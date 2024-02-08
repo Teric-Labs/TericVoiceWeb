@@ -1,11 +1,11 @@
 import React from "react";
 import { Box} from "@mui/material";
-import TranscribeComponent from "../components/TranscribeComponent";
+import Text2SpeechComponent from "../components/Text2speechComponent";
 
 const Text2Speech =()=>{
     return(
         <Box>
-            <TranscribeComponent/>
+            <Text2SpeechComponent/>
         </Box>
     )
 }

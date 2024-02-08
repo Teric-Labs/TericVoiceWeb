@@ -1,12 +1,17 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { styled, useTheme } from '@mui/material/styles';
-import { AppBar as MuiAppBar, Box, CssBaseline, Divider, Drawer as MuiDrawer, IconButton, List, ListItem, ListItemButton,ListItemText, Toolbar, Typography } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { AppBar as MuiAppBar, Box,Avatar, CssBaseline, Divider, Drawer as MuiDrawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import mvetlogo from '../assets/livestock.png'; // Ensure the path is correct
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LiveTvIcon from '@mui/icons-material/LiveTv';
+import MicIcon from '@mui/icons-material/Mic';
+import SubtitlesIcon from '@mui/icons-material/Subtitles';
+import TextToSpeechIcon from '@mui/icons-material/RecordVoiceOver'; 
+import TranslateIcon from '@mui/icons-material/Translate';
+import VoiceOverOffIcon from '@mui/icons-material/VoiceOverOff';
+import mvetlogo from '../assets/livestock.png'; 
 
 const drawerWidth = 190;
 
@@ -74,12 +79,13 @@ export default function Sidenav({ children }) {
   const location = useLocation();
 
   const menuItems = [
-    { text: 'Dashboard', icon: <InboxIcon />, path: '/' },
-    { text: 'Livestream', icon: <InboxIcon />, path: '/livestream' },
-    { text: 'Audio Transcription', icon: <InboxIcon />, path: '/transcribe' },
-    { text: 'Video Transcription', icon: <InboxIcon />, path: '/videostream' },
-    { text: 'Text2Speech', icon: <InboxIcon />, path: '/synthesize' },
-    { text: 'Translation', icon: <InboxIcon />, path: '/translate' }
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Livestream', icon: <LiveTvIcon />, path: '/livestream' },
+    { text: 'Audio Transcription', icon: <MicIcon />, path: '/transcribe' },
+    { text: 'Video Transcription', icon: <SubtitlesIcon />, path: '/videostream' },
+    { text: 'Text2Speech', icon: <TextToSpeechIcon />, path: '/synthesize' },
+    { text: 'Translation', icon: <TranslateIcon />, path: '/translate' },
+    { text: 'Voice-to-Voice', icon: <VoiceOverOffIcon />, path: '/voice' }
   ];
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -91,7 +97,7 @@ export default function Sidenav({ children }) {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <CustomAppBar position="fixed" open={open}>
-        <Toolbar sx={{backgroundColor:'#EBDFD7'}}>
+        <Toolbar sx={{backgroundColor:''}}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -104,9 +110,20 @@ export default function Sidenav({ children }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="body2" noWrap component="div" sx={{ marginLeft: 'auto',color:'black' }}>
-            Hello Guest
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 ,marginLeft: 'auto'}}>
+            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
+              <MicIcon sx={{ color: 'black' }} />
+            </Avatar>
+            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
+              <VoiceOverOffIcon sx={{ color: 'black' }} />
+            </Avatar>
+            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
+              <TranslateIcon sx={{ color: 'black' }} />
+            </Avatar>
+            <Typography variant="body2" noWrap component="div" sx={{ color: 'white' }}> 
+              Hello Guest
+            </Typography>
+          </Box>
         </Toolbar>
       </CustomAppBar>
       <Drawer variant="permanent" open={open} sx={{backgroundColor:'white'}}>
@@ -134,8 +151,12 @@ export default function Sidenav({ children }) {
               disablePadding 
               sx={{ 
                 display: 'block', 
-                backgroundColor: isActive(item.path) ? 'white' : 'transparent' ,
-                color:isActive(item.path) ? 'black' : 'white' 
+                backgroundColor: isActive(item.path) ? theme.palette.primary.main : 'transparent',
+                color: isActive(item.path) ? theme.palette.primary.contrastText : theme.palette.primary.light,
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                  color: theme.palette.primary.contrastText,
+                }
               }} 
               onClick={() => navigate(item.path)}
             >
@@ -146,7 +167,10 @@ export default function Sidenav({ children }) {
                   px: 2.5,
                 }}
               >
-                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemIcon sx={{ color: isActive(item.path) ? 'black' : 'white' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, color: isActive(item.path) ? 'black' : 'white' }} />
               </ListItemButton>
             </ListItem>
           ))}

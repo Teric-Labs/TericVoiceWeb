@@ -10,9 +10,10 @@ const CustomPanel = ({ heading, value, imageUrl}) => {
         margin: 'auto',
         padding:2,
         display: 'flex',
+        color:'white',
         flexDirection: 'column',
         alignItems: 'center',
-        backgroundColor: '#EBDFD7',
+        backgroundColor: 'black',
       }}
       elevation={2}
     >

@@ -7,6 +7,9 @@ import Transcribe from "./views/Transcribe";
 import Sidenav from "./components/Sidenav";
 import Translation from "./views/Translation";
 import Text2Speech from "./views/Text2Speech";
+import ViewVideo from "./views/ViewVideo"
+import ViewAudio from "./views/ViewAudio";
+import Voice2Voice from "./views/Voice2Voice";
 
 function App() {
   return (
@@ -19,6 +22,10 @@ function App() {
           <Route path="/transcribe" element={<Transcribe />} />
           <Route path="/synthesize" element={<Text2Speech />} />
           <Route path="/translate" element={<Translation />} />
+          <Route path="/translate" element={<Translation />} />
+          <Route path="/audio" element={<ViewAudio />} />
+          <Route path="/video" element={<ViewVideo />} />
+          <Route path="/voice" element={<Voice2Voice />} />
         </Routes>
         </Sidenav>
     </Router>
