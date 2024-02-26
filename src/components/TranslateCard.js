@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
-import TranslateIcon from '@mui/icons-material/Translate'; // Icon for translation visual cue
+import TranslateIcon from '@mui/icons-material/Translate'; 
 
 const TranslateCard = ({ title, language, translation }) => {
   return (

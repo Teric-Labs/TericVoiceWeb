@@ -5,7 +5,7 @@ const Voice2VoiceComponent =()=>{
     return(   
         <Box>
             
-             <Box container spacing={1}>
+             <Box>
                 <SpeechToSpeechForm/>
             </Box>
         </Box>

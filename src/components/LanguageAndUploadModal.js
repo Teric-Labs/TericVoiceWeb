@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { Box, Typography, Button, FormControl, InputLabel,Modal, Select, MenuItem, Chip, OutlinedInput, Stack, useTheme } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import TranslateIcon from '@mui/icons-material/Translate';
@@ -11,17 +11,28 @@ const LanguageAndUploadModal = ({
   setSpeakLanguage,
   transcribeLanguages,
   setTranscribeLanguages,
-  handleFileChange,
   isMultiple,
+  onSubmit,
   languageOptions
 }) => {
   const theme = useTheme();
-
+  const [selectedFiles, setSelectedFiles] = useState(isMultiple ? [] : null);
+  
   const handleTranscribeLanguageChange = (event) => {
     const { target: { value } } = event;
     setTranscribeLanguages(typeof value === 'string' ? value.split(',') : value);
   };
 
+  const handleFileChange =(event)=>{
+    const files = event.target.files;
+    if (isMultiple) {
+      setSelectedFiles([...files]);
+    } else {
+      setSelectedFiles(files[0]);
+    }
+  }
+
+  const handleSubmit=()=>{onSubmit({speakLanguage,transcribeLanguages,selectedFiles})}
   return (
     <Modal open={open} onClose={handleClose}>
     <Box
@@ -55,7 +66,7 @@ const LanguageAndUploadModal = ({
             input={<OutlinedInput label="Speak Language" startAdornment={<LanguageIcon sx={{ mr: 1, color: 'action.active' }} />} />}
           >
             {languageOptions.map((language) => (
-              <MenuItem key={language} value={language}>{language}</MenuItem>
+              <MenuItem key={language.code} value={language.code}>{language.name}</MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -76,7 +87,7 @@ const LanguageAndUploadModal = ({
             )}
           >
             {languageOptions.map((language) => (
-              <MenuItem key={language} value={language}>{language}</MenuItem>
+              <MenuItem key={language.code} value={language.code}>{language.name}</MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -97,7 +108,7 @@ const LanguageAndUploadModal = ({
         </Button>
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-        <Button variant="contained" onClick={handleClose} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
+        <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
           Start Transcription
         </Button>
       </Box>

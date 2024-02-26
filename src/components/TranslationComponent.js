@@ -31,11 +31,9 @@ const TranslationComponent = () => {
       </Box>
       <Accordion sx={{ width: '100%', boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleToggleTableVisibility} sx={{ backgroundColor: theme.palette.action.hover }}>
-          <Typography variant="h6">View Transcribed Videos</Typography>
+          <Typography variant="h6">View Translations</Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ width: '100%', padding: 2, margin:'auto', justifyContent:'center', display:'flex', backgroundColor:'black'}}>
-          {isTableVisible && <VideoTable />}
-        </AccordionDetails>
+        
       </Accordion>
     </Box>
   );

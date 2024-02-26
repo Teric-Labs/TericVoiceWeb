@@ -23,8 +23,8 @@ function App() {
           <Route path="/synthesize" element={<Text2Speech />} />
           <Route path="/translate" element={<Translation />} />
           <Route path="/translate" element={<Translation />} />
-          <Route path="/audio" element={<ViewAudio />} />
-          <Route path="/video" element={<ViewVideo />} />
+          <Route path="/audio/:id" element={<ViewAudio />} />
+          <Route path="/video/:id" element={<ViewVideo />} />
           <Route path="/voice" element={<Voice2Voice />} />
         </Routes>
         </Sidenav>

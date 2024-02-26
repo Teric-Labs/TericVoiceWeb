@@ -1,17 +1,51 @@
-import React, { useState } from 'react';
-import { Container, Step, StepLabel, Stepper, Button, Select, MenuItem, FormControl,Paper, Divider,Typography, Box, Grid, Card, CardContent,InputLabel, Chip, OutlinedInput} from '@mui/material';
+import React, { useState,useEffect,useRef } from 'react';
+import { Container, Step, StepLabel, Stepper, Button, Select, MenuItem, FormControl,Paper, Divider,Typography, Box, Grid, Card, CardContent,InputLabel, Chip, OutlinedInput, IconButton, keyframes,useTheme,} from '@mui/material';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import TranslateIcon from '@mui/icons-material/Translate';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import MicIcon from '@mui/icons-material/Mic';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
 import AudioCard from './AudioCard';
 import TranslateCard from './TranslateCard';
 import RecordComponent from './RecordComponent';
-const languages = ['Acholi','Ateso','English','Luganda','Lugbra','Lumasaaba','Runyankore-Rukiga'];
-
+const languages = [
+    { name: "English", code: "en" },
+    { name: "Luganda", code: "lg" },
+    { name: "Ateso", code: "at" },
+    { name: "Acholi", code: "ac" },
+    { name: "Lugbara", code: "lgg" },
+    { name: "Runyankore", code: "nyn" },
+    { name: "Swahili", code: "sw" } 
+  ];
+  const pulse = keyframes`
+  0% { 
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
 const SpeechToSpeechForm = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [targetLanguages, setTargetLanguages] = useState([]);
+    const [websocket, setWebsocket] = useState(null);
+    const [transcription, setTranscription] = useState("");
+    const [displayedTranslations, setDisplayedTranslations] = useState([]);
+    const [isRecording, setIsRecording] = useState(false);
+    const [displayedTranscription, setDisplayedTranscription] = useState("");
+    const [websocketResults, setWebsocketResults] = useState({transcription: "",translations: [],});
+
+    const mediaRecorderRef = useRef(null);
+    const transcriptBoxRef = useRef(null);
+    const websocketRef = useRef(null);
+    const intervalIdRef = useRef(null);
+
+    const theme = useTheme();
 
     const handleLanguageChange = (event) => {
         setSelectedLanguage(event.target.value);
@@ -26,12 +60,123 @@ const SpeechToSpeechForm = () => {
 
 
     const handleNext = () => {
+        if(activeStep ===0){
+            console.log("Selected Source Language:", selectedLanguage);
+            console.log("Selected Target Languages:", targetLanguages);
+        }
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
     };
 
     const handleBack = () => {
         setActiveStep((prevActiveStep) => prevActiveStep - 1);
     };
+   
+    const startRecording = async () => {
+       if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
+            websocketRef.current = new WebSocket("ws://127.0.0.1:5000/vocalcode");
+            
+            websocketRef.current.onopen = async () => {
+                console.log("WebSocket connected");
+
+                // Send language settings right after establishing the connection
+                const langSettings = {
+                        sourceLanguage: selectedLanguage,
+                        targetLanguages: targetLanguages,
+                };
+                websocketRef.current.send(JSON.stringify(langSettings));
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    mediaRecorderRef.current.ondataavailable = (e) => {
+                        if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+                            websocketRef.current.send(e.data);
+                        }
+                    };
+
+                    mediaRecorderRef.current.start(); 
+                    setIsRecording(true);
+                    intervalIdRef.current = setInterval(() => {
+                        console.log("Restarting recording");
+                        mediaRecorderRef.current.stop();
+                        mediaRecorderRef.current.start();
+                      }, 5000);
+                } catch (err) {
+                    console.error("Error starting recording:", err);
+                }
+            };
+
+            websocketRef.current.onerror = (error) => {
+                console.error("WebSocket Error: ", error);
+            };
+
+            websocketRef.current.onmessage = (event) => {
+                console.log("Received message:", event.data);
+                try {
+                    const data = JSON.parse(event.data); // Attempt to parse JSON
+                    setWebsocketResults(prevResults => ({
+                        ...prevResults,
+                        transcription: data.transcription,
+                        translations: Object.entries(data.translations).map(([language, fullTranslation]) => ({
+                            language,
+                            fullTranslation,
+                        })),
+                    }));
+                    setDisplayedTranslations(Object.entries(data.translations).map(([language, fullTranslation]) => ({
+                        language,
+                        displayedTranslation: "",
+                    })));
+                } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                }
+            };
+        }
+    };
+    
+      const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            clearInterval(intervalIdRef.current);
+          }
+      };
+
+      useEffect(() => {
+        const timer = setInterval(() => {
+            // Transcription
+            if (websocketResults.transcription.length > displayedTranscription.length) {
+                setDisplayedTranscription(prev => websocketResults.transcription.substring(0, prev.length + 1));
+            }
+    
+            // Translations (existing logic)
+            const newDisplayedTranslations = displayedTranslations.map(translation => {
+                const fullTranslation = websocketResults.translations.find(t => t.language === translation.language)?.fullTranslation || "";
+                return {
+                    ...translation,
+                    displayedTranslation: fullTranslation.substring(0, translation.displayedTranslation.length + 1),
+                };
+            });
+    
+            setDisplayedTranslations(newDisplayedTranslations);
+        }, 50);
+    
+        return () => clearInterval(timer);
+    }, [websocketResults, displayedTranscription, displayedTranslations]);
+   
+
+      useEffect(() => {
+        if (transcriptBoxRef.current) {
+            transcriptBoxRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [websocketResults]);
+    
+    useEffect(() => {
+        return () => {
+          // Cleanup intervals and WebSocket on component unmount
+          if (intervalIdRef.current) clearInterval(intervalIdRef.current);
+          if (websocketRef.current) websocketRef.current.close();
+        };
+      }, []);
 
     return (
         <Paper elevation={3} sx={{padding:4}}>
@@ -110,8 +255,8 @@ const SpeechToSpeechForm = () => {
                                         sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
                                     >
                                         {languages.map((language) => (
-                                            <MenuItem key={language} value={language}>
-                                                {language}
+                                            <MenuItem key={language.code} value={language.code}>
+                                                {language.name}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -135,8 +280,8 @@ const SpeechToSpeechForm = () => {
                                         sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
                                     >
                                         {languages.map((language) => (
-                                            <MenuItem key={language} value={language}>
-                                                {language}
+                                            <MenuItem key={language.code} value={language.code}>
+                                                {language.name}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -149,44 +294,71 @@ const SpeechToSpeechForm = () => {
                 {activeStep === 1 && (
                     <Box p={4}>
                        <Box>
-                            <RecordComponent/>
+                       <Card sx={{
+                                minWidth: 275,
+                                margin: '20px',
+                                boxShadow: theme.shadows[3],
+                                transition: '0.3s',
+                                backgroundColor: '#121212',
+                                color: '#FFFFFF', 
+                                '&:hover': {
+                                    boxShadow: theme.shadows[5]
+                                }
+                                }}>
+                                <CardContent>
+                                    <Grid container spacing={2} alignItems="center" justifyContent="center">
+                                    <Grid item xs={12} sm={4}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', p: 2 }}>
+                                        <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }} onClick={startRecording} disabled={isRecording}>
+                                            <MicIcon fontSize="large" />
+                                        </IconButton>
+                                        <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }}>
+                                            <PlayArrowIcon fontSize="large" />
+                                        </IconButton>
+                                        <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }} onClick={stopRecording} disabled={!isRecording}>
+                                            <PauseIcon fontSize="large" />
+                                        </IconButton>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} sm={8}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px' }} id="audio">
+                                        <GraphicEqIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
+                                        </Box>
+                                    </Grid>
+                                    </Grid>
+                                </CardContent>
+                                </Card>
                        </Box>
                        <Box>
                             <Box>
-                                <TranslateCard 
-                                            title="Example Translation" 
-                                            language="Spanish" 
-                                            translation="Esta es una traducción de ejemplo."
+                                <TranslateCard
+                                           title="Transcription"
+                                            language={languages.find(lang => lang.code === selectedLanguage)?.name || selectedLanguage}
+                                            translation={displayedTranscription}
                                         />
                             </Box>
                             <Divider/>
                             <Paper elevation={3} sx={{padding:2, margin:'auto'}}>
                             <Box >
                                 <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                    <TranslateCard 
-                                        title="Example Translation" 
-                                        language="Spanish" 
-                                        translation="Esta es una traducción de ejemplo."
-                                    />
-                                    <TranslateCard 
-                                        title="Example Translation" 
-                                        language="Spanish" 
-                                        translation="Esta es una traducción de ejemplo."
-                                    />
-                                      
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                    <AudioCard 
-                                        title="Sample Audio" 
-                                        language="English" 
-                                        link="path_to_your_audio_file.mp3"/>
-                                    <AudioCard 
-                                        title="Sample Audio" 
-                                        language="English" 
-                                        link="path_to_your_audio_file.mp3"/>
-
-                                    </Grid>
+                                    {displayedTranslations.map(({ language, displayedTranslation }, index) => (
+                                        <React.Fragment key={index}>
+                                            <Grid item xs={12} sm={6}>
+                                                <TranslateCard
+                                                    title={`Translation (${language.toUpperCase()})`}
+                                                    language={languages.find(lang => lang.code === language)?.name || language}
+                                                    translation={displayedTranslation}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <AudioCard
+                                                    title={`Sample Audio (${languages.find(lang => lang.code === language)?.name || language})`}
+                                                    language={languages.find(lang => lang.code === language)?.name || language}
+                                                    link={`path_to_audio_file_for_${language}.mp3`}
+                                                />
+                                            </Grid>
+                                        </React.Fragment>
+                                    ))}
                                 </Grid>
                             </Box>
                             </Paper>

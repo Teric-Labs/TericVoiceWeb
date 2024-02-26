@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Typography,
   Table,
   TableBody,
   TableCell,
@@ -14,21 +13,35 @@ import {
   TextField,
   IconButton
 } from '@mui/material';
+import axios from 'axios';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import AudioData from '../constants/AudioData';
 
 export default function DataTable() {
   const [filter, setFilter] = useState('');
+  const [entries, setEntries] = useState([]);
   const navigate = useNavigate();
 
   const handleVisibilityClick = (id) => {
     console.log(`Visibility icon clicked for Audio ID: ${id}`);
-    navigate('/audio');
+    navigate(`/audio/${id}`);
   };
+ 
+  useEffect(()=>{
+    const apiEndpoint = 'http://127.0.0.1:5000/get_audios/';
+    const fetchEntries  =async()=>{
+      try{
+        const response = await axios.post(apiEndpoint,{user_id:"78"});
+        setEntries(response.data.entries);
+      } catch(error){
+        console.error('Failed to fecth entries',error)
+      }
+    }
 
-  const filteredData = AudioData.filter(audio => audio.name.toLowerCase().includes(filter.toLowerCase()));
+    fetchEntries();
+  },[])
+
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -55,14 +68,14 @@ export default function DataTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.map((audio) => (
-                <TableRow key={audio.id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }}>
+              {entries.map((audio) => (
+                <TableRow key={audio.doc_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }}>
                   <TableCell component="th" scope="row">
                     <Checkbox sx={{ color: 'white' }} />
                   </TableCell>
-                  <TableCell align="right" sx={{ color: 'white', fontSize: '0.875rem' }}>{audio.name}</TableCell>
-                  <TableCell align="right" sx={{ color: 'white', fontSize: '0.875rem' }}>{audio.date}</TableCell>
-                  <TableCell align="right"><IconButton onClick={() => handleVisibilityClick(audio.id)}><VisibilityIcon sx={{ color: 'gray', '&:hover': { color: 'white' } }} /></IconButton></TableCell>
+                  <TableCell align="right" sx={{ color: 'white', fontSize: '0.875rem' }}>{audio.fileName}</TableCell>
+                  <TableCell align="right" sx={{ color: 'white', fontSize: '0.875rem' }}>{audio.doc_id}</TableCell>
+                  <TableCell align="right"><IconButton onClick={() => handleVisibilityClick(audio.doc_id)}><VisibilityIcon sx={{ color: 'gray', '&:hover': { color: 'white' } }} /></IconButton></TableCell>
                   <TableCell align="right"><IconButton><ShareIcon sx={{ color: 'blue', '&:hover': { color: 'darkblue' } }} /></IconButton></TableCell>
                   <TableCell align="right"><IconButton><DeleteIcon sx={{ color: 'red', '&:hover': { color: 'darkred' } }} /></IconButton></TableCell>
                 </TableRow>

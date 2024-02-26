@@ -1,14 +1,38 @@
-import React,{useState} from "react";
-import { Box, Card, CardContent, TextField, Button, Typography, Grid, Select, MenuItem, Modal,Stack,InputLabel, FormControl, IconButton,Chip, OutlinedInput } from "@mui/material";
+import React,{useState, useEffect} from "react";
+import { Box, Card, CardContent, TextField, Button, Typography, Grid, Select, MenuItem, Modal,Stack,InputLabel, FormControl, IconButton,Chip, OutlinedInput,Snackbar,LinearProgress } from "@mui/material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TranslateIcon from '@mui/icons-material/Translate';
 import UploadIcon from '@mui/icons-material/Upload';
-const languages = ['Acholi','Ateso','English','Luganda','Lugbra','Lumasaaba','Runyankore-Rukiga'];
+import axios from "axios";
+const languageOptions = [
+  { name: "English", code: "en" },
+  { name: "Luganda", code: "lg" },
+  { name: "Ateso", code: "at" },
+  { name: "Acholi", code: "ac" },
+  { name: "Lugbara", code: "lgg" },
+  { name: "Runyankore", code: "nyn" },
+  { name: "Swahili", code: "sw" } 
+];
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 const TranslationCard = () => {
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [targetLanguages, setTargetLanguages] = useState([]);
+    const [transcript ,setTranscript]=useState('')
+    const [translation,setTranslation]= useState({})
     const [modalOpen, setModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [showBanner, setShowBanner] = useState(false);
 
     const handleLanguageChange = (event) => {
         setSelectedLanguage(event.target.value);
@@ -31,15 +55,34 @@ const TranslationCard = () => {
         };
       
         const handleFileChange = (event) => {
-          // Assuming you want to store the file in state, add a state for it if not already done
-          // For single file upload
           console.log(event.target.files[0]); // Log or set state here
         };
 
-
+        const handleSubmit = async (event) => {
+          event.preventDefault();
+          setLoading(true);
+          const formData = new FormData();
+          formData.append('source_lang', selectedLanguage);
+          targetLanguages.forEach(lang => formData.append('target_langs', lang));
+          formData.append('doc', transcript); 
+          formData.append('user_id', "78"); 
+        
+          try {
+            const response = await axios.post('http://127.0.0.1:8000/translate/', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setLoading(false);
+            setShowBanner(true);
+            setTimeout(() => setShowBanner(false), 5000);
+            setTranslation(response.data.msg); 
+          } catch (error) {
+            setLoading(false);
+            console.error('Error during translation:', error);
+          }
+        };
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
     <Card sx={{
         width: '100%',
         maxWidth: '1200px', 
@@ -54,74 +97,92 @@ const TranslationCard = () => {
         boxShadow: '0 8px 16px rgba(0,0,0,0.5)',
       }}>
       <CardContent sx={{ width: '100%' }}>
-        
+      {loading && <LinearProgress />}
+      <Snackbar
+        open={showBanner}
+        autoHideDuration={6000}
+        onClose={() => setShowBanner(false)}
+        message="Translation complete"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
         <form>
-            <Grid container spacing={3} justifyContent="space-between">
+            <Box>
+            <Grid container justifyContent="space-between">
                 <Grid item xs={12} md={5} >
                     <FormControl fullWidth>
-                                    <InputLabel sx={{ color: 'white' }}>Source Language</InputLabel>
-                                    <Select
-                                        value={selectedLanguage}
-                                        onChange={handleLanguageChange}
-                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
-                                    >
-                                        {languages.map((language) => (
-                                            <MenuItem key={language} value={language}>
-                                                {language}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
+                    <InputLabel sx={{ color: 'white' }}>Source Language</InputLabel>
+                      <Select
+                        value={selectedLanguage}
+                        onChange={handleLanguageChange}
+                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}>
+                      {languageOptions.map((language) => (
+                        <MenuItem key={language.code} value={language.code}>
+                          {language.name}
+                            </MenuItem>
+                        ))}
+                      </Select>
                     </FormControl>
-                    <TextField
+                </Grid>
+                <Grid item xs={12} md={5}>
+                  <FormControl fullWidth>
+                      <InputLabel sx={{ color: 'white' }}>Target Languages</InputLabel>
+                        <Select
+                          multiple
+                          value={targetLanguages}
+                          onChange={handleTargetLanguageChange}
+                          input={<OutlinedInput label="Target Languages" id="select-multiple-chip" />}
+                          renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {selected.map((code) => (
+                              <Chip key={code} label={languageOptions.find(lang => lang.code === code)?.name || code} />
+                              ))}
+                          </Box>)}
+                          MenuProps={MenuProps}
+                          sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}>
+                          {languageOptions.map((language) => (
+                          <MenuItem key={language.code} value={language.code}>
+                          {language.name}
+                          </MenuItem>
+                        ))}
+                        </Select>
+                  </FormControl>
+                  </Grid>
+                </Grid>
+                <Box>
+                <TextField
                         label="Enter Text"
                         variant="outlined"
                         margin="dense"
+                        value={transcript}
+                        onChange={(e) => setTranscript(e.target.value)}
                         multiline
                         rows={4}
                         fullWidth
                         InputLabelProps={{ style: { color: '#fff' } }}
-                        sx={{ backgroundColor: '#333', color: '#fff', input: { color: '#fff' } }}
+                        sx={{ backgroundColor: 'white', color: '#fff', input: { color: '#fff' } }}
                     />
-                </Grid>
-                <Grid item xs={12} md={5}>
-                <FormControl fullWidth>
-                                    <InputLabel sx={{ color: 'white' }}>Target Languages</InputLabel>
-                                    <Select
-                                        multiple
-                                        value={targetLanguages}
-                                        onChange={handleTargetLanguageChange}
-                                        input={<OutlinedInput label="Target Languages" />}
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selected.map((value) => (
-                                                    <Chip key={value} label={value} />
-                                                ))}
-                                            </Box>
-                                        )}
-                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
-                                    >
-                                        {languages.map((language) => (
-                                            <MenuItem key={language} value={language}>
-                                                {language}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                    <TextField
-                        label="Translation"
-                        variant="outlined"
-                        margin="dense"
-                        multiline
-                        rows={4}
-                        fullWidth
-                        disabled
-                        InputLabelProps={{ style: { color: '#aaa' } }} 
-                        sx={{ backgroundColor: '#333', color: '#aaa', input: { color: '#aaa' } }}
-                    />
-                </Grid>
-            </Grid>
+                </Box>
+                <Box>
+                {Object.keys(translation).map(langCode => (
+                        <Box key={langCode}>
+                          <TextField
+                            label={`Translation (${langCode})`}
+                            variant="outlined"
+                            margin="dense"
+                            multiline
+                            rows={2}
+                            fullWidth
+                            value={translation[langCode]}
+                            disabled
+                            InputLabelProps={{ style: { color: '#aaa' } }}
+                            sx={{ backgroundColor: 'white', color: '#aaa', input: { color: '#aaa' } }}
+                          />
+                        </Box>
+                      ))}
+                </Box>
+            </Box>
             <Box mt={4} display="flex" justifyContent="center" gap={2}>
-                <Button variant="contained" startIcon={<TranslateIcon />} sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                <Button variant="contained" startIcon={<TranslateIcon /> } sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' } }} onClick={handleSubmit}>
                     Translate
                 </Button>
                 <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />

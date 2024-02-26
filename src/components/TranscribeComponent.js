@@ -1,12 +1,22 @@
 import React, { useState } from "react";
-import { Box, Typography, Grid, Paper, Accordion, AccordionSummary, AccordionDetails, useTheme ,Card,CardContent} from '@mui/material';
+import { Box, Typography, Grid, Paper, Accordion, AccordionSummary, AccordionDetails, useTheme ,Card,CardContent,Snackbar,LinearProgress} from '@mui/material';
 import uploadfile from '../assets/audio-headset.png';
 import multiplefiles from '../assets/files.png'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CustomPanel from "./CustomPanel";
 import DataTable from "./DataTable";
+import axios from 'axios';
 import LanguageAndUploadModal from "./LanguageAndUploadModal";
-const languageOptions = ["English", "Luganda", "Ateso", "Acholi", "Lugbara", "Runyankore", "Swahili"];
+const languageOptions = [
+  { name: "English", code: "en" },
+  { name: "Luganda", code: "lg" },
+  { name: "Ateso", code: "at" },
+  { name: "Acholi", code: "ac" },
+  { name: "Lugbara", code: "lgg" },
+  { name: "Runyankore", code: "nyn" },
+  { name: "Swahili", code: "sw" } 
+];
+
 
 const TranscribeComponent = () => {
   const [isTableVisible, setIsTableVisible] = useState(false);
@@ -14,7 +24,10 @@ const TranscribeComponent = () => {
   const [multipleModalOpen, setMultipleModalOpen] = useState(false);
   const [speakLanguage, setSpeakLanguage] = useState('');
   const [transcribeLanguages, setTranscribeLanguages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
   const theme = useTheme(); 
+  const apiEndpoint = 'http://127.0.0.1:5000/upload/';
 
   const handleSingleUploadClick = () => {
     setSingleModalOpen(true);
@@ -25,24 +38,49 @@ const TranscribeComponent = () => {
   const handleCloseSingleModal = () => {
     setSingleModalOpen(false);
   };
-  const handleFileChange = (event) => {
-    // Assuming you want to store the file in state, add a state for it if not already done
-    // For single file upload
-    console.log(event.target.files[0]); // Log or set state here
-  };
+  
 
   const handleCloseMultipleModal = () => {
     setMultipleModalOpen(false);
   };
 
-  const handleFilesChange = (event) => {
-    // Assuming you want to store multiple files in state, add a state for it if not already done
-    // For multiple file uploads
-    console.log(event.target.files); // Log or set state here
-  };
   const handleToggleTableVisibility = () => {
     setIsTableVisible(!isTableVisible);
   };
+
+  const handleSubmit=async({ speakLanguage, transcribeLanguages, selectedFiles })=>{
+    setSingleModalOpen(false);
+    setMultipleModalOpen(false);
+    setLoading(true);
+    const formData  = new FormData();
+    formData.append('source_lang',speakLanguage)
+    transcribeLanguages.forEach(lang => {
+      formData.append('target_langs', lang); 
+    });
+    formData.append('user_id',"78")
+   
+    if (Array.isArray(selectedFiles)) {
+      selectedFiles.forEach((file, index) => {
+        formData.append(`files[${index}]`, file);
+      });
+    } else {
+      formData.append('audio_file', selectedFiles);
+    }
+    console.log(formData);
+    try {
+      const response = await axios.post(apiEndpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setLoading(false);
+      setShowBanner(true);
+      setTimeout(() => setShowBanner(false), 5000);
+    } catch (error) {
+      setLoading(false);
+    }
+
+  }
 
   return (
     <Box p={3} sx={{ maxWidth: '1200px', margin: 'auto' }}>
@@ -58,6 +96,13 @@ const TranscribeComponent = () => {
           Our platform accurately transcribes audio into various Ugandan languages, enabling easy download of these transcriptions. It's designed to improve engagement and understanding across diverse local communities.          </Typography>
         </CardContent>
     </Card>
+    {loading && <LinearProgress />}
+    <Snackbar
+      open={showBanner}
+      autoHideDuration={6000}
+      onClose={() => setShowBanner(false)}
+      message="Transcription is complete"
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}/>
       <Paper elevation={3} sx={{ padding: 4, mb: 5, borderRadius: theme.shape.borderRadius }}>
         <Grid container spacing={4} justifyContent="center">
           <Grid item xs={12} sm={6} md={4} onClick={handleSingleUploadClick} >
@@ -84,9 +129,9 @@ const TranscribeComponent = () => {
         setSpeakLanguage={setSpeakLanguage}
         transcribeLanguages={transcribeLanguages}
         setTranscribeLanguages={setTranscribeLanguages}
-        handleFileChange={handleFileChange}
         isMultiple={false}
         languageOptions={languageOptions}
+        onSubmit={handleSubmit}
       />
       <LanguageAndUploadModal
         open={multipleModalOpen}
@@ -95,9 +140,9 @@ const TranscribeComponent = () => {
         setSpeakLanguage={setSpeakLanguage}
         transcribeLanguages={transcribeLanguages}
         setTranscribeLanguages={setTranscribeLanguages}
-        handleFileChange={handleFilesChange} 
         isMultiple={true}
         languageOptions={languageOptions}
+        onSubmit={handleSubmit}
       />
     </Box>
   );

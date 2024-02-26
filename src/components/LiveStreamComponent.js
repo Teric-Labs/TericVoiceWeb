@@ -4,7 +4,15 @@ import microphone from "../assets/microphone.png";
 import CustomPanel from "./CustomPanel";
 import LanguageIcon from '@mui/icons-material/Language';
 import TranslateIcon from '@mui/icons-material/Translate';
-const languageOptions = ["English", "Luganda", "Ateso", "Acholi", "Lugbara", "Runyankore", "Swahili"];
+const languages = [
+  { name: "English", code: "en" },
+  { name: "Luganda", code: "lg" },
+  { name: "Ateso", code: "at" },
+  { name: "Acholi", code: "ac" },
+  { name: "Lugbara", code: "lgg" },
+  { name: "Runyankore", code: "nyn" },
+  { name: "Swahili", code: "sw" } 
+];
 const LiveStreamComponent = () => {
   const [websocket, setWebsocket] = useState(null);
   const [transcription, setTranscription] = useState("");
@@ -13,61 +21,63 @@ const LiveStreamComponent = () => {
   const [modalOpen, setModalOpen] = useState(true);
   const [speakLanguage, setSpeakLanguage] = useState('');
   const [transcribeLanguages, setTranscribeLanguages] = useState([]);
-  const theme = useTheme();
+
   const mediaRecorderRef = useRef(null);
   const transcriptBoxRef = useRef(null);
+  const websocketRef = useRef(null);
+  const intervalIdRef = useRef(null)
 
-  useEffect(() => {
-    const ws = new WebSocket("ws://127.0.0.1:8000/transcribe");
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-    };
-    ws.onmessage = (event) => {
-      console.log("Received message:", event.data);
-      setTranscription((prevTranscription) => prevTranscription + " " + event.data);
-      transcriptBoxRef.current.scrollTop = transcriptBoxRef.current.scrollHeight;
-    };
-    ws.onerror = (error) => {
-      console.error("WebSocket Error: ", error);
-    };
-    setWebsocket(ws);
-
-    return () => {
-      ws.close();
-    };
-  }, []);
+  
 
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+    if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
+         websocketRef.current = new WebSocket("ws://127.0.0.1:5000/transcribe");
+         
+         websocketRef.current.onopen = async () => {
+             console.log("WebSocket connected");
+             const langSettings = {
+              speakLanguage: speakLanguage
+             };
+             websocketRef.current.send(JSON.stringify(langSettings));
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
-          console.log("Sending data");
-          websocket.send(e.data);
-        }
-      };
+             try {
+                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                 mediaRecorderRef.current = new MediaRecorder(stream);
+                 mediaRecorderRef.current.ondataavailable = (e) => {
+                     if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+                         websocketRef.current.send(e.data);
+                     }
+                 };
 
-      mediaRecorder.start();
-      setIsRecording(true);
+                 mediaRecorderRef.current.start(); 
+                 setIsRecording(true);
+                 intervalIdRef.current = setInterval(() => {
+                  console.log("Restarting recording");
+                  mediaRecorderRef.current.stop();
+                  mediaRecorderRef.current.start();
+                }, 5000);
+             } catch (err) {
+                 console.error("Error starting recording:", err);
+             }
+         };
 
-      // Stop recording after 10 seconds and restart
-      setInterval(() => {
-        console.log("Restarting recording");
-        mediaRecorder.stop();
-        mediaRecorder.start();
-      }, 10000);
-    } catch (err) {
-      console.error("Error starting recording:", err);
-    }
-  };
+         websocketRef.current.onerror = (error) => {
+             console.error("WebSocket Error: ", error);
+         };
+
+         websocketRef.current.onmessage = (event) => {
+             console.log("Received message:", event.data);
+             setTranscription((prevTranscription) => prevTranscription + " " + event.data);
+            transcriptBoxRef.current.scrollTop = transcriptBoxRef.current.scrollHeight;
+         };
+     }
+ };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      clearInterval(intervalIdRef.current);
     }
   };
 
@@ -93,7 +103,12 @@ const LiveStreamComponent = () => {
   const handleCloseModal = () => {
     setModalOpen(false);
   };
-
+  useEffect(() => {
+    return () => {
+      if (intervalIdRef.current) clearInterval(intervalIdRef.current);
+      if (websocketRef.current) websocketRef.current.close();
+    };
+  }, []);
   const handleTranscribeLanguageChange = (event) => {
     const {
       target: { value },
@@ -204,34 +219,9 @@ const LiveStreamComponent = () => {
               startAdornment={<LanguageIcon sx={{ mr: 1, color: 'action.active' }} />}
               input={<OutlinedInput label="Speak Language" startAdornment={<LanguageIcon sx={{ mr: 1, color: 'action.active' }} />} />}
             >
-              {languageOptions.map((language) => (
-                <MenuItem key={language} value={language}>
-                  {language}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth variant="outlined">
-            <InputLabel id="transcribe-language-label">Transcribe To</InputLabel>
-            <Select
-              labelId="transcribe-language-label"
-              id="transcribe-to"
-              multiple
-              value={transcribeLanguages}
-              onChange={handleTranscribeLanguageChange}
-              input={<OutlinedInput id="select-multiple-chip" label="Transcribe To" startAdornment={<TranslateIcon sx={{ mr: 1, color: 'action.active' }} />} />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} sx={{ bgcolor: theme.palette.grey[300] }} />
-                  ))}
-                </Box>
-              )}
-            >
-              {languageOptions.map((language) => (
-                <MenuItem key={language} value={language}>
-                  {language}
+              {languages.map((language) => (
+                <MenuItem key={language.code} value={language.code}>
+                  {language.name}
                 </MenuItem>
               ))}
             </Select>
