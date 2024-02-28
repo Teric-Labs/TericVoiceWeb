@@ -73,7 +73,7 @@ const SpeechToSpeechForm = () => {
    
     const startRecording = async () => {
        if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
-            websocketRef.current = new WebSocket("ws://127.0.0.1:5000/vocalcode");
+            websocketRef.current = new WebSocket("wss://tericwebsocket-wlivbm2klq-uc.a.run.app/vocalcode");
             
             websocketRef.current.onopen = async () => {
                 console.log("WebSocket connected");

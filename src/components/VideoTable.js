@@ -11,7 +11,7 @@ export default function VideoTable() {
   const [Enteries, setEntries] = useState([]);
   const navigate = useNavigate()
   useEffect(()=>{
-    const apiEndpoint = 'http://127.0.0.1:5000/get_video/';
+    const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/get_video';
     const fetchEntries  =async()=>{
       try{
         const response = await axios.post(apiEndpoint,{user_id:"78"});

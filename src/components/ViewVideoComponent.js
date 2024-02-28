@@ -13,7 +13,7 @@ const ViewVideoComponent =({audioId })=>{
   const [videoLink, setvideoLink] = useState("");
 
   useEffect(() => {
-    const apiEndpoint = 'http://127.0.0.1:5000/get_audio_data/';
+    const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/get_audio_data';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: audioId });

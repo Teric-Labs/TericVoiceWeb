@@ -31,8 +31,6 @@ const handleCloseModal = () => {
   };
 
   const handleFileChange = (event) => {
-    // Assuming you want to store the file in state, add a state for it if not already done
-    // For single file upload
     console.log(event.target.files[0]); // Log or set state here
   };
 

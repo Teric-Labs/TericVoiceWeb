@@ -27,7 +27,7 @@ const TranscribeComponent = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const theme = useTheme(); 
-  const apiEndpoint = 'http://127.0.0.1:5000/upload/';
+  const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/upload/';
 
   const handleSingleUploadClick = () => {
     setSingleModalOpen(true);

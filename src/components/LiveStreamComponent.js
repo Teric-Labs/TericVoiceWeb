@@ -31,7 +31,7 @@ const LiveStreamComponent = () => {
 
   const startRecording = async () => {
     if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
-         websocketRef.current = new WebSocket("ws://127.0.0.1:5000/transcribe");
+         websocketRef.current = new WebSocket("wss://tericwebsocket-wlivbm2klq-uc.a.run.app/transcribe");
          
          websocketRef.current.onopen = async () => {
              console.log("WebSocket connected");
@@ -55,7 +55,7 @@ const LiveStreamComponent = () => {
                   console.log("Restarting recording");
                   mediaRecorderRef.current.stop();
                   mediaRecorderRef.current.start();
-                }, 5000);
+                }, 2000);
              } catch (err) {
                  console.error("Error starting recording:", err);
              }

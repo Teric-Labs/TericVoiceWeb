@@ -40,7 +40,7 @@ const handleSubmit=async(event)=>{
   formData.append('user_id',"78")
   try{
     const response = await axios({method: 'post',
-    url: 'http://127.0.0.1:5000/videoUpload/',
+    url: 'https://afrivoices-wlivbm2klq-uc.a.run.app/videoUpload/',
     data: formData,
     headers: { 'Content-Type': 'multipart/form-data' }
   })
