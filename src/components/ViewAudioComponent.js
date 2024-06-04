@@ -11,6 +11,8 @@ import AudioPlayerComponent from "./AudioPlayerComponent";
 const ViewAudioComponent = ({ audioId }) => {
   const [entries, setEntries] = useState([]);
   const [audioSource, setAudioSource] = useState("");
+  const [audioDate, setDate] = useState("");
+  const [audioTitle, setTitle] = useState("");
 
   useEffect(() => {
     const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/get_audio';
@@ -20,6 +22,8 @@ const ViewAudioComponent = ({ audioId }) => {
         setEntries(response.data.entries);
         if (response.data.entries.length > 0 && response.data.entries[0].Url.length > 0) {
           setAudioSource(response.data.entries[0].Url[0].audio_file_url);
+          setDate(response.data.entries[0].Date);
+          setTitle(response.data.entries[0].title);
         }
       } catch (error) {
         console.error('Failed to fetch entries', error);
@@ -32,10 +36,11 @@ const ViewAudioComponent = ({ audioId }) => {
 
   return (
     <Paper elevation={4} sx={{marginTop:'20px', marginX:'20px'}}>
-    <Box p={4} sx={{ maxWidth: '1200px', margin: 'auto' }}>
+    <Box p={4} sx={{ margin: 'auto' }}>
       <Grid container spacing={3} alignItems="center" sx={{color:"white"}}>
         <Grid item xs={12} md={6} >
-          <Typography variant="subtitle1" color="textSecondary" >27/01/2024 15:54</Typography>
+          <Typography variant="subtitle1" color="textSecondary" sx={{fontFamily:'Poppins'}} >Date Created: {audioDate}</Typography>
+          <Typography variant="subtitle1" color="textSecondary" sx={{fontFamily:'Poppins', fontSize:'2em'}} > <b> {audioTitle}</b></Typography>
         </Grid>
         
         <Grid item xs={12} md={3} container justifyContent="flex-end">
@@ -53,10 +58,10 @@ const ViewAudioComponent = ({ audioId }) => {
       <Divider sx={{ marginTop: 3, backgroundColor: theme.palette.divider }} />
       {entries.length > 0 && (
           <Box sx={{ marginBottom: 2 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{fontFamily:'Poppins'}}>
               Original Transcript:
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" sx={{fontFamily:'Poppins'}}> 
               {entries[0].Original_transcript}
             </Typography>
           </Box>
@@ -64,10 +69,10 @@ const ViewAudioComponent = ({ audioId }) => {
       {entries.length > 0 && Object.entries(entries[0].Translations).map(([language, translation], index) => (
           <Accordion key={index}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1a-content" id="panel1a-header">
-              <Typography>{language.toUpperCase()}</Typography>
+              <Typography sx={{fontFamily:'Poppins'}}>{language.toUpperCase()}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography>
+              <Typography sx={{fontFamily:'Poppins'}}>
                 {translation}
               </Typography>
             </AccordionDetails>

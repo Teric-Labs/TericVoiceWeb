@@ -1,10 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 
-const AudioCard = ({ title, language, link }) => {
-  const theme = useTheme(); // Using the theme for potential theme-based styling
+  const AudioCard = ({ title, language, audioData }) => {
+  const theme = useTheme(); 
+  const [audioUrl, setAudioUrl] = useState('');
+
+  
+  useEffect(() => {
+    if (!audioData) return;
+
+    // Decode the base64 audio data
+    const audioBytes = atob(audioData);
+    const audioArray = new Uint8Array(audioBytes.length);
+    for (let i = 0; i < audioBytes.length; i++) {
+      audioArray[i] = audioBytes.charCodeAt(i);
+    }
+
+    // Create a Blob from the audio array
+    const blob = new Blob([audioArray], { type: 'audio/wav' });
+
+    // Generate a URL for the Blob
+    const url = URL.createObjectURL(blob);
+    setAudioUrl(url);
+
+    // Clean up the URL when the component unmounts
+    return () => URL.revokeObjectURL(url);
+  }, [audioData]);
 
   return (
     <Card sx={{
@@ -12,8 +35,6 @@ const AudioCard = ({ title, language, link }) => {
       margin: '20px',
       boxShadow: theme.shadows[3],
       transition: '0.3s',
-      backgroundColor: '#121212', // Dark background
-      color: '#FFFFFF', // White text color
       '&:hover': {
         boxShadow: theme.shadows[5]
       },
@@ -42,12 +63,12 @@ const AudioCard = ({ title, language, link }) => {
         <Box sx={{
           display: 'flex',
           justifyContent: 'center',
-          backgroundColor: '#FFFFFF', // White background for the oval
-          borderRadius: '20px', // Oval shape
-          px: 2, // Horizontal padding
-          py: 1, // Vertical padding
-          color: '#121212', // Black text for the title
-          marginBottom: '20px', // Margin bottom for spacing
+          backgroundColor: '#FFFFFF',
+          borderRadius: '20px',
+          px: 2,
+          py: 1,
+          color: '#121212',
+          marginBottom: '20px',
         }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
             {title}
@@ -56,11 +77,7 @@ const AudioCard = ({ title, language, link }) => {
         <Typography sx={{ marginBottom: 2, color: 'grey' }}>
           Language: {language}
         </Typography>
-        <AudioPlayer
-          src={link}
-          onPlay={e => console.log("onPlay")}
-          // Custom styling can be adjusted here if needed
-        />
+        {audioUrl && <AudioPlayer src={audioUrl} autoPlay onPlay={e => console.log("onPlay")} />}
       </CardContent>
     </Card>
   );

@@ -1,5 +1,5 @@
-import React,{useState} from "react";
-import { Box, Card, CardContent, TextField, Button,Select, MenuItem, FormControl,Grid,InputLabel, Chip, OutlinedInput,Snackbar,LinearProgress } from "@mui/material";
+import React,{useState,useEffect} from "react";
+import { Box, Card, CardContent, TextField, Button,Select, MenuItem, FormControl,Grid,InputLabel, Chip, OutlinedInput,Snackbar,LinearProgress, Typography } from "@mui/material";
 import YouTubeIcon from '@mui/icons-material/YouTube'; 
 import MicIcon from '@mui/icons-material/Mic'; 
 import axios from "axios";
@@ -17,8 +17,10 @@ const VideoCard = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [targetLanguages, setTargetLanguages] = useState([]);
   const [videoLink, setVideoLink] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
+  const [user, setUser] = useState({ username: '', userId: '' });
 
   const handleLanguageChange = (event) => {
     setSelectedLanguage(event.target.value);};
@@ -30,6 +32,13 @@ const VideoCard = () => {
     setTargetLanguages(typeof value === 'string' ? value.split(',') : value);
 };
 
+useEffect(() => {
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    const userData = JSON.parse(storedUser);
+    setUser(userData);
+  }
+}, []);
 const handleSubmit=async(event)=>{
   event.preventDefault();
   setLoading(true);
@@ -37,10 +46,11 @@ const handleSubmit=async(event)=>{
   formData.append('source_lang', selectedLanguage);
   targetLanguages.forEach(lang => formData.append('target_langs', lang));
   formData.append('youtube_link', videoLink);
-  formData.append('user_id',"78")
+  formData.append('title', videoTitle);
+  formData.append('user_id',user.userId)
   try{
     const response = await axios({method: 'post',
-    url: 'https://afrivoices-wlivbm2klq-uc.a.run.app/videoUpload/',
+    url: 'http://127.0.0.1:8000/videoUpload/',
     data: formData,
     headers: { 'Content-Type': 'multipart/form-data' }
   })
@@ -56,18 +66,14 @@ const handleSubmit=async(event)=>{
   return (
     <Card sx={{
         width: '100%',
-        maxWidth: '1200px',
         margin: '2rem auto',
-        padding: '2rem',
+        padding: '1rem',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        backgroundColor: '#121212',
-        color: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
       }}>
       <CardContent sx={{ width: '100%' }}>
+        <Typography sx={{fontFamily:'Poppins'}}>Enter YouTube Video Link </Typography>
       <Snackbar
       open={showBanner}
       autoHideDuration={6000}
@@ -76,10 +82,9 @@ const handleSubmit=async(event)=>{
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}/>
       {loading && <LinearProgress />}
         <form>
-        <Box sx={{ padding: 4, alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <Grid container spacing={2} sx={{
-                            borderRadius: '30px', 
-                            padding: '10px', 
+        <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        <Grid container spacing={2} sx={{ 
+                            padding: '4px', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             width: '800px', 
@@ -87,11 +92,11 @@ const handleSubmit=async(event)=>{
                         }}>
                             <Grid item xs={12} sm={6}>
                                 <FormControl fullWidth>
-                                    <InputLabel sx={{ color: 'white' }}>Source Language</InputLabel>
+                                    <InputLabel>Source Language</InputLabel>
                                     <Select
                                         value={selectedLanguage}
                                         onChange={handleLanguageChange}
-                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
+                                        
                                     >
                                         {languageOptions.map((language) => (
                                             <MenuItem key={language.name} value={language.code}>
@@ -103,7 +108,7 @@ const handleSubmit=async(event)=>{
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <FormControl fullWidth>
-                                    <InputLabel sx={{ color: 'white' }}>Target Languages</InputLabel>
+                                    <InputLabel >Target Languages</InputLabel>
                                     <Select
                                         multiple
                                         value={targetLanguages}
@@ -116,7 +121,7 @@ const handleSubmit=async(event)=>{
                                                 ))}
                                             </Box>
                                         )}
-                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)' }}
+                                  
                                     >
                                         {languageOptions.map((language) => (
                                             <MenuItem key={language.name} value={language.code}>
@@ -128,7 +133,24 @@ const handleSubmit=async(event)=>{
                             </Grid>
                         </Grid>
                     </Box>
-          
+                    <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
+            <TextField 
+              fullWidth 
+              label="Enter Title" 
+              variant="outlined" 
+              margin="dense"
+              value={videoTitle}
+              onChange={(e) => setVideoTitle(e.target.value)}
+              placeholder="Video title"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: 'grey' },
+                  '&:hover fieldset': { borderColor: '#fff' },
+                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
+                },
+              }}
+            />
+            </Box>
           <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
             <TextField 
               fullWidth 
@@ -138,9 +160,7 @@ const handleSubmit=async(event)=>{
               value={videoLink}
               onChange={(e) => setVideoLink(e.target.value)}
               placeholder="Insert the link here"
-              InputLabelProps={{ style: { color: '#fff' } }}
               InputProps={{
-                style: { color: '#fff' },
                 startAdornment: (
                   <YouTubeIcon sx={{ color: 'red', mr: 1 }} />
                 ),

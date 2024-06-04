@@ -3,8 +3,10 @@ import { Box} from "@mui/material";
 import HomeComponent from "../components/HomeComponent";
 
 const Dashboard =()=>{
+   
+
     return(
-        <Box>
+        <Box sx={{width:'100%'}}>
             <HomeComponent/>
         </Box>
     )
