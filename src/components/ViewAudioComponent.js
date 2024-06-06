@@ -15,7 +15,7 @@ const ViewAudioComponent = ({ audioId }) => {
   const [audioTitle, setTitle] = useState("");
 
   useEffect(() => {
-    const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/get_audio';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_audio';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: audioId });

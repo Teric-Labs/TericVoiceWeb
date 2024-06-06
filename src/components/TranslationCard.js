@@ -87,7 +87,7 @@ const TranslationCard = () => {
     formData.append('user_id', user.userId); 
   
     try {
-      const response = await axios.post('http://127.0.0.1:8000/translate', formData, {
+      const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/translate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setLoading(false);

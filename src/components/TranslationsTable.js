@@ -29,22 +29,19 @@ export default function TranslationsTable() {
   const entriesPerPage = 5; 
   const navigate = useNavigate();
   const [user, setUser] = useState({ username: '', userId: '' });
-
   const handleVisibilityClick = (id) => {
     console.log(`Visibility icon clicked for Audio ID: ${id}`);
     navigate(`/dashboard/ttdata/${id}`);
-  };
- 
+  }; 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
-     
     }
   }, []);
   useEffect(()=>{
-    const apiEndpoint = 'http://127.0.0.1:8000/get_translations';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_translations';
     const fetchEntries  =async()=>{
       if (typeof user.userId !== 'string' || !user.userId.startsWith('user_')) {
         console.error('Invalid user ID format');

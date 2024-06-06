@@ -53,7 +53,7 @@ const modalStyle = {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://127.0.0.1:8000/register', {
+      const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/register', {
         email, 
         password,
         confirm_password: confirmPassword
@@ -70,7 +70,7 @@ const modalStyle = {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://127.0.0.1:8000/login', { email, password });
+      const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/login', { email, password });
       setUser({ username: response.data[0].username, userId: response.data[0].user_id });
       localStorage.setItem('user', JSON.stringify({ username: response.data[0].username, userId: response.data[0].user_id }));
       navigate('/dashboard')
@@ -86,7 +86,7 @@ const modalStyle = {
             <Paper elevation={3} sx={{ maxWidth: matches ? 450 : '90%', margin: '40px auto', padding: '20px' }}>
         {authMode === 'signIn' ? (
           <>
-            <Button
+            {/* <Button
               startIcon={<GoogleIcon />}
               variant="contained"
               fullWidth
@@ -94,7 +94,7 @@ const modalStyle = {
               sx={{ mb: 4, height: '56px' }}
             >
               Sign In with Google
-            </Button>
+            </Button> */}
             <form onSubmit={handleSignIn}>
               <TextField label="Email" type="email" fullWidth required margin="dense" value={email} onChange={handleEmailChange} />
               <TextField label="Password" type="password" fullWidth required margin="dense" value={password} onChange={handlePasswordChange} />
@@ -122,7 +122,7 @@ const modalStyle = {
           </>
         ) : (
           <>
-            <Button
+            {/* <Button
               startIcon={<GoogleIcon />}
               variant="contained"
               fullWidth
@@ -130,7 +130,7 @@ const modalStyle = {
               sx={{ mb: 4, height: '56px',fontFamily: 'Poppins' }}
             >
               Sign Up with Google
-            </Button>
+            </Button> */}
             <form onSubmit={handleSignUp}>
               <TextField label="Email" type="email" fullWidth required margin="dense" value={email} onChange={handleEmailChange} />
               <TextField label="Password" type="password" fullWidth required margin="dense" value={password} onChange={handlePasswordChange} />

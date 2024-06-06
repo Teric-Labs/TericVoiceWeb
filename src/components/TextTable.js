@@ -17,7 +17,7 @@ export default function TextTable() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const apiEndpoint = 'http://127.0.0.1:8000/get_tts_audios';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/et_tts_audios';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { user_id: "78" });

@@ -13,7 +13,7 @@ const ViewTranslationsComponent = ({ translationId }) => {
   const [scriptTitle, setScriptTitle] = useState("");
 
   useEffect(() => {
-    const apiEndpoint = 'https://afrivoices-wlivbm2klq-uc.a.run.app/get_translation';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_translation';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: translationId });

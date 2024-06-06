@@ -51,7 +51,7 @@ export default function DataTable() {
         setLoading(false);
         return;
       }
-      const apiEndpoint = 'http://127.0.0.1:8000/get_audios';
+      const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_audios';
       try {
         console.log("here is the user"+user.userId)
         const response = await axios.post(apiEndpoint, { user_id:"user_229088OPP" });

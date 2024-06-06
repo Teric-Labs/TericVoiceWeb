@@ -24,7 +24,7 @@ const Welcome = () => {
               padding:'4px',
               fontFamily: 'Poppins',
               bgcolor: 'background.paper'}}>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', textAlign: 'center' ,fontFamily: 'Poppins', padding:'8px'}}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' ,fontFamily: 'Poppins', padding:'8px'}}>
               GET STARTED WITH AFRICAN VOICES
             </Typography>
            

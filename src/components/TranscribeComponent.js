@@ -32,7 +32,7 @@ const TranscribeComponent = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [user, setUser] = useState({ username: '', userId: '' });
   const theme = useTheme();
-  const apiEndpoint = 'http://127.0.0.1:8000/upload/';
+  const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/upload/';
 
   const handleSingleUploadClick = () => {
     setSingleModalOpen(true);

@@ -31,7 +31,7 @@ export default function VoxTransTable() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const apiEndpoint = 'http://127.0.0.1:8000/get_vvoices';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_vvoices';
     const fetchEntries = async () => {
       setLoading(true);
       try {

@@ -25,7 +25,7 @@ export default function VideoTable() {
     }
   }, []);
   useEffect(()=>{
-    const apiEndpoint = 'http://127.0.0.1:8000/get_video';
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_video';
     const fetchEntries  =async()=>{
       if (typeof user.userId !== 'string' || !user.userId.startsWith('user_')) {
         console.error('Invalid user ID format');
