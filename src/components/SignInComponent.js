@@ -5,14 +5,15 @@ import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Button, Checkbox, FormControlLabel, Grid, Link, Modal, Paper, TextField, Typography, CircularProgress } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { useAuth } from './AuthContext'; // Ensure the correct path to your AuthContext
 
 const UserContext = createContext();
 
 export const useUser = () => useContext(UserContext);
 
-
 const SignInComponent = () => {
   const navigate = useNavigate();
+  const { setIsAuthenticated } = useAuth();
   const [authMode, setAuthMode] = useState('signIn');
   const [openModal, setOpenModal] = useState(false);
   const [email, setEmail] = useState('');
@@ -23,16 +24,16 @@ const SignInComponent = () => {
 
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('sm'));
-const modalStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: matches ? 400 : '80%',
-  bgcolor: 'background.paper',
-  boxShadow: 24,
-  p: 4,
-};
+  const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: matches ? 400 : '80%',
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: 4,
+  };
 
   const handleSignInWithGoogle = () => {
     // Placeholder for Google Sign-In integration
@@ -73,7 +74,8 @@ const modalStyle = {
       const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/login', { email, password });
       setUser({ username: response.data[0].username, userId: response.data[0].user_id });
       localStorage.setItem('user', JSON.stringify({ username: response.data[0].username, userId: response.data[0].user_id }));
-      navigate('/dashboard')
+      setIsAuthenticated(true);
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error logging in the user:', error);
     } finally {
@@ -83,7 +85,7 @@ const modalStyle = {
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
-            <Paper elevation={3} sx={{ maxWidth: matches ? 450 : '90%', margin: '40px auto', padding: '20px' }}>
+      <Paper elevation={3} sx={{ maxWidth: matches ? 450 : '90%', margin: '40px auto', padding: '20px' }}>
         {authMode === 'signIn' ? (
           <>
             {/* <Button
