@@ -1,6 +1,5 @@
 import React from "react";
 import { Box, Typography, Grid,Paper } from '@mui/material';
-import wrk from '../assets/microphone.png';
 import '../App.css';
 import SignInComponent from "./SignInComponent";
 import CarouselComponent from "./CarouselComponent";
@@ -20,7 +19,7 @@ const Welcome = () => {
           <Box>
           <Paper elevation={3} sx={{
               width: '98%',
-              mb:5,
+              mt:14,
               padding:'4px',
               fontFamily: 'Poppins',
               bgcolor: 'background.paper'}}>

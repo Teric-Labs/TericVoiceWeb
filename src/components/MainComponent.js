@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Grid, Paper, Chip, Stack } from '@mui/material';
+import { Box, Typography, Grid, Chip, Stack } from '@mui/material';
 import wrk from '../assets/voices.png';
 import { keyframes } from '@emotion/react';
 
@@ -27,55 +27,63 @@ const MainComponent = () => {
     ];
 
     return (
-        <Box sx={{display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh', 
-        p: 4, 
-        fontFamily: 'Poppins', 
-        margin: 'auto' }}>
-                <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} md={6}>
-                        <Typography 
-                            variant="h2" 
-                            component="h1" 
-                            gutterBottom
-                            sx={{
-                                fontFamily: 'Poppins',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                borderRight: '.15em solid black',
-                                animation: `${typing} 4s steps(40, end), ${blink} .75s step-end infinite`,
-                            }}
-                        >
-                            AFRICAN VOICES <br/>PLATFORM
-                        </Typography>
-                        <Typography variant="h4" component="p" sx={{ fontFamily: 'Poppins' }}>
-                            Unlock Africa's Language Diversity
-                        </Typography>
-                        <Typography variant="body1" component="p" gutterBottom sx={{ fontFamily: 'Poppins' ,px:2, py:2}}>
-                            Break communication barriers effortlessly with our powerful tool.<br/>
-                            Convert your audio, documents, and videos into any native African language and beyond. Connect with your audience across the continent like never before.
-                        </Typography>
-                        <Box id="modules" sx={{ padding: 1 }}>
-                            <Stack direction="row" flexWrap="wrap" sx={{  paddingTop:'4px', marginTop:'4px'}} spacing={2}>
-                                {modules.map((module, index) => (
-                                    <Chip key={index} label={module} color="primary" variant="outlined" 
-                                    sx={{ 
-                                        fontFamily: 'Poppins',  
-                                        marginTop:'8px'
-                                    }} />
-                                ))}
-                            </Stack>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Box display="flex" justifyContent="center">
-                            <img src={wrk} alt="Voice services" style={{ maxWidth: '100%', height: 'auto' }} />
-                        </Box>
-                    </Grid>
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            p: 2,
+            minHeight: '100vh',
+            fontFamily: 'Poppins',
+        }}>
+            <Grid container spacing={4} justifyContent="center" alignItems="center" sx={{ maxWidth: '90%' }}>
+                <Grid item xs={12} md={6}>
+                    <Typography
+                        variant="h2"
+                        component="h1"
+                        gutterBottom
+                        sx={{
+                            fontFamily: 'Poppins',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            borderRight: '.15em solid black',
+                            animation: `${typing} 4s steps(40, end), ${blink} .75s step-end infinite`,
+                            paddingBottom: 2,
+                            textAlign: { xs: 'center', md: 'left' }
+                        }}
+                    >
+                        AFRICAN VOICES <br />PLATFORM
+                    </Typography>
+                    <Typography variant="h4" component="p" sx={{ fontFamily: 'Poppins', marginBottom: 2, textAlign: { xs: 'center', md: 'left' } }}>
+                        Unlock Africa's Language Diversity
+                    </Typography>
+                    <Typography variant="body1" component="p" gutterBottom sx={{ fontFamily: 'Poppins', px: 2, py: 2, textAlign: { xs: 'center', md: 'left' } }}>
+                        Break communication barriers effortlessly with our powerful tool.<br />
+                        Convert your audio, documents, and videos into any native African language and beyond. Connect with your audience across the continent like never before.
+                    </Typography>
+                    <Box id="modules" sx={{ padding: 1 }}>
+                        <Stack direction="row" flexWrap="wrap" justifyContent={{ xs: 'center', md: 'flex-start' }} spacing={2}>
+                            {modules.map((module, index) => (
+                                <Chip
+                                    key={index}
+                                    label={module}
+                                    color="primary"
+                                    variant="outlined"
+                                    sx={{
+                                        fontFamily: 'Poppins',
+                                        marginTop: '8px',
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    </Box>
                 </Grid>
-            
+                <Grid item xs={12} md={6}>
+                    <Box display="flex" justifyContent="center">
+                        <img src={wrk} alt="Voice services" style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }} />
+                    </Box>
+                </Grid>
+            </Grid>
         </Box>
     );
 };

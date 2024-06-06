@@ -59,8 +59,6 @@ export default function VoxTransTable() {
     setCurrentPage(selected);
   };
 
-  const pageCount = Math.ceil(entries.length / entriesPerPage);
-
   const filteredEntries = entries.filter((entry) => entry.Translation.toLowerCase().includes(filter.toLowerCase()));
   const displayedEntries = filteredEntries.slice(
     currentPage * entriesPerPage,
