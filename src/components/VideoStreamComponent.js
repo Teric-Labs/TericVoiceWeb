@@ -10,7 +10,7 @@ import VideoTable from "./VideoTable";
 import YouTube from "../assets/youtube.png";
 
 const VideoStreamComponent = () => {
-  const [isTableVisible, setIsTableVisible] = useState(false);
+  const [isTableVisible, setIsTableVisible] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const theme = useTheme();
 
@@ -27,7 +27,7 @@ const VideoStreamComponent = () => {
   };
 
   return (
-    <Box p={3} sx={{ margin: 'auto' }}>
+    <Box p={2} sx={{ margin: 'auto' }}>
       <Card sx={{ minWidth: 275, boxShadow: 3, borderRadius: 2, marginBottom: '20px', position: 'relative' }}>
         <CardContent>
           <Grid container justifyContent="space-between" alignItems="center">
@@ -55,8 +55,8 @@ const VideoStreamComponent = () => {
         </CardContent>
       </Card>
       <Box p={3}>
-        <Accordion sx={{ boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleToggleTableVisibility} sx={{ backgroundColor: theme.palette.action.hover }}>
+        <Accordion sx={{ boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }} expanded={isTableVisible} onChange={handleToggleTableVisibility}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ backgroundColor: theme.palette.action.hover }}>
             <Typography variant="h6" sx={{ fontFamily: 'Poppins' }}>View Transcribed Videos</Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ width: '100%', padding: 2, margin: 'auto', justifyContent: 'center', display: 'flex' }}>

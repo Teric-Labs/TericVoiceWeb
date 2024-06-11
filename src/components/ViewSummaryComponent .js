@@ -1,0 +1,92 @@
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Grid, Divider, IconButton, Paper, useTheme, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import GetAppIcon from '@mui/icons-material/GetApp';
+import ShareIcon from '@mui/icons-material/Share';
+import SaveIcon from '@mui/icons-material/Save';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import axios from "axios";
+
+const ViewSummaryComponent = ({ translationId }) => {
+  const [entries, setEntries] = useState([]);
+  const [scriptDate, setScriptDate] = useState("");
+  const [scriptTitle, setScriptTitle] = useState("");
+  const [document, setDocument] = useState("");
+  const [summary, setSummary] = useState("");
+  const [language, setLanguage] = useState("");
+
+  useEffect(() => {
+    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_summary';
+    const fetchEntries = async () => {
+      try {
+        const response = await axios.post(apiEndpoint, { doc_id: translationId });
+        setEntries(response.data.entries);
+        if (response.data.entries.length > 0) {
+          setScriptDate(response.data.entries[0].Date);
+          setScriptTitle(response.data.entries[0].title);
+          setDocument(response.data.entries[0].Original_transcript);
+          setSummary(response.data.entries[0].Summary);
+          setLanguage(response.data.entries[0].source_lang);
+        }
+      } catch (error) {
+        console.error('Failed to fetch entries', error);
+      }
+    };
+
+    fetchEntries();
+  }, [translationId]);
+
+  const theme = useTheme();
+
+  const formatSummary = (text) => {
+    return text.split('\n').map((str, index) => (
+      <Typography key={index} variant="body1" sx={{ fontFamily: 'Poppins' }}>
+        {str}
+      </Typography>
+    ));
+  };
+
+  return (
+    <Paper elevation={4} sx={{ marginTop: '20px', marginX: '20px' }}>
+      <Box p={4} sx={{ margin: 'auto' }}>
+        <Grid container spacing={3} alignItems="center" sx={{ color: "white" }}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" color="textSecondary" sx={{ fontFamily: 'Poppins' }}>Date Created: {scriptDate}</Typography>
+            <Typography variant="subtitle1" color="textSecondary" sx={{ fontFamily: 'Poppins' }}><b>Title: {scriptTitle}</b></Typography>
+          </Grid>
+          <Grid item xs={12} md={3} container justifyContent="flex-end">
+            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%' }} aria-label="Download">
+              <GetAppIcon />
+            </IconButton>
+            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%', marginLeft: 2 }} aria-label="Share">
+              <ShareIcon />
+            </IconButton>
+            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%', marginLeft: 2 }} aria-label="Save">
+              <SaveIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
+        <Divider sx={{ marginTop: 3, backgroundColor: theme.palette.divider }} />
+        <Box sx={{ marginBottom: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Poppins' }}>
+            Summary ({language}):
+          </Typography>
+          <Box sx={{ fontFamily: 'Poppins' }}>
+            {formatSummary(summary)}
+          </Box>
+        </Box>
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1a-content" id="panel1a-header">
+            <Typography sx={{ fontFamily: 'Poppins' }}>{language.toUpperCase()}</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography sx={{ fontFamily: 'Poppins' }}>
+              {document}
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    </Paper>
+  );
+}
+
+export default ViewSummaryComponent;

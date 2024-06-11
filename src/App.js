@@ -14,6 +14,8 @@ import ViewttsAudio from "./views/ViewttsAudio";
 import ViewTranslations from "./views/ViewTranslations";
 import VoiceLingo from "./views/VoiceLingo";
 import ViewVoxTrans from "./views/ViewVoxTrans";
+import Summarization from "./views/Summarization";
+import ViewSummary from "./views/ViewSummary";
 import Home from "./views/Home";
 import GetStarted from "./views/GetStarted";
 import ContactSupport from "./views/ContactSupport";
@@ -38,12 +40,14 @@ function App() {
           <Route path="videostream" element={<VideoStream />} />
           <Route path="transcribe" element={<Transcribe />} />
           <Route path="synthesize" element={<Text2Speech />} />
+          <Route path="summarize" element={<Summarization />} />
           <Route path="translate" element={<Translation />} />
           <Route path="voxtrans" element={<VoiceLingo />} />
           <Route path="audio/:id" element={<ViewAudio />} />
           <Route path="voice/:id" element={<ViewVoxTrans />} />
           <Route path="tts/:id" element={<ViewttsAudio />} />
           <Route path="ttdata/:id" element={<ViewTranslations />} />
+          <Route path="summarydata/:id" element={<ViewSummary />} />
           <Route path="video/:id" element={<ViewVideo />} />
           <Route path="voice" element={<Voice2Voice />} />
           <Route path="contact-support" element={<ContactSupport />} />

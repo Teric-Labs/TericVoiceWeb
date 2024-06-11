@@ -185,6 +185,15 @@ export default function Sidenav({ children }) {
         { text: 'Textify', icon: <TranslateIcon />, path: '/dashboard/translate' },
       ],
     },
+    {
+      text: 'Summarization',
+      icon: <VoiceOverOffIcon />,
+      open: openSpeech,
+      onClick: handleSpeechClick,
+      children: [
+        { text: 'Text Summarization', icon: <TextToSpeechIcon />, path: '/dashboard/summarize' }
+      ],
+    },
     // {
     //   text: 'Speech',
     //   icon: <VoiceOverOffIcon />,

@@ -46,7 +46,7 @@ export default function DataTable() {
  
   useEffect(() => {
     const fetchEntries = async () => {
-      if (typeof user.userId !== 'string' || !user.userId.startsWith('user_')) {
+      if (typeof user.userId !== 'string') {
         console.error('Invalid user ID format');
         setLoading(false);
         return;
@@ -54,7 +54,7 @@ export default function DataTable() {
       const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_audios';
       try {
         console.log("here is the user"+user.userId)
-        const response = await axios.post(apiEndpoint, { user_id:"user_229088OPP" });
+        const response = await axios.post(apiEndpoint, { user_id:user.userId});
         setEntries(response.data.entries);
         setLoading(false);
       } catch (error) {

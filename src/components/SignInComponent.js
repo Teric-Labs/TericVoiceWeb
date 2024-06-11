@@ -21,6 +21,7 @@ const SignInComponent = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [user, setUser] = useState({ username: '', userId: '' });
   const [loading, setLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
 
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('sm'));
@@ -41,6 +42,7 @@ const SignInComponent = () => {
 
   const toggleAuthMode = () => {
     setAuthMode(authMode === 'signIn' ? 'signUp' : 'signIn');
+    setRegistrationError('');
   };
 
   const handleOpenModal = () => setOpenModal(true);
@@ -53,15 +55,18 @@ const SignInComponent = () => {
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setRegistrationError('');
     try {
       const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/register', {
-        email, 
+        email,
         password,
         confirm_password: confirmPassword
       });
       console.log(response.data);
+      toggleAuthMode(); // Switch to sign-in mode upon successful registration
     } catch (error) {
       console.error('Error registering the user:', error);
+      setRegistrationError('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -147,6 +152,7 @@ const SignInComponent = () => {
                   Sign Up
                 </Button>
               )}
+              {registrationError && <Typography color="error" sx={{ textAlign: 'center', mt: 2 }}>{registrationError}</Typography>}
               <Typography variant="body2" sx={{ textAlign: 'center' ,fontFamily: 'Poppins'}}>
                 Already have an account? <Link href="#" onClick={toggleAuthMode} underline="hover">Sign In</Link>
               </Typography>

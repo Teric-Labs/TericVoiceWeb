@@ -11,6 +11,7 @@ import DataTable from "./DataTable";
 import axios from 'axios';
 import LanguageAndUploadModal from "./LanguageAndUploadModal";
 import Upload from "@mui/icons-material/Upload";
+import RecordingAudioComponent from "./RecordAudioComponent";
 
 const languageOptions = [
   { name: "English", code: "en" },
@@ -23,7 +24,7 @@ const languageOptions = [
 ];
 
 const TranscribeComponent = () => {
-  const [isTableVisible, setIsTableVisible] = useState(false);
+  const [isTableVisible, setIsTableVisible] = useState(true);
   const [singleModalOpen, setSingleModalOpen] = useState(false);
   const [multipleModalOpen, setMultipleModalOpen] = useState(false);
   const [speakLanguage, setSpeakLanguage] = useState('');
@@ -135,8 +136,11 @@ const TranscribeComponent = () => {
         message="Transcription is complete"
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       />
-      <Accordion sx={{ width: '100%', boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleToggleTableVisibility} sx={{ backgroundColor: theme.palette.action.hover }}>
+      <Box>
+        <RecordingAudioComponent/>
+      </Box>
+      <Accordion sx={{ width: '100%', boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }} expanded={isTableVisible} onChange={handleToggleTableVisibility}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}  sx={{ backgroundColor: theme.palette.action.hover }}>
           <Typography variant="h6">View Transcribed Audios</Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ width: '100%', padding: 2, margin: 'auto', justifyContent: 'center', display: 'flex' }}>
