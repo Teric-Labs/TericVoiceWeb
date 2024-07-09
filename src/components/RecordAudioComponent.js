@@ -4,46 +4,61 @@ import { Button, Select, MenuItem, FormControl, InputLabel, Typography, Box, Gri
 import wrk from '../assets/microphone.png';
 import axios from 'axios';
 
-const useStyles = styled((theme) => ({
-  formControl: {
+const PREFIX = 'RecordingAudioComponent';
+
+const classes = {
+  formControl: `${PREFIX}-formControl`,
+  button: `${PREFIX}-button`,
+  audioContainer: `${PREFIX}-audioContainer`,
+  buttonGroup: `${PREFIX}-buttonGroup`,
+  audioPlayer: `${PREFIX}-audioPlayer`,
+  gridContainer: `${PREFIX}-gridContainer`,
+  iconContainer: `${PREFIX}-iconContainer`,
+  icon: `${PREFIX}-icon`,
+  instructions: `${PREFIX}-instructions`,
+  instructionsTitle: `${PREFIX}-instructionsTitle`,
+};
+
+const Root = styled('div')(({ theme }) => ({
+  [`& .${classes.formControl}`]: {
     margin: theme.spacing(1),
     minWidth: 200,
   },
-  button: {
+  [`& .${classes.button}`]: {
     margin: theme.spacing(1),
   },
-  audioContainer: {
+  [`& .${classes.audioContainer}`]: {
     marginTop: theme.spacing(2),
     textAlign: 'center',
   },
-  buttonGroup: {
+  [`& .${classes.buttonGroup}`]: {
     display: 'flex',
     justifyContent: 'center',
     marginTop: theme.spacing(2),
   },
-  audioPlayer: {
+  [`& .${classes.audioPlayer}`]: {
     display: 'block',
     margin: '0 auto',
   },
-  gridContainer: {
+  [`& .${classes.gridContainer}`]: {
     padding: theme.spacing(3),
   },
-  iconContainer: {
+  [`& .${classes.iconContainer}`]: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  icon: {
+  [`& .${classes.icon}`]: {
     fontSize: 80,
     color: 'blue',
   },
-  instructions: {
+  [`& .${classes.instructions}`]: {
     marginLeft: theme.spacing(2),
     textAlign: 'left',
     fontFamily: 'Poppins',
     fontSize: 12,
   },
-  instructionsTitle: {
+  [`& .${classes.instructionsTitle}`]: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: theme.spacing(1),
@@ -52,7 +67,6 @@ const useStyles = styled((theme) => ({
 }));
 
 const RecordingAudioComponent = () => {
-  const classes = useStyles();
   const [language, setLanguage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -73,7 +87,6 @@ const RecordingAudioComponent = () => {
     { label: 'Runyankore', value: 'nyn' },
     { label: 'Kinyarwanda', value: 'rw' },
     { label: 'French', value: 'fr' },
-
   ];
 
   const handleLanguageChange = (event) => {
@@ -133,7 +146,7 @@ const RecordingAudioComponent = () => {
       setLoading(true);
       const formData = new FormData();
       formData.append('source_lang', language);
-      formData.append('target_langs', [language]);  // Update here
+      formData.append('target_langs', [language]); 
       formData.append('recorded_audio', new Blob([audioBlob], { type: 'audio/webm' }));
       formData.append('user_id', user.userId);
 
@@ -161,7 +174,7 @@ const RecordingAudioComponent = () => {
 
   return (
     <Paper elevation={2} sx={{ margin: '10px' }}>
-      <Box className={classes.gridContainer} sx={{ p: 2, justifyItems: 'center', display: 'flex', margin: 'auto' }}>
+      <Root className={classes.gridContainer}>
         {loading && <LinearProgress />}
         <Snackbar
           open={showBanner}
@@ -213,25 +226,25 @@ const RecordingAudioComponent = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box className={classes.instructions}>
-                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily:'Poppins' }}>Instructions:</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>1. Tap the "Start Recording" button to begin.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>2. Once you finish, tap the "Stop Recording" button.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>3. The "Play", "Discard", and "Submit" buttons will appear.</Typography>
-                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily:'Poppins' }}>
+                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily: 'Poppins' }}>Instructions:</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>1. Tap the "Start Recording" button to begin.</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>2. Once you finish, tap the "Stop Recording" button.</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>3. The "Play", "Discard", and "Submit" buttons will appear.</Typography>
+                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily: 'Poppins' }}>
                     Buttons:
                   </Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>• Play: Listen to your recording.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>• Discard: Delete the recording if you are not satisfied.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily:'Poppins' }}>• Submit: Upload your recording.</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Play: Listen to your recording.</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Discard: Delete the recording if you are not satisfied.</Typography>
+                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Submit: Upload your recording.</Typography>
                 </Box>
               </Grid>
             </Grid>
-            <Box className={classes.audioContainer} sx={{display: 'flex', justifyContent: 'left', justifyItems: 'center', width:'80%' }}>
+            <Box className={classes.audioContainer} sx={{ display: 'flex', justifyContent: 'left', justifyItems: 'center', width: '80%' }}>
               {audioURL && (
-                <audio ref={audioPlayer} src={audioURL} controls className={classes.audioPlayer} sx={{width:'100%'}} />
+                <audio ref={audioPlayer} src={audioURL} controls className={classes.audioPlayer} sx={{ width: '100%' }} />
               )}
             </Box>
-            <Box className={classes.buttonGroup} sx={{ p:1, display: 'flex', justifyContent: 'left', justifyItems: 'center' }}>
+            <Box className={classes.buttonGroup} sx={{ p: 1, display: 'flex', justifyContent: 'left', justifyItems: 'center' }}>
               {audioBlob && (
                 <>
                   <Tooltip title="Play Recording">
@@ -273,7 +286,7 @@ const RecordingAudioComponent = () => {
             </Box>
           </Grid>
         </Grid>
-      </Box>
+      </Root>
     </Paper>
   );
 };
