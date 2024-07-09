@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Paper, Grid, Modal, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, Stack, useTheme, Card, CardContent } from "@mui/material";
+import { Box, Typography, Button, Paper, Grid, Modal, FormControl, InputLabel, Select, MenuItem,OutlinedInput, Stack, Card, CardContent } from "@mui/material";
 import LanguageIcon from '@mui/icons-material/Language';
 import TranslateIcon from '@mui/icons-material/Translate';
 import downloadbtn from "../assets/download.png"
@@ -12,10 +12,14 @@ const languages = [
   { name: "English", code: "en" },
   { name: "Luganda", code: "lg" },
   { name: "Ateso", code: "at" },
-  { name: "Acholi", code: "ac" },
+  { name: "Acholi", code: "ach" },
   { name: "Lugbara", code: "lgg" },
   { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" }
+  { name: "Swahili", code: "sw" },
+  { name: "French", code: "fr" },
+  { name: "Swahili", code: "sw" },
+  { name: "Kinyarwanda", code: "rw" },
+
 ];
 
 const LiveStreamComponent = () => {

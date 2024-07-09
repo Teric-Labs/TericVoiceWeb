@@ -32,7 +32,6 @@ import TextToSpeechIcon from '@mui/icons-material/RecordVoiceOver';
 import TranslateIcon from '@mui/icons-material/Translate';
 import VoiceOverOffIcon from '@mui/icons-material/VoiceOverOff';
 import SupportIcon from '@mui/icons-material/Support';
-import EventIcon from '@mui/icons-material/Event';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
@@ -75,14 +74,14 @@ const CustomAppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  backgroundColor: '#246EE9',
+  backgroundColor: '#ffff',
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
     marginLeft: drawerWidth,
-    backgroundColor: '#246EE9',
+    backgroundColor: '#ffff',
     width: `calc(100% - ${drawerWidth}px)`,
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
@@ -124,7 +123,6 @@ const MainContent = styled('main', { shouldForwardProp: (prop) => prop !== 'open
     marginLeft: 0,
   }),
   width: `calc(100% - ${open ? drawerWidth : theme.spacing(7) + 1}px)`,
-  width: '100%',
   [theme.breakpoints.up('md')]: {
     marginLeft: 0,
     width: `calc(100% - ${drawerWidth}px)`,
@@ -239,16 +237,16 @@ export default function Sidenav({ children }) {
             <MenuIcon />
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 'auto' }}>
-            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
-              <MicIcon sx={{ color: 'black' }} />
+            <Avatar sx={{ bgcolor: 'black', width: 36, height: 36 }}>
+              <MicIcon sx={{ color: 'white' }} />
             </Avatar>
-            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
-              <VoiceOverOffIcon sx={{ color: 'black' }} />
+            <Avatar sx={{ bgcolor: 'black', width: 36, height: 36 }}>
+              <VoiceOverOffIcon sx={{ color: 'white' }} />
             </Avatar>
-            <Avatar sx={{ bgcolor: 'white', width: 36, height: 36 }}>
-              <TranslateIcon sx={{ color: 'black' }} />
+            <Avatar sx={{ bgcolor: 'black', width: 36, height: 36 }}>
+              <TranslateIcon sx={{ color: 'white' }} />
             </Avatar>
-            <Typography variant="body2" noWrap component="div" sx={{ color: 'white' }}>
+            <Typography variant="body2" noWrap component="div" sx={{ color: 'black' }}>
               Hello {user.username}
             </Typography>
           </Box>

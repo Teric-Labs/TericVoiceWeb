@@ -68,10 +68,12 @@ const RecordingAudioComponent = () => {
     { label: 'Luganda', value: 'lg' },
     { label: 'English', value: 'en' },
     { label: 'Ateso', value: 'at' },
-    { label: 'Lumasaaba', value: 'lm' },
-    { label: 'Acholi', value: 'ac' },
-    { label: "Swahili", value: 'sw' },
+    { label: 'Acholi', value: 'ach' },
+    { label: 'Swahili', value: 'sw' },
     { label: 'Runyankore', value: 'nyn' },
+    { label: 'Kinyarwanda', value: 'rw' },
+    { label: 'French', value: 'fr' },
+
   ];
 
   const handleLanguageChange = (event) => {

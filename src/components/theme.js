@@ -3,12 +3,9 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   typography: {
     fontFamily: [
-      'Roboto',
-      'Gill Sans',
-      'Arial',
-      'sans-serif',
+     'Poppins'
     ].join(','),
-    fontSize: 14,
+    fontSize: 12,
   },
 });
 

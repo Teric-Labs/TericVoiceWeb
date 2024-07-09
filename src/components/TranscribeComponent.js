@@ -17,10 +17,12 @@ const languageOptions = [
   { name: "English", code: "en" },
   { name: "Luganda", code: "lg" },
   { name: "Ateso", code: "at" },
-  { name: "Acholi", code: "ac" },
+  { name: "Acholi", code: "ach" },
   { name: "Lugbara", code: "lgg" },
   { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" }
+  { name: "Swahili", code: "sw" },
+  { name: "French", code: "fr" },
+  { name: "Kinyarwanda", code: "rw" }
 ];
 
 const TranscribeComponent = () => {
