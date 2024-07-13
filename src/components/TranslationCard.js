@@ -77,7 +77,6 @@ const TranslationCard = () => {
       setUser(userData);
     }
   }, []);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);

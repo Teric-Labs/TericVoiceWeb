@@ -13,14 +13,23 @@ export default function TextTable() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [user, setUser] = useState({ username: '', userId: '' });
   const entriesPerPage = 5; 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+    }
+  }, []);
 
   useEffect(() => {
     const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/et_tts_audios';
     const fetchEntries = async () => {
       try {
-        const response = await axios.post(apiEndpoint, { user_id: "78" });
+        const response = await axios.post(apiEndpoint, { user_id:user.userId });
         setEntries(response.data.entries);
         setLoading(false);
       } catch (error) {

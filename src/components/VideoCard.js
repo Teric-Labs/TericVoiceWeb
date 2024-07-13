@@ -1,8 +1,9 @@
-import React,{useState,useEffect} from "react";
-import { Box, Card, CardContent, TextField, Button,Select, MenuItem, FormControl,Grid,InputLabel, Chip, OutlinedInput,Snackbar,LinearProgress, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, Card, CardContent, TextField, Button, Select, MenuItem, FormControl, Grid, InputLabel, Chip, OutlinedInput, Snackbar, LinearProgress, Typography } from "@mui/material";
 import YouTubeIcon from '@mui/icons-material/YouTube'; 
 import MicIcon from '@mui/icons-material/Mic'; 
 import axios from "axios";
+
 const languageOptions = [
   { name: "English", code: "en" },
   { name: "Luganda", code: "lg" },
@@ -10,7 +11,7 @@ const languageOptions = [
   { name: "Acholi", code: "ach" },
   { name: "Lugbara", code: "lgg" },
   { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" } ,
+  { name: "Swahili", code: "sw" },
   { name: "French", code: "fr" },
   { name: "Kinyarwanda", code: "rw" }
 ];
@@ -18,6 +19,7 @@ const languageOptions = [
 const VideoCard = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [targetLanguages, setTargetLanguages] = useState([]);
+  const [returnText, setReturnText] = useState('');
   const [videoLink, setVideoLink] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,121 +27,127 @@ const VideoCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
 
   const handleLanguageChange = (event) => {
-    setSelectedLanguage(event.target.value);};
+    setSelectedLanguage(event.target.value);
+  };
 
   const handleTargetLanguageChange = (event) => {
     const {
-        target: { value },
+      target: { value },
     } = event;
     setTargetLanguages(typeof value === 'string' ? value.split(',') : value);
-};
+  };
 
-useEffect(() => {
-  const storedUser = localStorage.getItem('user');
-  if (storedUser) {
-    const userData = JSON.parse(storedUser);
-    setUser(userData);
-  }
-}, []);
-const handleSubmit=async(event)=>{
-  event.preventDefault();
-  setLoading(true);
-  const formData = new FormData();
-  formData.append('source_lang', selectedLanguage);
-  targetLanguages.forEach(lang => formData.append('target_langs', lang));
-  formData.append('youtube_link', videoLink);
-  formData.append('title', videoTitle);
-  formData.append('user_id',user.userId)
-  try{
-    const response = await axios({method: 'post',
-    url: 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/videoUpload/',
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-    setLoading(false);
-    setShowBanner(true);
-    setTimeout(() => setShowBanner(false), 5000);
-  }
-  catch(error){
-    setLoading(false);
-  }
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+    }
+  }, []);
 
-}
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('source_lang', selectedLanguage);
+    targetLanguages.forEach(lang => formData.append('target_langs', lang));
+    formData.append('youtube_link', videoLink);
+    formData.append('title', videoTitle);
+    formData.append('user_id', user.userId);
+    
+    try {
+      const response = await axios({
+        method: 'post',
+        url: 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/videoUpload/',
+        data: formData,
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setReturnText(response.data.msg || "Transcription submitted successfully");
+      setLoading(false);
+      setShowBanner(true);
+      setTimeout(() => setShowBanner(false), 5000);
+    } catch (error) {
+      setReturnText("An error occurred. Please try again.");
+      setLoading(false);
+      setShowBanner(true);
+      setTimeout(() => setShowBanner(false), 5000);
+    }
+  };
+
   return (
     <Card sx={{
-        width: '100%',
-        margin: '2rem auto',
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}>
+      width: '100%',
+      margin: '2rem auto',
+      padding: '1rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    }}>
       <CardContent sx={{ width: '100%' }}>
-        <Typography sx={{fontFamily:'Poppins'}}>Enter YouTube Video Link </Typography>
-      <Snackbar
-      open={showBanner}
-      autoHideDuration={6000}
-      onClose={() => setShowBanner(false)}
-      message="Transcription is complete"
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}/>
-      {loading && <LinearProgress />}
+        <Typography sx={{ fontFamily: 'Poppins' }}>Enter YouTube Video Link</Typography>
+        <Snackbar
+          open={showBanner}
+          autoHideDuration={6000}
+          onClose={() => setShowBanner(false)}
+          message={returnText}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        />
+        {loading && <LinearProgress />}
         <form>
-        <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <Grid container spacing={2} sx={{ 
-                            padding: '4px', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            width: '800px', 
-                            margin: 'auto'
-                        }}>
-                            <Grid item xs={12} sm={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Source Language</InputLabel>
-                                    <Select
-                                        value={selectedLanguage}
-                                        onChange={handleLanguageChange}
-                                        
-                                    >
-                                        {languageOptions.map((language) => (
-                                            <MenuItem key={language.name} value={language.code}>
-                                                {language.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel >Target Languages</InputLabel>
-                                    <Select
-                                        multiple
-                                        value={targetLanguages}
-                                        onChange={handleTargetLanguageChange}
-                                        input={<OutlinedInput label="Target Languages" />}
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selected.map((value) => (
-                                                    <Chip key={value} label={value} />
-                                                ))}
-                                            </Box>
-                                        )}
-                                  
-                                    >
-                                        {languageOptions.map((language) => (
-                                            <MenuItem key={language.name} value={language.code}>
-                                                {language.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                        </Grid>
-                    </Box>
-                    <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
-            <TextField 
-              fullWidth 
-              label="Enter Title" 
-              variant="outlined" 
+          <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <Grid container spacing={2} sx={{
+              padding: '4px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '800px',
+              margin: 'auto'
+            }}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Source Language</InputLabel>
+                  <Select
+                    value={selectedLanguage}
+                    onChange={handleLanguageChange}
+                  >
+                    {languageOptions.map((language) => (
+                      <MenuItem key={language.name} value={language.code}>
+                        {language.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Target Languages</InputLabel>
+                  <Select
+                    multiple
+                    value={targetLanguages}
+                    onChange={handleTargetLanguageChange}
+                    input={<OutlinedInput label="Target Languages" />}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} />
+                        ))}
+                      </Box>
+                    )}
+                  >
+                    {languageOptions.map((language) => (
+                      <MenuItem key={language.name} value={language.code}>
+                        {language.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
+            <TextField
+              fullWidth
+              label="Enter Title"
+              variant="outlined"
               margin="dense"
               value={videoTitle}
               onChange={(e) => setVideoTitle(e.target.value)}
@@ -152,12 +160,12 @@ const handleSubmit=async(event)=>{
                 },
               }}
             />
-            </Box>
+          </Box>
           <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
-            <TextField 
-              fullWidth 
-              label="Enter Youtube video link" 
-              variant="outlined" 
+            <TextField
+              fullWidth
+              label="Enter YouTube video link"
+              variant="outlined"
               margin="dense"
               value={videoLink}
               onChange={(e) => setVideoLink(e.target.value)}
@@ -175,13 +183,13 @@ const handleSubmit=async(event)=>{
                 },
               }}
             />
-            <Button 
+            <Button
               onClick={handleSubmit}
-              type="submit" 
-              variant="contained" 
-              color="primary" 
+              type="submit"
+              variant="contained"
+              color="primary"
               startIcon={<MicIcon />}
-              sx={{ 
+              sx={{
                 width: { xs: '100%', sm: 'auto' },
                 height: '40px',
               }}>

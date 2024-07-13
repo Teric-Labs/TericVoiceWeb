@@ -43,7 +43,7 @@ export default function TranslationsTable() {
   useEffect(()=>{
     const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_translations';
     const fetchEntries  =async()=>{
-      if (typeof user.userId !== 'string' || !user.userId.startsWith('user_')) {
+      if (typeof user.userId !== 'string') {
         console.error('Invalid user ID format');
         setLoading(false);
         return;

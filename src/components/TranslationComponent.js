@@ -16,9 +16,9 @@ const TranslationComponent = () => {
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
-     console.log(user.userId)
     }
   }, []);
+
 
   return (
     <Box sx={{margin: 'auto' }}>
