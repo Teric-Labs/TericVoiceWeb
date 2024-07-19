@@ -1,7 +1,7 @@
 import React,{useState} from "react"
 import { Box, Typography, Accordion, AccordionSummary,useTheme,Card,CardContent } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Voice2VoiceCard from "../components/Voice2VoiceCard"
+import Voice2VoiceCard from "./Voice2VoiceCard"
 import VoxTransTable from "./VoxTransTable";
 
 const VoiceLingoComponent=()=>{

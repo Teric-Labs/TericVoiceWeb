@@ -35,6 +35,7 @@ import SupportIcon from '@mui/icons-material/Support';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
+import UpgradeIcon from '@mui/icons-material/Upgrade';
 import mvetlogo from '../assets/livestock.png';
 
 const drawerWidth = 240;
@@ -192,17 +193,6 @@ export default function Sidenav({ children }) {
         { text: 'Text Summarization', icon: <TextToSpeechIcon />, path: '/dashboard/summarize' }
       ],
     },
-    // {
-    //   text: 'Speech',
-    //   icon: <VoiceOverOffIcon />,
-    //   open: openSpeech,
-    //   onClick: handleSpeechClick,
-    //   children: [
-    //     { text: 'Voicify', icon: <TextToSpeechIcon />, path: '/dashboard/synthesize' },
-        // { text: 'VoiceLingo', icon: <TranslateIcon />, path: '/dashboard/voxtrans' },
-        // { text: 'VStream', icon: <VoiceOverOffIcon />, path: '/dashboard/voice' },
-      // ],
-    // },
   ];
 
   const handleDrawerOpen = () => {
@@ -369,6 +359,33 @@ export default function Sidenav({ children }) {
                 <SupportIcon />
               </ListItemIcon>
               <ListItemText primary="Contact Support" sx={{ opacity: open ? 1 : 0, color: 'white' }} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem
+            disablePadding
+            sx={{
+              display: 'block',
+              margin: 2,
+              fontFamily: 'poppins',
+              fontSize: theme.typography.fontSize,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+                color: theme.palette.primary.contrastText,
+              },
+            }}
+            onClick={() => navigate('/dashboard/subscription')}
+          >
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? 'initial' : 'center',
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon sx={{ color: 'white' }}>
+                <UpgradeIcon />
+              </ListItemIcon>
+              <ListItemText primary="Upgrade" sx={{ opacity: open ? 1 : 0, color: 'white' }} />
             </ListItemButton>
           </ListItem>
         </List>

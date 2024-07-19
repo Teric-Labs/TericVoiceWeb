@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Paper, Grid, Modal, FormControl, InputLabel, Select, MenuItem,OutlinedInput, Stack, Card, CardContent } from "@mui/material";
+import { Box, Typography, Button, Paper, Grid, Modal, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Stack, Card, CardContent } from "@mui/material";
 import LanguageIcon from '@mui/icons-material/Language';
-import TranslateIcon from '@mui/icons-material/Translate';
-import downloadbtn from "../assets/download.png"
+import downloadbtn from "../assets/download.png";
 import Summarizebtn from "../assets/summary.png";
-import record from '../assets/record.png'
-import stop from '../assets/stop.png'
-
+import record from '../assets/record.png';
+import stop from '../assets/stop.png';
 
 const languages = [
   { name: "English", code: "en" },
@@ -17,9 +15,7 @@ const languages = [
   { name: "Runyankore", code: "nyn" },
   { name: "Swahili", code: "sw" },
   { name: "French", code: "fr" },
-  { name: "Swahili", code: "sw" },
-  { name: "Kinyarwanda", code: "rw" },
-
+  { name: "Kinyarwanda", code: "rw" }
 ];
 
 const LiveStreamComponent = () => {
@@ -128,28 +124,22 @@ const LiveStreamComponent = () => {
   };
 
   return (
-    <Box sx={{ margin: 'auto', maxWidth: '80%' }}>
-      <Card sx={{ minWidth: 300, boxShadow: 3, borderRadius: 2, position: 'relative', padding: '16px', mb: 4 }}>
+    <Box sx={{ margin: 'auto', maxWidth: '1200px', p: 2 }}>
+      <Card sx={{ boxShadow: 3, borderRadius: 2, mb: 4 }}>
         <CardContent>
           <Grid container justifyContent="space-between" alignItems="center">
-            <Grid item>
-              <Typography sx={{ fontSize: 14, fontFamily: 'Poppins' }} color="text.secondary" gutterBottom>
-                RealTime Transcription Overview
-              </Typography>
-              <Typography variant="h5" component="div" sx={{ fontFamily: 'Poppins' }}>
-                Real Voice Transformation Services
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1.5, fontFamily: 'Poppins' }}>
-                A-Voices performs voice transcription into various Ugandan languages, enabling easy download of these transcriptions. <br />It's designed to improve engagement and understanding across diverse local communities.
+            <Grid item xs={12} sm={6}>
+              <Typography sx={{ fontSize: 18, fontFamily: 'Poppins', fontWeight: 'bold' }} color="text.primary">
+                RealTime Transcription
               </Typography>
             </Grid>
-            <Grid item>
+            <Grid item xs={12} sm={6} sx={{ textAlign: { xs: 'center', sm: 'right' } }}>
               <Button variant="contained" color="primary" onClick={startRecording} disabled={isRecording} sx={{ boxShadow: 1, fontFamily: 'Poppins', mr: 1 }}>
-              <img src={record} style={{width: 20, height:20}}/>
+                <img src={record} style={{ width: 20, height: 20, marginRight: 5 }} alt="Start Recording" />
                 Start Recording
               </Button>
               <Button variant="contained" color="secondary" onClick={stopRecording} disabled={!isRecording} sx={{ boxShadow: 1, fontFamily: 'Poppins' }}>
-              <img src={stop} style={{width: 20, height:20}}/>
+                <img src={stop} style={{ width: 20, height: 20, marginRight: 5 }} alt="Stop Recording" />
                 Stop Recording
               </Button>
             </Grid>
@@ -157,15 +147,15 @@ const LiveStreamComponent = () => {
         </CardContent>
       </Card>
       <Grid container justifyContent="center">
-        <Grid item xs={12} sm={12} md={12}>
+        <Grid item xs={12}>
           <Box id="record" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Button variant="outlined" onClick={downloadTranscription} sx={{ mr: 1 }}>
-                <img src={downloadbtn} style={{width: 20, height:20}}/>
-                 Download Transcription
+              <Button variant="outlined" onClick={downloadTranscription} sx={{ mr: 1, fontFamily: 'Poppins' }}>
+                <img src={downloadbtn} style={{ width: 20, height: 20, marginRight: 5 }} alt="Download Transcription" />
+                Download Transcription
               </Button>
-              <Button variant="outlined">
-              <img src={Summarizebtn} style={{width: 20, height:20}}/>
+              <Button variant="outlined" sx={{ fontFamily: 'Poppins' }}>
+                <img src={Summarizebtn} style={{ width: 20, height: 20, marginRight: 5 }} alt="Summarize Transcription" />
                 Summarize Transcription
               </Button>
             </Box>
@@ -174,13 +164,12 @@ const LiveStreamComponent = () => {
               sx={{
                 maxHeight: 500,
                 width: '100%',
-                maxWidth: '100%',
                 overflowY: 'auto',
                 padding: 4,
                 height: 400,
-                mt: 10,
+                mt: 5,
                 fontFamily: 'monospace',
-                backgroundColor: 'gray',
+                backgroundColor: '#f5f5f5',
                 borderRadius: 2
               }}
               ref={transcriptBoxRef}
@@ -198,7 +187,6 @@ const LiveStreamComponent = () => {
         onClose={handleCloseModal}
         aria-labelledby="language-selection-modal-title"
         aria-describedby="language-selection-modal-description"
-        closeAfterTransition
       >
         <Box
           sx={{
@@ -206,8 +194,7 @@ const LiveStreamComponent = () => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 'auto',
-            minWidth: 400,
+            width: { xs: '90%', sm: '70%', md: '50%' },
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
@@ -215,11 +202,11 @@ const LiveStreamComponent = () => {
             outline: 'none',
           }}
         >
-          <Typography id="language-selection-modal-title" variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'medium' }}>
+          <Typography id="language-selection-modal-title" variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'medium', fontFamily: 'Poppins' }}>
             Choose Your Languages
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, fontFamily: 'Poppins' }}>
             Select the language you'll be speaking and the languages you want to transcribe to.
           </Typography>
 
@@ -232,10 +219,10 @@ const LiveStreamComponent = () => {
                 value={speakLanguage}
                 onChange={(event) => setSpeakLanguage(event.target.value)}
                 startAdornment={<LanguageIcon sx={{ mr: 1, color: 'action.active' }} />}
-                input={<OutlinedInput label="Speak Language" startAdornment={<LanguageIcon sx={{ mr: 1, color: 'action.active' }} />} />}
+                input={<OutlinedInput label="Speak Language" />}
               >
                 {languages.map((language) => (
-                  <MenuItem key={language.code} value={language.code}>
+                  <MenuItem key={language.code} value={language.code} sx={{ fontFamily: 'Poppins' }}>
                     {language.name}
                   </MenuItem>
                 ))}
@@ -244,7 +231,7 @@ const LiveStreamComponent = () => {
           </Stack>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Button variant="contained" onClick={handleCloseModal} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
+            <Button variant="contained" onClick={handleCloseModal} sx={{ textTransform: 'none', fontWeight: 'medium', fontFamily: 'Poppins' }}>
               Start Transcription
             </Button>
           </Box>

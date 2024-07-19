@@ -27,31 +27,27 @@ const VideoStreamComponent = () => {
   };
 
   return (
-    <Box p={2} sx={{ margin: 'auto' }}>
-      <Card sx={{ minWidth: 275, boxShadow: 3, borderRadius: 2, marginBottom: '20px', position: 'relative' }}>
+    <Box p={2} sx={{ margin: 'auto', maxWidth: '1200px' }}>
+      <Card sx={{ boxShadow: 3, borderRadius: 2, marginBottom: '20px', position: 'relative' }}>
         <CardContent>
           <Grid container justifyContent="space-between" alignItems="center">
             <Grid item>
               <Typography sx={{ fontSize: 14, fontFamily: 'Poppins' }} color="text.secondary" gutterBottom>
                 Video Transcription Overview
               </Typography>
-              <Typography variant="h5" component="div" sx={{ fontFamily: 'Poppins' }}>
-                Video Translation Services
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1.5, fontFamily: 'Poppins' }}>
-                A-Voices transcribes YouTube videos into various Ugandan languages, enabling easy download of these transcriptions. It's designed to improve engagement and understanding across diverse local communities.
-              </Typography>
+            </Grid>
+            <Grid item>
+              <Button
+                onClick={handleOpenModal}
+                variant="contained"
+                color="primary"
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <img src={YouTube} style={{ width: 20, height: 20 }} alt="Transcribe Video" />
+                Transcribe Video
+              </Button>
             </Grid>
           </Grid>
-          <Button
-            onClick={handleOpenModal}
-            variant="contained"
-            color="primary"
-            sx={{ position: 'absolute', top: 16, right: 16 }}
-          >
-            <img src={YouTube} style={{width:20, height:20}}/>
-            Transcribe Video
-          </Button>
         </CardContent>
       </Card>
       <Box p={3}>
@@ -72,8 +68,10 @@ const VideoStreamComponent = () => {
       >
         <Box sx={{
           position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)', width: 800,
-          bgcolor: 'background.paper', boxShadow: 24, p: 6  ,
+          transform: 'translate(-50%, -50%)',
+          width: { xs: '90%', sm: '70%', md: '60%', lg: '50%' },
+          bgcolor: 'background.paper', boxShadow: 24, p: { xs: 2, sm: 4, md: 6 },
+          borderRadius: 2,
         }}>
           <VideoCard />
         </Box>

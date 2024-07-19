@@ -90,18 +90,12 @@ const SignInComponent = () => {
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
-      <Paper elevation={3} sx={{ maxWidth: matches ? 450 : '90%', margin: '40px auto', padding: '20px' }}>
+      <Paper elevation={3} sx={{ maxWidth: matches ? 450 : '90%', margin: '40px auto', padding: '20px', borderRadius: 2 }}>
         {authMode === 'signIn' ? (
           <>
-            {/* <Button
-              startIcon={<GoogleIcon />}
-              variant="contained"
-              fullWidth
-              onClick={handleSignInWithGoogle}
-              sx={{ mb: 4, height: '56px' }}
-            >
-              Sign In with Google
-            </Button> */}
+            <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+              Sign In
+            </Typography>
             <form onSubmit={handleSignIn}>
               <TextField label="Email" type="email" fullWidth required margin="dense" value={email} onChange={handleEmailChange} />
               <TextField label="Password" type="password" fullWidth required margin="dense" value={password} onChange={handlePasswordChange} />
@@ -129,15 +123,9 @@ const SignInComponent = () => {
           </>
         ) : (
           <>
-            {/* <Button
-              startIcon={<GoogleIcon />}
-              variant="contained"
-              fullWidth
-              onClick={handleSignInWithGoogle}
-              sx={{ mb: 4, height: '56px',fontFamily: 'Poppins' }}
-            >
-              Sign Up with Google
-            </Button> */}
+            <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+              Sign Up
+            </Typography>
             <form onSubmit={handleSignUp}>
               <TextField label="Email" type="email" fullWidth required margin="dense" value={email} onChange={handleEmailChange} />
               <TextField label="Password" type="password" fullWidth required margin="dense" value={password} onChange={handlePasswordChange} />
@@ -145,15 +133,15 @@ const SignInComponent = () => {
               <FormControlLabel
                 control={<Checkbox name="rememberMe" />}
                 label="Remember me"
-                sx={{ mt: 2, mb: 1,fontFamily: 'Poppins' }}
+                sx={{ mt: 2, mb: 1 }}
               />
               {loading ? <CircularProgress sx={{ display: 'block', mx: 'auto' }} /> : (
-                <Button type="submit" fullWidth variant="contained" sx={{ mb: 2,fontFamily: 'Poppins' }}>
+                <Button type="submit" fullWidth variant="contained" sx={{ mb: 2 }}>
                   Sign Up
                 </Button>
               )}
               {registrationError && <Typography color="error" sx={{ textAlign: 'center', mt: 2 }}>{registrationError}</Typography>}
-              <Typography variant="body2" sx={{ textAlign: 'center' ,fontFamily: 'Poppins'}}>
+              <Typography variant="body2" sx={{ textAlign: 'center' }}>
                 Already have an account? <Link href="#" onClick={toggleAuthMode} underline="hover">Sign In</Link>
               </Typography>
             </form>
@@ -182,7 +170,7 @@ const SignInComponent = () => {
                 fullWidth
                 variant="outlined"
               />
-              <Button type="submit" fullWidth variant="contained" sx={{ mt: 2,fontFamily: 'Poppins' }}>
+              <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
                 Submit
               </Button>
             </Box>

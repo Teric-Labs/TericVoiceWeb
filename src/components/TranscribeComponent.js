@@ -1,17 +1,17 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box, Typography, Grid, Button, Accordion,
   AccordionSummary, AccordionDetails, useTheme,
-  Card, CardContent, Snackbar, LinearProgress
+  Card, CardContent, Snackbar, LinearProgress,
+  Modal, IconButton
 } from '@mui/material';
 import uploadfile from '../assets/upload.png';
-import multiplefiles from '../assets/documents.png';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import DataTable from "./DataTable";
 import axios from 'axios';
 import LanguageAndUploadModal from "./LanguageAndUploadModal";
-import Upload from "@mui/icons-material/Upload";
 import RecordingAudioComponent from "./RecordAudioComponent";
+import MicIcon from '@mui/icons-material/Mic';
+import DataTable from "./DataTable";
 
 const languageOptions = [
   { name: "English", code: "en" },
@@ -29,6 +29,7 @@ const TranscribeComponent = () => {
   const [isTableVisible, setIsTableVisible] = useState(true);
   const [singleModalOpen, setSingleModalOpen] = useState(false);
   const [multipleModalOpen, setMultipleModalOpen] = useState(false);
+  const [recordingModalOpen, setRecordingModalOpen] = useState(false);
   const [speakLanguage, setSpeakLanguage] = useState('');
   const [transcribeLanguages, setTranscribeLanguages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,20 +37,31 @@ const TranscribeComponent = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
   const theme = useTheme();
   const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/upload/';
-  
 
   const handleSingleUploadClick = () => {
     setSingleModalOpen(true);
   };
+
   const handleMultipleUploadClick = () => {
     setMultipleModalOpen(true);
   };
+
+  const handleRecordingClick = () => {
+    setRecordingModalOpen(true);
+  };
+
   const handleCloseSingleModal = () => {
     setSingleModalOpen(false);
   };
+
   const handleCloseMultipleModal = () => {
     setMultipleModalOpen(false);
   };
+
+  const handleCloseRecordingModal = () => {
+    setRecordingModalOpen(false);
+  };
+
   const handleToggleTableVisibility = () => {
     setIsTableVisible(!isTableVisible);
   };
@@ -61,7 +73,8 @@ const TranscribeComponent = () => {
       setUser(userData);
     }
   }, []);
-  const handleSubmit = async ({ speakLanguage, transcribeLanguages, selectedFiles,description }) => {
+
+  const handleSubmit = async ({ speakLanguage, transcribeLanguages, selectedFiles, description }) => {
     setSingleModalOpen(false);
     setMultipleModalOpen(false);
     setLoading(true);
@@ -102,29 +115,22 @@ const TranscribeComponent = () => {
           <Grid container justifyContent="space-between" alignItems="center">
             <Grid item>
               <Typography sx={{ fontSize: 14, fontFamily: 'Poppins' }} color="text.secondary" gutterBottom>
-                Audio Transcription Overview
-              </Typography>
-              <Typography variant="h5" component="div" sx={{ fontFamily: 'Poppins' }}>
-                Audio Translation Services
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1.5, fontFamily: 'Poppins' }}>
-                Our platform accurately transcribes audio into various Ugandan languages, enabling easy download of these transcriptions. <br />
-                It's designed to improve engagement and understanding across diverse local communities.
+                Audio Transcription
               </Typography>
             </Grid>
             <Grid item>
               <Grid container spacing={2}>
                 <Grid item>
                   <Button variant="outlined" onClick={handleSingleUploadClick}>
-                    <img src={uploadfile} alt="Upload Audio" style={{width: 20, height: 20}} />
+                    <img src={uploadfile} alt="Upload Audio" style={{ width: 20, height: 20, marginRight: 5 }} />
                     Upload Audio
                   </Button>
                 </Grid>
                 <Grid item>
-                  {/* <Button variant="outlined" onClick={handleMultipleUploadClick}>
-                    <img src={multiplefiles} alt="Upload Multiple Files" style={{width: 20, height: 20}} />
-                    Upload Multiple Files
-                  </Button> */}
+                  <Button variant="outlined" onClick={handleRecordingClick}>
+                    <MicIcon sx={{ marginRight: 1 }} />
+                    Record Audio
+                  </Button>
                 </Grid>
               </Grid>
             </Grid>
@@ -139,11 +145,8 @@ const TranscribeComponent = () => {
         message="Transcription is complete"
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       />
-      <Box>
-        <RecordingAudioComponent/>
-      </Box>
       <Accordion sx={{ width: '100%', boxShadow: theme.shadows[2], '&:before': { display: 'none' }, mb: 3 }} expanded={isTableVisible} onChange={handleToggleTableVisibility}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}  sx={{ backgroundColor: theme.palette.action.hover }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ backgroundColor: theme.palette.action.hover }}>
           <Typography variant="h6">View Transcribed Audios</Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ width: '100%', padding: 2, margin: 'auto', justifyContent: 'center', display: 'flex' }}>
@@ -172,6 +175,26 @@ const TranscribeComponent = () => {
         languageOptions={languageOptions}
         onSubmit={handleSubmit}
       />
+      <Modal
+        open={recordingModalOpen}
+        onClose={handleCloseRecordingModal}
+        aria-labelledby="recording-modal-title"
+        aria-describedby="recording-modal-description"
+      >
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: { xs: '90%', sm: '70%', md: '60%' },
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2
+        }}>
+          <RecordingAudioComponent />
+        </Box>
+      </Modal>
     </Box>
   );
 }

@@ -1,6 +1,5 @@
 import React from "react";
-import { Box, Typography, Grid,Paper } from '@mui/material';
-import '../App.css';
+import { Box, Typography, Grid, Paper } from '@mui/material';
 import SignInComponent from "./SignInComponent";
 import CarouselComponent from "./CarouselComponent";
 
@@ -17,17 +16,17 @@ const Welcome = () => {
       <Grid container sx={{ height: '100%', width: '100%' }}>
         <Grid item xs={12} sm={6} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Box>
-          <Paper elevation={3} sx={{
-              width: '98%',
-              mt:14,
-              padding:'4px',
-              fontFamily: 'Poppins',
-              bgcolor: 'background.paper'}}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' ,fontFamily: 'Poppins', padding:'8px'}}>
-              GET STARTED WITH AFRICAN VOICES
-            </Typography>
-           
-          </Paper>
+            <Paper elevation={3} sx={{
+                width: '98%',
+                mt: 14,
+                padding: '4px',
+                fontFamily: 'Poppins',
+                bgcolor: 'background.paper'
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center', fontFamily: 'Poppins', padding: '8px' }}>
+                GET STARTED WITH AFRICAN VOICES
+              </Typography>
+            </Paper>
             <SignInComponent />
           </Box>
         </Grid>

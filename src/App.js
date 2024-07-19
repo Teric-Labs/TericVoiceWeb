@@ -20,6 +20,8 @@ import Home from "./views/Home";
 import GetStarted from "./views/GetStarted";
 import ContactSupport from "./views/ContactSupport";
 import { AuthProvider,useAuth } from "./components/AuthContext";
+import Pricing from "./views/Pricing";
+import Subscription from "./views/Subscription";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -34,6 +36,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/get-started" element={<GetStarted />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/dashboard" element={<PrivateRoute><Sidenav/></PrivateRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="livestream" element={<LiveStream />} />
@@ -50,6 +53,7 @@ function App() {
           <Route path="summarydata/:id" element={<ViewSummary />} />
           <Route path="video/:id" element={<ViewVideo />} />
           <Route path="voice" element={<Voice2Voice />} />
+          <Route path="subscription" element={<Subscription />} />
           <Route path="contact-support" element={<ContactSupport />} />
         </Route>
       </Routes>

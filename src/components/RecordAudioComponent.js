@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
-import { Button, Select, MenuItem, FormControl, InputLabel, Typography, Box, Grid, Tooltip, Paper, LinearProgress, Snackbar } from '@mui/material';
+import {
+  Button, Select, MenuItem, FormControl, InputLabel,
+  Typography, Box, Grid, Tooltip, Paper, LinearProgress,
+  Snackbar, IconButton
+} from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 import wrk from '../assets/microphone.png';
 import axios from 'axios';
 
@@ -15,8 +20,6 @@ const classes = {
   gridContainer: `${PREFIX}-gridContainer`,
   iconContainer: `${PREFIX}-iconContainer`,
   icon: `${PREFIX}-icon`,
-  instructions: `${PREFIX}-instructions`,
-  instructionsTitle: `${PREFIX}-instructionsTitle`,
 };
 
 const Root = styled('div')(({ theme }) => ({
@@ -51,18 +54,6 @@ const Root = styled('div')(({ theme }) => ({
   [`& .${classes.icon}`]: {
     fontSize: 80,
     color: 'blue',
-  },
-  [`& .${classes.instructions}`]: {
-    marginLeft: theme.spacing(2),
-    textAlign: 'left',
-    fontFamily: 'Poppins',
-    fontSize: 12,
-  },
-  [`& .${classes.instructionsTitle}`]: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing(1),
-    fontFamily: 'Poppins',
   },
 }));
 
@@ -146,7 +137,7 @@ const RecordingAudioComponent = () => {
       setLoading(true);
       const formData = new FormData();
       formData.append('source_lang', language);
-      formData.append('target_langs', [language]); 
+      formData.append('target_langs', [language]);
       formData.append('recorded_audio', new Blob([audioBlob], { type: 'audio/webm' }));
       formData.append('user_id', user.userId);
 
@@ -173,7 +164,7 @@ const RecordingAudioComponent = () => {
   };
 
   return (
-    <Paper elevation={2} sx={{ margin: '10px' }}>
+    <Paper elevation={2} sx={{ margin: '10px', padding:4 }}>
       <Root className={classes.gridContainer}>
         {loading && <LinearProgress />}
         <Snackbar
@@ -225,26 +216,45 @@ const RecordingAudioComponent = () => {
                 <img src={wrk} alt="Recording audio" style={{ width: 150, height: 150 }} />
               </Grid>
               <Grid item xs={12} md={6}>
-                <Box className={classes.instructions}>
-                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily: 'Poppins' }}>Instructions:</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>1. Tap the "Start Recording" button to begin.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>2. Once you finish, tap the "Stop Recording" button.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>3. The "Play", "Discard", and "Submit" buttons will appear.</Typography>
-                  <Typography className={classes.instructionsTitle} sx={{ fontSize: 14, fontFamily: 'Poppins' }}>
-                    Buttons:
-                  </Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Play: Listen to your recording.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Discard: Delete the recording if you are not satisfied.</Typography>
-                  <Typography sx={{ fontSize: 10, fontFamily: 'Poppins' }}>• Submit: Upload your recording.</Typography>
+                <Box className={classes.iconContainer}>
+                  <Tooltip title={
+                    <>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        1. Tap the "Start Recording" button to begin.
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        2. Once you finish, tap the "Stop Recording" button.
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        3. The "Play", "Discard", and "Submit" buttons will appear.
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12, fontWeight: 'bold', mt: 1 }}>
+                        Buttons:
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        • Play: Listen to your recording.
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        • Discard: Delete the recording if you are not satisfied.
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
+                        • Submit: Upload your recording.
+                      </Typography>
+                    </>
+                  }>
+                    <IconButton>
+                      <InfoIcon className={classes.icon} />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </Grid>
             </Grid>
-            <Box className={classes.audioContainer} sx={{ display: 'flex', justifyContent: 'left', justifyItems: 'center', width: '80%' }}>
+            <Box className={classes.audioContainer} sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
               {audioURL && (
                 <audio ref={audioPlayer} src={audioURL} controls className={classes.audioPlayer} sx={{ width: '100%' }} />
               )}
             </Box>
-            <Box className={classes.buttonGroup} sx={{ p: 1, display: 'flex', justifyContent: 'left', justifyItems: 'center' }}>
+            <Box className={classes.buttonGroup} sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
               {audioBlob && (
                 <>
                   <Tooltip title="Play Recording">

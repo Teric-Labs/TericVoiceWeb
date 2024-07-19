@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Paper, useTheme, useMediaQuery, MobileStepper } from '@mui/material';
 import SwipeableViews from 'react-swipeable-views';
 import { autoPlay } from 'react-swipeable-views-utils';
 import carouselData from '../constants/CarouselData';
@@ -17,7 +17,7 @@ const CarouselComponent = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, margin: 'auto' }}>
+    <Box sx={{ flexGrow: 1, margin: 'auto', position: 'relative' }}>
       <AutoPlaySwipeableViews
         axis={'x'}
         index={activeStep}
@@ -30,10 +30,10 @@ const CarouselComponent = () => {
               <Box
                 component="img"
                 sx={{
-                  height: matches ? 500 : 200, // Responsive height
-                  maxWidth: '90%', // Limit max width to allow some space on the sides
+                  height: matches ? 500 : 200,
+                  maxWidth: '90%',
                   overflow: 'hidden',
-                  display: 'block', // This ensures the image is centered horizontally
+                  display: 'block',
                 }}
                 src={step.imgPath}
                 alt={step.title}
@@ -47,7 +47,7 @@ const CarouselComponent = () => {
                 textAlign: 'center',
                 color: 'white',
                 position: 'absolute',
-                top: matches ? '85%' : '80%', // Adjust based on screen size
+                top: matches ? '85%' : '80%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 width: '100%',
@@ -59,17 +59,16 @@ const CarouselComponent = () => {
               elevation={3}
               sx={{
                 position: 'absolute',
-                top: matches ? '90%' : '85%', // Adjust based on screen size
+                top: matches ? '90%' : '85%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: matches ? '90%' : '80%', // Responsive width
+                width: matches ? '90%' : '80%',
                 bgcolor: 'background.paper',
-                p: matches ? 2 : 1, // Adjust padding based on screen size
-                fontSize: matches ? 'default' : 'small', // Adjust font size based on screen size
+                p: matches ? 2 : 1,
                 textAlign: 'center',
                 color: theme.palette.text.primary,
                 border: 'none',
-                fontFamily: 'Poppins'
+                fontFamily: 'Poppins',
               }}
             >
               {step.description}
@@ -77,6 +76,24 @@ const CarouselComponent = () => {
           </Box>
         ))}
       </AutoPlaySwipeableViews>
+      <MobileStepper
+        steps={maxSteps}
+        position="static"
+        activeStep={activeStep}
+        nextButton={null}
+        backButton={null}
+        sx={{
+          justifyContent: 'center',
+          backgroundColor: 'transparent',
+          mt: 2,
+          '& .MuiMobileStepper-dot': {
+            backgroundColor: 'white',
+            '&.MuiMobileStepper-dotActive': {
+              backgroundColor: '#1976d2',
+            },
+          },
+        }}
+      />
     </Box>
   );
 };
