@@ -2,6 +2,7 @@
 export const PRICING_TIERS = [
     {
       title: "Free Trial",
+      id:5,
       monthly: "Free for 1 month",
       features: [
         "Access to Real-Time Audio/Video Transcription (1 hour)",
@@ -14,6 +15,7 @@ export const PRICING_TIERS = [
     },
     {
       title: "Classic",
+      id:1,
       monthly: "$20/month",
       features: [
         "Real-Time Audio/Video Transcription (25 hours/month)",
@@ -26,6 +28,7 @@ export const PRICING_TIERS = [
     },
     {
       title: "Classic Pro",
+      id:2,
       monthly: "$50/month",
       features: [
         "Real-Time Audio/Video Transcription (50 hours/month)",
@@ -38,6 +41,7 @@ export const PRICING_TIERS = [
     },
     {
       title: "Pro Plus",
+      id:3,
       monthly: "$100/month",
       features: [
         "Real-Time Audio/Video Transcription (100 hours/month)",
@@ -50,6 +54,7 @@ export const PRICING_TIERS = [
     },
     {
       title: "Enterprise Basic",
+      id:4,
       monthly: "Custom pricing",
       features: [
         "Real-Time Audio/Video Transcription (200 hours/month)",
@@ -62,6 +67,7 @@ export const PRICING_TIERS = [
     },
     {
       title: "Enterprise Plus",
+      id:6,
       monthly: "Custom pricing",
       features: [
         "Unlimited Real-Time Audio/Video Transcription",
