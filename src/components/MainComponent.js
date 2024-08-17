@@ -1,8 +1,8 @@
 import React from 'react';
-import { Box, Typography, Grid, Chip, Stack } from '@mui/material';
+import { Box, Typography, Grid, Button } from '@mui/material';
 import wrk from '../assets/voices.png';
 import { keyframes } from '@emotion/react';
-
+import { Link } from 'react-router-dom';
 // Typing animation keyframes
 const typing = keyframes`
   from { width: 0 }
@@ -15,17 +15,6 @@ const blink = keyframes`
 `;
 
 const MainComponent = () => {
-    const modules = [
-        "Real-Time Translation",
-        "Audio Transcription",
-        "Video Transcription",
-        "Document Translation",
-        "Text Summarization",
-        "Speech to Speech Translation",
-        "Text to Speech",
-        "Translation APIs"
-    ];
-
     return (
         <Box sx={{
             display: 'flex',
@@ -61,21 +50,49 @@ const MainComponent = () => {
                         Break communication barriers effortlessly with our powerful tool.<br />
                         Convert your audio, documents, and videos into any native African language and beyond. Connect with your audience across the continent like never before.
                     </Typography>
-                    <Box id="modules" sx={{ padding: 1 }}>
-                        <Stack direction="row" flexWrap="wrap" justifyContent={{ xs: 'center', md: 'flex-start' }} spacing={2}>
-                            {modules.map((module, index) => (
-                                <Chip
-                                    key={index}
-                                    label={module}
-                                    color="primary"
-                                    variant="outlined"
-                                    sx={{
-                                        fontFamily: 'Poppins',
-                                        marginTop: '8px',
-                                    }}
-                                />
-                            ))}
-                        </Stack>
+                    <Box id="modules" sx={{ padding: 1, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' }, gap: 2 }}>
+                        <Button
+                            variant="contained"
+                            component={Link} 
+                            to="/get-started"
+                            color="primary"
+                            sx={{
+                                fontFamily: 'Poppins',
+                                padding: '10px 20px',
+                                fontSize: '16px',
+                                textTransform: 'none',
+                                backgroundColor: '#007BFF',
+                                '&:hover': {
+                                    backgroundColor: '#0056b3',
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.3s ease-in-out',
+                                },
+                            }}
+                        >
+                            Get Started for Free
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            component={Link} 
+                            to="/documentation"
+                            sx={{
+                                fontFamily: 'Poppins',
+                                padding: '10px 20px',
+                                fontSize: '16px',
+                                textTransform: 'none',
+                                borderColor: '#007BFF',
+                                color: '#007BFF',
+                                '&:hover': {
+                                    borderColor: '#0056b3',
+                                    color: '#0056b3',
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.3s ease-in-out',
+                                },
+                            }}
+                        >
+                            API Documentation
+                        </Button>
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
