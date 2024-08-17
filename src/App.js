@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import React from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate} from "react-router-dom";
 import Dashboard from "./views/Dashboard";
 import LiveStream from "./views/Livestream";
 import VideoStream from "./views/Videostream";
@@ -22,6 +22,8 @@ import ContactSupport from "./views/ContactSupport";
 import { AuthProvider,useAuth } from "./components/AuthContext";
 import Pricing from "./views/Pricing";
 import Subscription from "./views/Subscription";
+import APIReference from "./views/APIReference";
+import APis from "./views/APis";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -37,6 +39,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/get-started" element={<GetStarted />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/documentation" element={<APis />} />
+        <Route path="/api-reference" element={<APIReference />} />
         <Route path="/dashboard" element={<PrivateRoute><Sidenav/></PrivateRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="livestream" element={<LiveStream />} />
