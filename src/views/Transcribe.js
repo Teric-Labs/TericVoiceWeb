@@ -1,11 +1,11 @@
 import React from "react";
 import { Box} from "@mui/material";
-import TranscribeComponent from "../components/TranscribeComponent";
+import History from "../components/History";
 
 const Transcribe =()=>{
     return(
         <Box>
-            <TranscribeComponent/>
+            <History/>
         </Box>
     )
 }

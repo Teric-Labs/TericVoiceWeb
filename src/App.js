@@ -30,38 +30,42 @@ const PrivateRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate replace to="/" />;
 };
 
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate replace to="/dashboard" /> : children;
+};
+
 function App() {
-  
   return (
-   <AuthProvider>
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/get-started" element={<GetStarted />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/documentation" element={<APis />} />
-        <Route path="/api-reference" element={<APIReference />} />
-        <Route path="/dashboard" element={<PrivateRoute><Sidenav/></PrivateRoute>}>
-          <Route index element={<Dashboard />} />
-          <Route path="livestream" element={<LiveStream />} />
-          <Route path="videostream" element={<VideoStream />} />
-          <Route path="transcribe" element={<Transcribe />} />
-          <Route path="synthesize" element={<Text2Speech />} />
-          <Route path="summarize" element={<Summarization />} />
-          <Route path="translate" element={<Translation />} />
-          <Route path="voxtrans" element={<VoiceLingo />} />
-          <Route path="audio/:id" element={<ViewAudio />} />
-          <Route path="voice/:id" element={<ViewVoxTrans />} />
-          <Route path="tts/:id" element={<ViewttsAudio />} />
-          <Route path="ttdata/:id" element={<ViewTranslations />} />
-          <Route path="summarydata/:id" element={<ViewSummary />} />
-          <Route path="video/:id" element={<ViewVideo />} />
-          <Route path="voice" element={<Voice2Voice />} />
-          <Route path="subscription" element={<Subscription />} />
-          <Route path="contact-support" element={<ContactSupport />} />
-        </Route>
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+          <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />
+          <Route path="/pricing" element={<PublicRoute><Pricing /></PublicRoute>} />
+          <Route path="/documentation" element={<PublicRoute><APis /></PublicRoute>} />
+          <Route path="/api-reference" element={<PublicRoute><APIReference /></PublicRoute>} />
+          <Route path="/dashboard" element={<PrivateRoute><Sidenav /></PrivateRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="livestream" element={<LiveStream />} />
+            <Route path="videostream" element={<VideoStream />} />
+            <Route path="transcribe" element={<Transcribe />} />
+            <Route path="synthesize" element={<Text2Speech />} />
+            <Route path="summarize" element={<Summarization />} />
+            <Route path="translate" element={<Translation />} />
+            <Route path="voxtrans" element={<VoiceLingo />} />
+            <Route path="audio/:id" element={<ViewAudio />} />
+            <Route path="voice/:id" element={<ViewVoxTrans />} />
+            <Route path="tts/:id" element={<ViewttsAudio />} />
+            <Route path="ttdata/:id" element={<ViewTranslations />} />
+            <Route path="summarydata/:id" element={<ViewSummary />} />
+            <Route path="video/:id" element={<ViewVideo />} />
+            <Route path="voice" element={<Voice2Voice />} />
+            <Route path="subscription" element={<Subscription />} />
+            <Route path="contact-support" element={<ContactSupport />} />
+          </Route>
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }

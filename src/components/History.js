@@ -1,10 +1,10 @@
 import React ,{useState}from "react";
 import { Box, Typography,Card, CardContent,Tabs,Tab } from "@mui/material";
-import TranscribeComponent from "./TranscribeComponent";
-import VideoStreamComponent from "./VideoStreamComponent";
-import TranslationComponent from "./TranslationComponent";
-import SummarizeComponent from './SummarizeComponent.js'
-const HomeComponent = () => {
+import DataTable from "./DataTable.js";
+import VideoTable from "./VideoTable";
+import TranslationsTable from "./TranslationsTable";
+import SummaryTable from "./SummaryTable";
+const History = () => {
   const [selectedTab,setSelectedTab] =useState(0)
 
   const handleChange  =(event, newValue) =>{
@@ -30,22 +30,22 @@ const HomeComponent = () => {
         <Box>
           {selectedTab === 0 &&(
             <Typography variant="body1" sx={{fontFamily:'Poppins',padding:2}}>
-              <TranscribeComponent/>
+              <DataTable/>
             </Typography>
           )}
            {selectedTab === 1 &&(
             <Typography variant="body1" sx={{fontFamily:'Poppins',padding:2}}>
-              <VideoStreamComponent/>
+              <VideoTable/>
             </Typography>
           )}
            {selectedTab === 2 &&(
             <Typography variant="body1" sx={{fontFamily:'Poppins',padding:2}}>
-              <TranslationComponent/>
+              <TranslationsTable/>
             </Typography>
           )}
           {selectedTab === 3 &&(
             <Typography variant="body1" sx={{fontFamily:'Poppins',padding:2}}>
-              <SummarizeComponent/>
+              <SummaryTable/>
             </Typography>
           )}
           
@@ -56,4 +56,4 @@ const HomeComponent = () => {
   );
 };
 
-export default HomeComponent;
+export default History;

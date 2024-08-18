@@ -1,12 +1,9 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Box, Card, CardContent, TextField, Button,
-  Typography, Grid, Select, MenuItem, Modal,
-  Stack, InputLabel, FormControl, Chip,
+  Box,TextField, Button,Grid, Select, MenuItem,FormControl, Chip,InputLabel,
+  Tab, Tabs,
   OutlinedInput, Snackbar, LinearProgress
 } from "@mui/material";
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import TranslateIcon from '@mui/icons-material/Translate';
 import UploadIcon from '@mui/icons-material/Upload';
 import axios from "axios";
 
@@ -17,7 +14,7 @@ const languageOptions = [
   { name: "Acholi", code: "ach" },
   { name: "Lugbara", code: "lgg" },
   { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" } ,
+  { name: "Swahili", code: "sw" },
   { name: "French", code: "fr" },
   { name: "Kinyarwanda", code: "rw" }
 ];
@@ -38,38 +35,12 @@ const TranslationCard = () => {
   const [targetLanguages, setTargetLanguages] = useState([]);
   const [transcript, setTranscript] = useState('');
   const [translation, setTranslation] = useState({});
-  const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [textTitle, setTextTitle] = useState('');
   const [showBanner, setShowBanner] = useState(false);
   const [user, setUser] = useState({ username: '', userId: '' });
+  const [selectedTab, setSelectedTab] = useState(0);
 
-  const handleLanguageChange = (event) => {
-    setSelectedLanguage(event.target.value);
-  };
-  
-  const handleTargetLanguageChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setTargetLanguages(typeof value === 'string' ? value.split(',') : value);
-  };
-  
-  const handleUploadClick = () => {
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleFileUpload = (event) => {
-    console.log('File Uploaded:', event.target.files[0]);
-  };
-  
-  const handleFileChange = (event) => {
-    console.log(event.target.files[0]); // Log or set state here
-  };
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -77,16 +48,27 @@ const TranslationCard = () => {
       setUser(userData);
     }
   }, []);
+
+  const handleLanguageChange = (event) => {
+    setSelectedLanguage(event.target.value);
+  };
+
+  const handleTargetLanguageChange = (event) => {
+    const { target: { value } } = event;
+    setTargetLanguages(typeof value === 'string' ? value.split(',') : value);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
+
     const formData = new FormData();
     formData.append('source_lang', selectedLanguage);
     targetLanguages.forEach(lang => formData.append('target_langs', lang));
-    formData.append('doc', transcript); 
-    formData.append('title', textTitle); 
-    formData.append('user_id', user.userId); 
-  
+    formData.append('doc', transcript);
+    formData.append('title', textTitle);
+    formData.append('user_id', user.userId);
+
     try {
       const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/translate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -94,83 +76,61 @@ const TranslationCard = () => {
       setLoading(false);
       setShowBanner(true);
       setTimeout(() => setShowBanner(false), 5000);
-      setTranslation(response.data.msg); 
+      setTranslation(response.data.msg);
     } catch (error) {
       setLoading(false);
       console.error('Error during translation:', error);
     }
   };
+  const handleFileUpload = (event) => {
+    console.log('File Uploaded:', event.target.files[0]);
+  };
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
-          {loading && <LinearProgress />}
-          <Snackbar
-            open={showBanner}
-            autoHideDuration={6000}
-            onClose={() => setShowBanner(false)}
-            message="Translation complete"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          />
-          <Box mt={1} display="flex" justifyContent="center" gap={2}>
-            <Button variant="contained" startIcon={<TranslateIcon /> } sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' } }} onClick={handleUploadClick}>
-              Translate Text
-            </Button>
-            <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
-            <label htmlFor="file-upload">
-              <Button variant="contained" startIcon={<UploadIcon />} sx={{ '&:hover': { backgroundColor: 'secondary.dark' }, color: '#fff' }}>
-                Upload Document
-              </Button>
-            </label>
-          </Box>
-
-      <Modal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        aria-labelledby="translation-modal-title"
-        aria-describedby="translation-modal-description"
-        closeAfterTransition
+      {loading && <LinearProgress />}
+      <Snackbar
+        open={showBanner}
+        autoHideDuration={6000}
+        onClose={() => setShowBanner(false)}
+        message="Translation complete"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+      <Box>
+      <Tabs
+        value={selectedTab}
+        onChange={(event, newValue) => setSelectedTab(newValue)}
+        textColor="primary"
+        variant="scrollable"
+        scrollButtons="auto"
+        aria-label="Translation Options"
+        sx={{ marginBottom: 2, fontFamily: 'Poppins' }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 'auto',
-            minWidth: 600,
-            bgcolor: 'background.paper', 
-            color: 'text.primary',
-            p: 4,
-            borderRadius: 2,
-            boxShadow: 24,
-            outline: 'none',
-          }}
-        >
-          {loading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
-          <Typography id="translation-modal-title" variant="h6" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontFamily:'Poppins'}}>
-            Translate Text
-          </Typography>
-
-          <form onSubmit={handleSubmit}>
+        <Tab label="Translate Text" />
+        <Tab label="Translate Document" />
+      </Tabs>
+      <Box sx={{ width: '100%' }}>
+        {selectedTab === 0 && (
+          <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={3}>
-            <Grid item xs={12} md={12}>
+              <Grid item xs={12}>
                 <FormControl fullWidth>
-                <TextField 
-                fullWidth 
-                label="Enter Title" 
-                variant="outlined" 
-                margin="dense"
-                value={textTitle}
-                onChange={(e) => setTextTitle(e.target.value)}
-                placeholder="Text Title"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: 'grey' },
-                    '&:hover fieldset': { borderColor: '#fff' },
-                    '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                  },
-                }}
-              />
+                  <TextField
+                    fullWidth
+                    label="Enter Title"
+                    variant="outlined"
+                    margin="dense"
+                    value={textTitle}
+                    onChange={(e) => setTextTitle(e.target.value)}
+                    placeholder="Text Title"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: 'grey' },
+                        '&:hover fieldset': { borderColor: '#fff' },
+                        '&.Mui-focused fieldset': { borderColor: '#1976d2' },
+                      },
+                    }}
+                  />
                 </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
@@ -195,7 +155,7 @@ const TranslationCard = () => {
                     multiple
                     value={targetLanguages}
                     onChange={handleTargetLanguageChange}
-                    input={<OutlinedInput label="Target Languages" id="select-multiple-chip" />}
+                    input={<OutlinedInput label="Target Languages" />}
                     renderValue={(selected) => (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {selected.map((code) => (
@@ -243,14 +203,22 @@ const TranslationCard = () => {
                 <Button variant="contained" color="primary" type="submit" sx={{ textTransform: 'none', fontWeight: 'medium' }}>
                   Translate
                 </Button>
-                <Button variant="outlined" color="secondary" onClick={handleCloseModal} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
-                  Close
-                </Button>
               </Grid>
             </Grid>
-          </form>
-        </Box>
-      </Modal>
+          </Box>
+        )}
+        {selectedTab === 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+            <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
+            <label htmlFor="file-upload">
+              <Button variant="contained" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
+                Upload Document
+              </Button>
+            </label>
+          </Box>
+        )}
+      </Box>
+      </Box>
     </Box>
   );
 };

@@ -1,8 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { Box, Card, CardContent, TextField, Button, Select, MenuItem, FormControl, Grid, InputLabel, Chip, OutlinedInput, Snackbar, LinearProgress, Typography } from "@mui/material";
+import { 
+  Box, Card, CardContent, TextField, Button, Select, MenuItem, FormControl, 
+  Grid, InputLabel, Chip, OutlinedInput, Snackbar, LinearProgress,
+  ThemeProvider, createTheme, Stepper, Step, StepLabel
+} from "@mui/material";
 import YouTubeIcon from '@mui/icons-material/YouTube'; 
 import MicIcon from '@mui/icons-material/Mic'; 
 import axios from "axios";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+  typography: {
+    fontFamily: 'Poppins',
+  },
+});
 
 const languageOptions = [
   { name: "English", code: "en" },
@@ -25,10 +43,13 @@ const VideoCard = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [user, setUser] = useState({ username: '', userId: '' });
+  const [activeStep, setActiveStep] = useState(0);
+  const steps = ['Enter Video Details', 'Select Languages', 'Transcribe']
 
   const handleLanguageChange = (event) => {
     setSelectedLanguage(event.target.value);
   };
+  
 
   const handleTargetLanguageChange = (event) => {
     const {
@@ -48,6 +69,7 @@ const VideoCard = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
+    setActiveStep(2);
     const formData = new FormData();
     formData.append('source_lang', selectedLanguage);
     targetLanguages.forEach(lang => formData.append('target_langs', lang));
@@ -75,33 +97,62 @@ const VideoCard = () => {
   };
 
   return (
-    <Card sx={{
-      width: '100%',
-      margin: '2rem auto',
-      padding: '1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    }}>
-      <CardContent sx={{ width: '100%' }}>
-        <Typography sx={{ fontFamily: 'Poppins' }}>Enter YouTube Video Link</Typography>
-        <Snackbar
-          open={showBanner}
-          autoHideDuration={6000}
-          onClose={() => setShowBanner(false)}
-          message={returnText}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        />
-        {loading && <LinearProgress />}
-        <form>
-          <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Grid container spacing={2} sx={{
-              padding: '4px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '800px',
-              margin: 'auto'
-            }}>
+    <ThemeProvider theme={theme}>
+      <Card sx={{
+        width: '100%',
+        maxWidth: 800,
+        margin: '2rem auto',
+        padding: '2rem',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+      }}>
+        <CardContent>
+          <Stepper activeStep={activeStep} alternativeLabel sx={{ marginBottom: 4 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Snackbar
+            open={showBanner}
+            autoHideDuration={6000}
+            onClose={() => setShowBanner(false)}
+            message={returnText}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          />
+          
+          {loading && <LinearProgress sx={{ marginBottom: 2 }} />}
+          
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Video Title"
+                  variant="outlined"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value)}
+                  placeholder="Enter video title"
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="YouTube Video Link"
+                  variant="outlined"
+                  value={videoLink}
+                  onChange={(e) => setVideoLink(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  InputProps={{
+                    startAdornment: (
+                      <YouTubeIcon sx={{ color: 'red', mr: 1 }} />
+                    ),
+                  }}
+                />
+              </Grid>
+              
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Source Language</InputLabel>
@@ -117,6 +168,7 @@ const VideoCard = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Target Languages</InputLabel>
@@ -128,7 +180,12 @@ const VideoCard = () => {
                     renderValue={(selected) => (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {selected.map((value) => (
-                          <Chip key={value} label={value} />
+                          <Chip 
+                            key={value} 
+                            label={languageOptions.find(lang => lang.code === value)?.name} 
+                            color="primary" 
+                            variant="outlined"
+                          />
                         ))}
                       </Box>
                     )}
@@ -141,64 +198,32 @@ const VideoCard = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              
+              <Grid item xs={12}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<MicIcon />}
+                  fullWidth
+                  size="large"
+                  sx={{
+                    height: '50px',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                    },
+                  }}
+                >
+                  Transcribe
+                </Button>
+              </Grid>
             </Grid>
-          </Box>
-          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
-            <TextField
-              fullWidth
-              label="Enter Title"
-              variant="outlined"
-              margin="dense"
-              value={videoTitle}
-              onChange={(e) => setVideoTitle(e.target.value)}
-              placeholder="Video title"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'grey' },
-                  '&:hover fieldset': { borderColor: '#fff' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
-            />
-          </Box>
-          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
-            <TextField
-              fullWidth
-              label="Enter YouTube video link"
-              variant="outlined"
-              margin="dense"
-              value={videoLink}
-              onChange={(e) => setVideoLink(e.target.value)}
-              placeholder="Insert the link here"
-              InputProps={{
-                startAdornment: (
-                  <YouTubeIcon sx={{ color: 'red', mr: 1 }} />
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'grey' },
-                  '&:hover fieldset': { borderColor: '#fff' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
-            />
-            <Button
-              onClick={handleSubmit}
-              type="submit"
-              variant="contained"
-              color="primary"
-              startIcon={<MicIcon />}
-              sx={{
-                width: { xs: '100%', sm: 'auto' },
-                height: '40px',
-              }}>
-              Transcribe
-            </Button>
-          </Box>
-        </form>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
+    </ThemeProvider>
   );
 };
 

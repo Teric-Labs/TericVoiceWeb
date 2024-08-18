@@ -1,9 +1,9 @@
 import React, { useState,useEffect } from "react";
 import {
-  Box, Card, CardContent, TextField, Button,
-  Typography, Grid, Select, MenuItem, Modal,
-  Stack, InputLabel, FormControl, Chip,
-  OutlinedInput, Snackbar, LinearProgress
+  Box, TextField, Button,
+  Grid, Select, MenuItem,
+  InputLabel, FormControl,
+  Snackbar, LinearProgress
 } from "@mui/material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TranslateIcon from '@mui/icons-material/Translate';
@@ -50,14 +50,6 @@ const SummarizationCard = () => {
       target: { value },
     } = event;
     setTargetLanguages(typeof value === 'string' ? value.split(',') : value);
-  };
-  
-  const handleUploadClick = () => {
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
   };
 
   const handleFileUpload = (event) => {
@@ -108,46 +100,16 @@ const SummarizationCard = () => {
             message="Translation complete"
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           />
-          <Box mt={1} display="flex" justifyContent="center" gap={2}>
-            <Button variant="contained" startIcon={<TranslateIcon /> } sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' } }} onClick={handleUploadClick}>
-              Summarize Text 
-            </Button>
+          
+            
             {/* <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
             <label htmlFor="file-upload">
               <Button variant="contained" startIcon={<UploadIcon />} sx={{ '&:hover': { backgroundColor: 'secondary.dark' }, color: '#fff' }}>
                 Upload Document
               </Button>
             </label> */}
-          </Box>
-
-      <Modal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        aria-labelledby="translation-modal-title"
-        aria-describedby="translation-modal-description"
-        closeAfterTransition
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 'auto',
-            minWidth: 600,
-            bgcolor: 'background.paper', 
-            color: 'text.primary',
-            p: 4,
-            borderRadius: 2,
-            boxShadow: 24,
-            outline: 'none',
-          }}
-        >
+         
           {loading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
-          <Typography id="translation-modal-title" variant="h6" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontFamily:'Poppins'}}>
-            Summarize Text
-          </Typography>
-
           <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
             <Grid item xs={12} md={12}>
@@ -201,15 +163,13 @@ const SummarizationCard = () => {
                 <Button variant="contained" color="primary" type="submit" sx={{ textTransform: 'none', fontWeight: 'medium' }}>
                   Summarize
                 </Button>
-                <Button variant="outlined" color="secondary" onClick={handleCloseModal} sx={{ textTransform: 'none', fontWeight: 'medium' }}>
-                  Close
-                </Button>
+                
               </Grid>
             </Grid>
           </form>
         </Box>
-      </Modal>
-    </Box>
+         
+          
   );
 };
 

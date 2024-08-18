@@ -1,5 +1,3 @@
-// UPDATE: Modify the AuthProvider in AuthContext.js to persist authentication state across sessions.
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -8,13 +6,11 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Check if the user is authenticated when the provider mounts
     const user = localStorage.getItem('user');
     return !!user;
   });
 
   useEffect(() => {
-    // Optionally, listen for changes in authentication state
     const handleStorageChange = () => {
       const user = localStorage.getItem('user');
       setIsAuthenticated(!!user);
@@ -25,8 +21,18 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  const login = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
