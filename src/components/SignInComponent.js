@@ -134,7 +134,7 @@ const SignInComponent = () => {
   };
 
   const handleSignUp = async () => {
-    const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/register', {
+    const response = await axios.post('http://127.0.0.1:8000/register', {
       email,
       password,
       confirm_password: confirmPassword
@@ -145,7 +145,7 @@ const SignInComponent = () => {
   };
 
   const handleSignIn = async () => {
-    const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/login', { email, password });
+    const response = await axios.post('http://127.0.0.1:8000/login', { email, password });
     setUser({ username: response.data[0].username, userId: response.data[0].user_id });
     localStorage.setItem('user', JSON.stringify({ username: response.data[0].username, userId: response.data[0].user_id }));
     setIsAuthenticated(true);

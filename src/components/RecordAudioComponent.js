@@ -67,7 +67,7 @@ const RecordingAudioComponent = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [user, setUser] = useState({ username: '', userId: '' });
-  const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/upload_recorded_audio/';
+  const apiEndpoint = 'http://127.0.0.1:8000/upload_recorded_audio/';
 
   const languageOptions = [
     { label: 'Luganda', value: 'lg' },

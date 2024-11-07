@@ -36,6 +36,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import mvetlogo from '../assets/livestock.png';
+import {useAuth} from '../components/AuthContext'
 
 const drawerWidth = 240;
 
@@ -135,6 +136,7 @@ export default function Sidenav() {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { logout } = useAuth(); 
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -174,7 +176,8 @@ export default function Sidenav() {
   };
 
   const handleLogout = () => {
-    // Implement logout logic here
+    logout(); // Call logout from AuthContext
+    navigate('/get-started');
     handleMenuClose();
   };
 

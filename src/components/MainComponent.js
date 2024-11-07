@@ -44,7 +44,7 @@ const MainComponent = () => {
                         AFRICAN VOICES <br />PLATFORM
                     </Typography>
                     <Typography variant="h4" component="p" sx={{ fontFamily: 'Poppins', marginBottom: 2, textAlign: { xs: 'center', md: 'left' } }}>
-                        Unlock Africa's Language Diversity
+                        Unlock Africas Language Diversity
                     </Typography>
                     <Typography variant="body1" component="p" gutterBottom sx={{ fontFamily: 'Poppins', px: 2, py: 2, textAlign: { xs: 'center', md: 'left' } }}>
                         Break communication barriers effortlessly with our powerful tool.<br />

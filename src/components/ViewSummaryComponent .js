@@ -15,7 +15,7 @@ const ViewSummaryComponent = ({ translationId }) => {
   const [language, setLanguage] = useState("");
 
   useEffect(() => {
-    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_summary';
+    const apiEndpoint = 'http://127.0.0.1:8000/get_summary';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: translationId });

@@ -54,7 +54,7 @@ const TranscribeComponent = () => {
   const [bannerMessage, setBannerMessage] = useState('');
   const [user, setUser] = useState({ username: '', userId: '' });
   const [selectedTab, setSelectedTab] = useState(0);
-  const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/upload/';
+  const apiEndpoint = 'http://127.0.0.1:8000/upload/';
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');

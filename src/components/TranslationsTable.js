@@ -64,7 +64,7 @@ export default function TranslationsTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_translations';
+    const apiEndpoint = 'http://127.0.0.1:8000/get_translations';
     try {
       const response = await axios.post(apiEndpoint, { user_id: user.userId });
       setEntries(response.data.entries);

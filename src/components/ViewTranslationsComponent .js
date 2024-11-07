@@ -13,7 +13,7 @@ const ViewTranslationsComponent = ({ translationId }) => {
   const [scriptTitle, setScriptTitle] = useState("");
 
   useEffect(() => {
-    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_translation';
+    const apiEndpoint = 'http://127.0.0.1:8000/get_translation';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: translationId });

@@ -53,7 +53,7 @@ export default function SummaryTable() {
   }, []);
 
   useEffect(() => {
-    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_summaries';
+    const apiEndpoint = 'http://127.0.0.1:8000/get_summaries';
     const fetchEntries = async () => {
       if (typeof user.userId !== 'string') {
         console.error('Invalid user ID format');

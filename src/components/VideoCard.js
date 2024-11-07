@@ -80,7 +80,7 @@ const VideoCard = () => {
     try {
       const response = await axios({
         method: 'post',
-        url: 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/videoUpload/',
+        url: 'http://127.0.0.1:8000/videoUpload/',
         data: formData,
         headers: { 'Content-Type': 'multipart/form-data' }
       });
