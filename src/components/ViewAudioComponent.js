@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Grid, Divider, IconButton, Paper, useTheme, Button } from "@mui/material";
-import GetAppIcon from '@mui/icons-material/GetApp';
-import ShareIcon from '@mui/icons-material/Share';
-import SaveIcon from '@mui/icons-material/Save';
+import {
+  Box,
+  Typography,
+  Grid,
+  Paper,
+  Button,
+  Menu,
+  MenuItem,
+  useTheme,
+  Fade,
+  Divider,
+  IconButton,
+  Tooltip
+} from "@mui/material";
+import DownloadIcon from '@mui/icons-material/Download';
+import LanguageIcon from '@mui/icons-material/Language';
 import axios from "axios";
 import AudioPlayerComponent from "./AudioPlayerComponent";
 
@@ -15,21 +27,20 @@ const ViewAudioComponent = ({ audioId }) => {
   const [currentSegment, setCurrentSegment] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = 'http://127.0.0.1:8000/get_audio';
     const fetchEntries = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.post(apiEndpoint, { doc_id: audioId });
+        const response = await axios.post('https://avoicesfinny-13747549899.us-central1.run.app/get_audio', { doc_id: audioId });
         const data = response.data.entries;
         setEntries(data);
 
         if (data.length > 0 && data[0].Url) {
-          const url = data[0].Url[0].audio_file_url;
-          setAudioSource(url);
+          setAudioSource(data[0].Url[0].audio_file_url);
           setDate(data[0].Date);
           setTitle(data[0].title);
 
@@ -52,7 +63,6 @@ const ViewAudioComponent = ({ audioId }) => {
     fetchEntries();
   }, [audioId]);
 
-  // Function to update displayed segment based on the selected language and current time
   const updateSegmentDisplay = (languageSegments, time) => {
     if (languageSegments && languageSegments.length > 0) {
       const activeSegment = languageSegments.find(
@@ -62,14 +72,13 @@ const ViewAudioComponent = ({ audioId }) => {
     }
   };
 
-  // Handle language selection and reset display to the first segment of the selected language
   const handleLanguageSelection = (language) => {
     setSelectedLanguage(language);
     const languageSegments = entries[0].Translations[language];
-    updateSegmentDisplay(languageSegments, 0); // Reset to the first segment when language changes
+    updateSegmentDisplay(languageSegments, 0);
+    setAnchorEl(null);
   };
 
-  // Sync transcript with audio playback
   const handleAudioTimeUpdate = (time) => {
     if (entries.length > 0 && selectedLanguage) {
       const languageSegments = entries[0].Translations[selectedLanguage];
@@ -77,79 +86,188 @@ const ViewAudioComponent = ({ audioId }) => {
     }
   };
 
+  const handleDownloadTranscript = () => {
+    if (!entries.length || !selectedLanguage) return;
+    
+    const transcriptText = entries[0].Translations[selectedLanguage]
+      .map(segment => segment.text)
+      .join('\n\n');
+    
+    const blob = new Blob([transcriptText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transcript_${selectedLanguage.toLowerCase()}_${audioTitle}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
-    <Paper elevation={4} sx={{ marginTop: '20px', marginX: '20px', padding: '20px' }}>
-      <Box sx={{ margin: 'auto' }}>
-        <Grid container spacing={3} alignItems="center" sx={{ color: "white" }}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle1" color="textSecondary" sx={{ fontFamily: 'Poppins' }}>Date Created: {audioDate}</Typography>
-            <Typography variant="subtitle1" color="textSecondary" sx={{ fontFamily: 'Poppins', fontSize: '2em' }}> <b>{audioTitle}</b></Typography>
+    <Paper 
+      elevation={3} 
+      sx={{ 
+        margin: '20px',
+        padding: { xs: '16px', md: '24px' },
+        borderRadius: '12px',
+        backgroundColor: theme.palette.background.paper
+      }}
+    >
+      <Box>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={8}>
+            <Typography 
+              variant="caption" 
+              color="textSecondary"
+              sx={{ display: 'block', marginBottom: 1 }}
+            >
+              {new Date(audioDate).toLocaleDateString()}
+            </Typography>
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                fontWeight: 600,
+                marginBottom: 2,
+                color: theme.palette.text.primary
+              }}
+            >
+              {audioTitle}
+            </Typography>
           </Grid>
           
-          <Grid item xs={12} md={3} container justifyContent="flex-end">
-            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%' }} aria-label="Download">
-              <GetAppIcon />
-            </IconButton>
-            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%', marginLeft: 2 }} aria-label="Share">
-              <ShareIcon />
-            </IconButton>
-            <IconButton sx={{ backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark' }, color: 'white', borderRadius: '50%', marginLeft: 2 }} aria-label="Save">
-              <SaveIcon />
-            </IconButton>
+          <Grid item xs={12} md={4} container justifyContent="flex-end" spacing={1}>
+            <Grid item>
+              <Button
+                variant="contained"
+                startIcon={<LanguageIcon />}
+                onClick={handleMenuClick}
+                sx={{ borderRadius: '8px' }}
+              >
+                {selectedLanguage || 'Select Language'}
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                TransitionComponent={Fade}
+              >
+                {entries.length > 0 && Object.keys(entries[0].Translations).map((language) => (
+                  <MenuItem 
+                    key={language}
+                    selected={selectedLanguage === language}
+                    onClick={() => handleLanguageSelection(language)}
+                  >
+                    {language}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Grid>
+            <Grid item>
+              <Tooltip title="Download Transcript">
+                <IconButton 
+                  onClick={handleDownloadTranscript}
+                  color="primary"
+                  sx={{ 
+                    backgroundColor: theme.palette.primary.main,
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.dark,
+                    }
+                  }}
+                >
+                  <DownloadIcon />
+                </IconButton>
+              </Tooltip>
+            </Grid>
           </Grid>
         </Grid>
 
-        <Divider sx={{ marginTop: 3, backgroundColor: theme.palette.divider }} />
+        <Divider sx={{ my: 3 }} />
 
         {loading && (
-          <Typography variant="body1" sx={{ fontFamily: 'Poppins', marginBottom: 2 }}>Loading audio data...</Typography>
+          <Typography variant="body1" sx={{ textAlign: 'center', py: 3 }}>
+            Loading audio data...
+          </Typography>
         )}
 
         {error && (
-          <Typography variant="body1" color="error" sx={{ fontFamily: 'Poppins', marginBottom: 2 }}>{error}</Typography>
+          <Typography variant="body1" color="error" sx={{ textAlign: 'center', py: 3 }}>
+            {error}
+          </Typography>
         )}
 
         {!loading && !error && entries.length > 0 && (
           <>
-            <Box sx={{ marginBottom: 2 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Poppins' }}>Original Transcript:</Typography>
-              <Typography variant="body1" sx={{ fontFamily: 'Poppins' }}>
-                {entries[0].Original_transcript}
+            <Box sx={{ mb: 4 }}>
+              <Typography 
+                variant="h6" 
+                gutterBottom 
+                sx={{ 
+                  fontWeight: 500,
+                  color: theme.palette.text.primary
+                }}
+              >
+                Original Transcript
               </Typography>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 2,
+                  backgroundColor: theme.palette.background.default,
+                  borderRadius: '8px'
+                }}
+              >
+                <Typography variant="body1">
+                  {entries[0].Original_transcript}
+                </Typography>
+              </Paper>
             </Box>
 
-            {/* Language selection buttons */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, marginBottom: 2 }}>
-              {Object.keys(entries[0].Translations).map((language, index) => (
-                <Button
-                  key={index}
-                  variant={selectedLanguage === language ? "contained" : "outlined"}
-                  onClick={() => handleLanguageSelection(language)}
-                  sx={{
-                    borderRadius: '20px', 
-                    fontFamily: 'Poppins',
-                    fontWeight: selectedLanguage === language ? 'bold' : 'normal',
-                    color: selectedLanguage === language ? 'white' : 'primary.main',
-                    backgroundColor: selectedLanguage === language ? 'primary.main' : 'transparent',
+            <Box sx={{ mb: 4 }}>
+              <Typography 
+                variant="h6" 
+                gutterBottom 
+                sx={{ 
+                  fontWeight: 500,
+                  color: theme.palette.text.primary
+                }}
+              >
+                Current Segment
+              </Typography>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2,
+                  backgroundColor: theme.palette.primary.light,
+                  borderRadius: '8px',
+                  border: `1px solid ${theme.palette.primary.main}`
+                }}
+              >
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: theme.palette.primary.dark,
+                    fontWeight: 500
                   }}
                 >
-                  {language.toUpperCase()}
-                </Button>
-              ))}
-            </Box>
-
-            {/* Display current transcript segment */}
-            <Box sx={{ marginBottom: 2 }}>
-              <Typography variant="body1" sx={{ fontFamily: 'Poppins', backgroundColor: 'primary.light', padding: 2, borderRadius: 2 }}>
-                {currentSegment}
-              </Typography>
+                  {currentSegment}
+                </Typography>
+              </Paper>
             </Box>
           </>
         )}
 
-        {/* Audio Player Component */}
         {audioSource && (
-          <Box id="audiobox" mt={3}>
+          <Box sx={{ mt: 4 }}>
             <AudioPlayerComponent 
               audioSrc={audioSource} 
               onTimeUpdate={handleAudioTimeUpdate} 

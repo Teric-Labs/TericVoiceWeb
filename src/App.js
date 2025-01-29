@@ -49,7 +49,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="livestream" element={<LiveStream />} />
             <Route path="videostream" element={<VideoStream />} />
-            <Route path="transcribe" element={<Transcribe />} />
+            <Route path="history" element={<Transcribe />} />
             <Route path="synthesize" element={<Text2Speech />} />
             <Route path="summarize" element={<Summarization />} />
             <Route path="translate" element={<Translation />} />

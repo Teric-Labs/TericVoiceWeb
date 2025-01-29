@@ -1,146 +1,374 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Checkbox,
+  TableSortLabel,
   TextField,
+  Typography,
+  CircularProgress,
   IconButton,
-  CircularProgress
+  Stack,
+  Tooltip,
+  InputAdornment,
+  Chip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Snackbar,
+  Alert
 } from '@mui/material';
-import axios from 'axios';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ShareIcon from '@mui/icons-material/Share';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  Search as SearchIcon,
+  MoreVert as MoreVertIcon,
+  ContentCopy as ContentCopyIcon,
+  Translate as TranslateIcon,
+  Visibility as VisibilityIcon,
+  Download as DownloadIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import ReactPaginate from 'react-paginate';
+import axios from 'axios';
 import './Pagination.css';
+import { useNavigate } from 'react-router-dom';
 
-export default function VoxTransTable() {
-  const [filter, setFilter] = useState('');
-  const [entries, setEntries] = useState([]);
+const VoiceTransTable = () => {
+  const [translations, setTranslations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-
-  const entriesPerPage = 5;
+  const [orderBy, setOrderBy] = useState('date');
+  const [order, setOrder] = useState('desc');
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState({ username: '', userId: '' });
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [activeRow, setActiveRow] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const apiEndpoint = 'https://teric-asr-api-wlivbm2klq-ue.a.run.app/get_vvoices';
-    const fetchEntries = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.post(apiEndpoint, { user_id: "78" });
-        setEntries(response.data.entries.map(entry => ({
-          ...entry,
-          // Limiting the display length of translation text to 100 characters
-          Translation: entry.Translation.length > 100 ? entry.Translation.substring(0, 100) + "..." : entry.Translation
-        })));
-      } catch (error) {
-        console.error('Failed to fetch entries', error);
-      }
-      setLoading(false);
-    };
+  const entriesPerPage = 5;
 
-    fetchEntries();
+  const handleVisibilityClick = useCallback((id) => {
+    navigate(`/dashboard/voice/${id}`);
+  }, [navigate]);
+
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const handleMenuOpen = (event, row) => {
+    setAnchorEl(event.currentTarget);
+    setActiveRow(row);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setActiveRow(null);
+  };
+
+  const fetchTranslations = useCallback(async () => {
+    setLoading(true);
+    if (!user.userId) {
+      console.error('Invalid user ID format');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await axios.post('https://avoicesfinny-13747549899.us-central1.run.app/get_voices', {
+        user_id: user.userId
+      });
+      
+      const processedData = response.data.entries.map(entry => ({
+        id: entry.doc_id,
+        date: new Date(entry.Date),
+        originalText: entry.Original_transcript.map(t => t.text).join(' '),
+        sourceLang: entry.source_lang,
+        translations: Object.entries(entry.Translations).map(([lang, texts]) => ({
+          language: lang,
+          text: texts.map(t => t.text).join(' ')
+        }))
+      }));
+      
+      setTranslations(processedData);
+    } catch (err) {
+      setError('Failed to fetch translations');
+      setSnackbar({
+        open: true,
+        message: 'Failed to fetch translations',
+        severity: 'error'
+      });
+      console.error('Error fetching translations:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleVisibilityClick = (id) => {
-    console.log(`Visibility icon clicked for Audio ID: ${id}`);
-    navigate(`/dashboard/voice/${id}`);
+  useEffect(() => {
+    fetchTranslations();
+  }, [fetchTranslations]);
+
+  const handleCopyText = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setSnackbar({
+        open: true,
+        message: 'Text copied to clipboard',
+        severity: 'success'
+      });
+    }).catch(() => {
+      setSnackbar({
+        open: true,
+        message: 'Failed to copy text',
+        severity: 'error'
+      });
+    });
+    handleMenuClose();
   };
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
+  const handleDownload = (id) => {
+    setSnackbar({
+      open: true,
+      message: 'Download started',
+      severity: 'success'
+    });
+    handleMenuClose();
   };
 
-  const filteredEntries = entries.filter((entry) => entry.Translation.toLowerCase().includes(filter.toLowerCase()));
-  const displayedEntries = filteredEntries.slice(
+  const handleDelete = async (id) => {
+    try {
+      // Implement delete logic here
+      setSnackbar({
+        open: true,
+        message: 'Translation deleted successfully',
+        severity: 'success'
+      });
+      fetchTranslations();
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete translation',
+        severity: 'error'
+      });
+    }
+    handleMenuClose();
+  };
+
+  const filteredTranslations = translations.filter(trans =>
+    trans.originalText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trans.translations.some(t => t.text.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const sortedTranslations = filteredTranslations.sort((a, b) => {
+    if (orderBy === 'date') {
+      return order === 'asc' ? a.date - b.date : b.date - a.date;
+    }
+    const aValue = a[orderBy]?.toString().toLowerCase() || '';
+    const bValue = b[orderBy]?.toString().toLowerCase() || '';
+    return order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+  });
+
+  const displayedTranslations = sortedTranslations.slice(
     currentPage * entriesPerPage,
     (currentPage + 1) * entriesPerPage
   );
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <Box sx={{ padding: 2 }}>
+      <Paper sx={{ width: '100%', mb: 2, p: 3 }}>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+          <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
+            Voice Translations
+          </Typography>
           <TextField
-            fullWidth
+            size="small"
             variant="outlined"
-            label="Search by Audio Name"
-            onChange={(e) => setFilter(e.target.value)}
-            sx={{ mb: 2, input: { color: 'white' }, label: { color: 'gray' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'gray' } }, '&:hover fieldset': { borderColor: 'white' } }}
+            placeholder="Search translations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 300 }}
           />
-        </Box>
+        </Stack>
+
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', padding: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
             <CircularProgress />
           </Box>
+        ) : error ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <Typography color="error">{error}</Typography>
+          </Box>
         ) : (
-          <React.Fragment>
+          <>
             <TableContainer>
-              <Table aria-label="simple table">
+              <Table aria-label="voice translations table">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontFamily: 'Poppins' }}>Select</TableCell>
-                    <TableCell colSpan={2} sx={{ fontFamily: 'Poppins' }}>Translated Script</TableCell>
-                    <TableCell sx={{ fontFamily: 'Poppins' }}>Source Language</TableCell>
-                    <TableCell sx={{ fontFamily: 'Poppins' }}>Target Language</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Poppins' }}>Date</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Poppins' }}>View Transcripts</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Poppins' }}>Share</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Poppins' }}>Delete</TableCell>
+                    <TableCell>
+                      <TableSortLabel
+                        active={orderBy === 'date'}
+                        direction={orderBy === 'date' ? order : 'asc'}
+                        onClick={() => handleSort('date')}
+                      >
+                        Date
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>Original Text</TableCell>
+                    <TableCell>Source Language</TableCell>
+                    <TableCell>Translations</TableCell>
+                    <TableCell></TableCell>
+                        
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {displayedEntries.map((audio) => (
-                    <TableRow key={audio.doc_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }}>
-                      <TableCell component="th" scope="row">
-                        <Checkbox />
+                  {displayedTranslations.map((trans) => (
+                    <TableRow key={trans.id} hover>
+                      <TableCell>
+                        {trans.date.toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
                       </TableCell>
-                      <TableCell align="left" colSpan={2} sx={{ fontFamily: 'Poppins', fontSize: '0.875rem' }}>{audio.title}</TableCell>
-                      <TableCell align="right" sx={{ fontFamily: 'Poppins', fontSize: '0.875rem' }}>{audio.source_language}</TableCell>
-                      <TableCell align="right" sx={{ fontFamily: 'Poppins', fontSize: '0.875rem' }}>{audio.target_language}</TableCell>
-                      <TableCell align="right" sx={{ fontFamily: 'Poppins', fontSize: '0.875rem' }}>{audio.Date}</TableCell>
-                      <TableCell align="right"><IconButton onClick={() => handleVisibilityClick(audio.doc_id)}><VisibilityIcon sx={{ color: 'gray', '&:hover': { color: 'white' } }} /></IconButton></TableCell>
-                      <TableCell align="right"><IconButton><ShareIcon sx={{ color: 'blue', '&:hover': { color: 'darkblue' } }} /></IconButton></TableCell>
-                      <TableCell align="right"><IconButton><DeleteIcon sx={{ color: 'red', '&:hover': { color: 'darkred' } }} /></IconButton></TableCell>
+                      <TableCell sx={{ maxWidth: 250 }}>
+                        <Tooltip title={trans.originalText}>
+                          <Typography noWrap>{trans.originalText}</Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<TranslateIcon />}
+                          label={trans.sourceLang.toUpperCase()}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Stack spacing={1}>
+                          {trans.translations.map((t, idx) => (
+                            <Box key={idx}>
+                              <Typography variant="caption" color="text.secondary">
+                                {t.language.toUpperCase()}:
+                              </Typography>
+                              <Tooltip title={t.text}>
+                                <Typography noWrap>{t.text}</Typography>
+                              </Tooltip>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </TableCell>
+                      <TableCell 
+
+                          onClick={() => handleVisibilityClick(trans.id)}
+                        >
+                        <VisibilityIcon/>
+                        </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleMenuOpen(e, trans)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <ReactPaginate
-                previousLabel={"Previous"}
-                nextLabel={"Next"}
-                breakLabel={"..."}
-                pageCount={Math.ceil(filteredEntries.length / entriesPerPage)}
+                previousLabel="Previous"
+                nextLabel="Next"
+                breakLabel="..."
+                pageCount={Math.ceil(filteredTranslations.length / entriesPerPage)}
                 marginPagesDisplayed={2}
                 pageRangeDisplayed={5}
-                onPageChange={handlePageChange}
-                containerClassName={"pagination"}
-                activeClassName={"active"}
-                previousClassName={"page-item"}
-                nextClassName={"page-item"}
-                pageClassName={"page-item"}
-                breakClassName={"page-item"}
-                pageLinkClassName={"page-link"}
-                previousLinkClassName={"page-link"}
-                nextLinkClassName={"page-link"}
-                breakLinkClassName={"page-link"}
-                activeLinkClassName={"active-link"}
+                onPageChange={({ selected }) => setCurrentPage(selected)}
+                containerClassName="pagination"
+                activeClassName="active"
+                previousClassName="page-item"
+                nextClassName="page-item"
+                pageClassName="page-item"
+                breakClassName="page-item"
+                pageLinkClassName="page-link"
+                previousLinkClassName="page-link"
+                nextLinkClassName="page-link"
+                breakLinkClassName="page-link"
+                activeLinkClassName="active-link"
               />
             </Box>
-          </React.Fragment>
+          </>
         )}
       </Paper>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={() => handleCopyText(activeRow?.originalText)}>
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" />
+          </ListItemIcon>
+          Copy Original Text
+        </MenuItem>
+        <MenuItem onClick={() => handleDownload(activeRow?.id)}>
+          <ListItemIcon>
+            <DownloadIcon fontSize="small" />
+          </ListItemIcon>
+          Download
+        </MenuItem>
+        <MenuItem onClick={() => handleDelete(activeRow?.id)} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          Delete
+        </MenuItem>
+      </Menu>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
-}
+};
+
+export default VoiceTransTable;

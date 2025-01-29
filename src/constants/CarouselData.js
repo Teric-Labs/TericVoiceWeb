@@ -1,8 +1,8 @@
 // Import images from the assets folder
-import audioToTextImg from '../assets/text.jpg';
-import textToTextImg from '../assets/text2.jpg';
-import textToSpeechImg from '../assets/voice.jpg';
-import voiceToVoiceImg from '../assets/text2text.jpg';
+import audioToTextImg from '../assets/transcribe.jpg';
+import textToTextImg from '../assets/transcribe.jpg';
+import textToSpeechImg from '../assets/textvoice.jpg';
+import voiceToVoiceImg from '../assets/voicev.jpg';
 
 const carouselData = [
   {

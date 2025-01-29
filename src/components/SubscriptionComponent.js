@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Button, Card, CardContent, Modal,
-  CardHeader, Divider, Container, List, ListItem, ListItemIcon, ListItemText,
-  CssBaseline
+  Box,
+  Typography,
+  Grid,
+  Button,
+  Card,
+  CardContent,
+  Modal,
+  CardHeader,
+  Divider,
+  Container,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  CssBaseline,
+  Chip,
+  Paper,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { PRICING_TIERS } from '../constants/PricingConstants';
 import StripeCheckoutForm from './StripeCheckoutForm';
+import { LocalAtm, Diamond, Rocket } from '@mui/icons-material';
 
 const theme = createTheme({
   typography: {
@@ -18,7 +33,7 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 24,
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
         },
       },
@@ -26,175 +41,296 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 50,
+          borderRadius: 28,
+          textTransform: 'none',
+          fontWeight: 600,
+          fontSize: '1.1rem',
+          padding: '12px 32px',
         },
       },
     },
   },
 });
 
-const PricingCard = ({ title, monthly, features, onSubscribe }) => {
-  const getButtonLabel = () => {
-    if (monthly.toLowerCase() === 'custom pricing') {
-      return 'Contact Support';
-    }
-    if (monthly.toLowerCase() === 'free for 1 month') {
-      return 'Upgrade';
-    }
-    return 'Subscribe';
-  };
-
-  const handleClick = () => {
-    if (monthly.toLowerCase() === 'custom pricing') {
-      alert('Contact support at support@example.com');
-    } else {
-      onSubscribe(title, monthly);
-    }
+// Feature Chip Component
+const PlanChip = ({ plan, isActive, onClick }) => {
+  const icons = {
+    'Basic': <LocalAtm />,
+    'Pro': <Diamond />,
+    'Enterprise': <Rocket />,
   };
 
   return (
-    <Card variant="outlined" sx={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 2, boxShadow: 3 }}>
-      <CardHeader
-        title={title}
-        sx={{ backgroundColor: '#1976d2', color: 'white', textAlign: 'center', padding: 2 }}
-        titleTypographyProps={{ variant: 'h6', fontWeight: 'bold' }}
-      />
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Box sx={{ marginBottom: 2, padding: 2, border: '1px solid #1976d2', borderRadius: 1, backgroundColor: '#e3f2fd', textAlign: 'center' }}>
-          <Typography variant="h6" component="div" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-            {monthly}
-          </Typography>
-        </Box>
-        <List>
-          {features.map((feature, index) => (
-            <React.Fragment key={index}>
-              <ListItem>
-                <ListItemIcon>
-                  <CheckIcon color="primary" />
-                </ListItemIcon>
-                <ListItemText primary={feature} />
-              </ListItem>
-              {index < features.length - 1 && <Divider variant="middle" />}
-            </React.Fragment>
-          ))}
-        </List>
-      </CardContent>
-      <Box sx={{ padding: 2, textAlign: 'center' }}>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          sx={{ backgroundColor: '#1976d2', color: 'white', textTransform: 'none', borderRadius: 2, '&:hover': { backgroundColor: '#155a9a' } }}
-          onClick={handleClick}
-        >
-          {getButtonLabel()}
-        </Button>
-      </Box>
-    </Card>
+    <Chip
+      label={plan.title}
+      icon={icons[plan.title]}
+      onClick={onClick}
+      sx={{
+        height: '48px',
+        borderRadius: '24px',
+        fontWeight: 600,
+        fontSize: '0.95rem',
+        px: 2,
+        py: 3,
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        transform: isActive ? 'scale(1.05)' : 'scale(1)',
+        backgroundColor: isActive ? 'primary.main' : 'background.paper',
+        color: isActive ? 'white' : 'text.primary',
+        boxShadow: isActive ? '0 4px 20px rgba(25, 118, 210, 0.25)' : 'none',
+        '&:hover': {
+          transform: 'scale(1.05)',
+          backgroundColor: isActive ? 'primary.main' : 'background.paper',
+        },
+        '& .MuiChip-icon': {
+          color: isActive ? 'white' : 'primary.main',
+          marginRight: '8px',
+        }
+      }}
+    />
   );
 };
+
+const PricingCard = ({ title, monthly, features, onSubscribe, isSelected }) => (
+  <Paper
+    elevation={isSelected ? 8 : 2}
+    sx={{
+      height: '100%',
+      borderRadius: '24px',
+      transition: 'all 0.3s ease',
+      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+      border: isSelected ? '2px solid #1976d2' : '1px solid rgba(25, 118, 210, 0.1)',
+      background: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(10px)',
+      overflow: 'hidden',
+    }}
+  >
+    <Box
+      sx={{
+        p: 3,
+        background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+        color: 'white',
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="h5" fontWeight="bold">
+        {title}
+      </Typography>
+    </Box>
+    <CardContent sx={{ p: 4 }}>
+      <Box
+        sx={{
+          mb: 4,
+          p: 2,
+          borderRadius: '16px',
+          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+          textAlign: 'center',
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+            backgroundClip: 'text',
+            textFillColor: 'transparent',
+          }}
+        >
+          {monthly}
+        </Typography>
+      </Box>
+      <List>
+        {features.map((feature, index) => (
+          <React.Fragment key={index}>
+            <ListItem>
+              <ListItemIcon>
+                <CheckIcon sx={{ color: '#1976d2' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary={feature}
+                primaryTypographyProps={{
+                  sx: { fontSize: '0.95rem' }
+                }}
+              />
+            </ListItem>
+            {index < features.length - 1 && <Divider />}
+          </React.Fragment>
+        ))}
+      </List>
+      <Box sx={{ mt: 4, textAlign: 'center' }}>
+        <Button
+          variant="contained"
+          onClick={() => onSubscribe(title, monthly)}
+          sx={{
+            background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+            }
+          }}
+        >
+          {monthly.toLowerCase() === 'custom pricing' ? 'Contact Support' : 'Subscribe Now'}
+        </Button>
+      </Box>
+    </CardContent>
+  </Paper>
+);
 
 const SubscriptionComponent = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activePlanIndex, setActivePlanIndex] = useState(0);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
+      setUser(JSON.parse(storedUser));
     }
   }, []);
 
-  const handleSubscribe = async (title, monthly) => {
-    const selectedTier = PRICING_TIERS.find(tier => tier.title === title);
-    try {
-      setSelectedPlan({ title, monthly, tierId: selectedTier.id });
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error('An error occurred:', error);
-      // You might want to show an error message to the user here
+  const handleSubscribe = (title, monthly) => {
+    if (monthly.toLowerCase() === 'custom pricing') {
+      alert('Contact support at support@example.com');
+      return;
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedPlan(null);
+    const selectedTier = PRICING_TIERS.find(tier => tier.title === title);
+    setSelectedPlan({ title, monthly, tierId: selectedTier.id });
+    setIsModalOpen(true);
   };
 
   const getAmountInCents = (monthly) => {
-    return parseInt(monthly.replace(/[^0-9]/g, '')) * 100; 
+    return parseInt(monthly.replace(/[^0-9]/g, '')) * 100;
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box p={3} sx={{ margin: 'auto' }}>
-        <Container sx={{ marginTop: 4, textAlign: 'center', mb: 10 }}>
-          <Card sx={{ boxShadow: 3, borderRadius: 2, mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontFamily: 'Poppins', color: theme.palette.text.secondary }}>
-                Subscribe
-              </Typography>
-            </CardContent>
-          </Card>
-          <Grid container spacing={3}>
+      <Container maxWidth="xl">
+        <Box sx={{ minHeight: '100vh', py: 8 }}>
+          {/* Hero Section */}
+          <Box sx={{ textAlign: 'center', mb: 12 }}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                backgroundClip: 'text',
+                textFillColor: 'transparent',
+                mb: 3,
+              }}
+            >
+              Choose Your Plan
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                color: 'text.secondary',
+                mb: 6,
+                maxWidth: '800px',
+                mx: 'auto',
+              }}
+            >
+              Select the perfect plan for your needs with our flexible pricing options
+            </Typography>
+          </Box>
+
+          {/* Plan Selection Chips */}
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              mb: 6,
+            }}
+          >
             {PRICING_TIERS.map((tier, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <PlanChip
+                key={index}
+                plan={tier}
+                isActive={activePlanIndex === index}
+                onClick={() => setActivePlanIndex(index)}
+              />
+            ))}
+          </Box>
+
+          {/* Pricing Cards */}
+          <Grid container spacing={4} sx={{ mb: 8 }}>
+            {PRICING_TIERS.map((tier, index) => (
+              <Grid item xs={12} md={4} key={index}>
                 <PricingCard
                   title={tier.title}
                   monthly={tier.monthly}
                   features={tier.features}
                   onSubscribe={handleSubscribe}
+                  isSelected={activePlanIndex === index}
                 />
               </Grid>
             ))}
           </Grid>
-        </Container>
-      </Box>
-      <Modal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        aria-labelledby="payment-modal"
-        aria-describedby="payment-form"
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <Box sx={{
-          width: { xs: '90%', sm: '80%', md: '60%', lg: '50%' },
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2,
-        }}>
-          {selectedPlan ? (
-            <>
-              <Typography id="payment-modal" variant="h4" component="h2" gutterBottom sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                Subscribe to {selectedPlan.title}
-              </Typography>
-              <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
-                Monthly fee: {selectedPlan.monthly}
-              </Typography>
-              {selectedPlan.monthly.toLowerCase() === 'contact support' ? (
-                <Button variant="contained" color="primary" fullWidth onClick={() => alert('Contact support at support@example.com')}>
-                  Contact Support
-                </Button>
-              ) : (
-                <StripeCheckoutForm 
-                  amount={getAmountInCents(selectedPlan.monthly)} 
-                  tier={selectedPlan.title}
-                  tierId={selectedPlan.tierId}
-                  userId={user.userId}
-                  onClose={handleCloseModal} 
-                />
-              )}
-            </>
-          ) : (
-            <Typography variant="subtitle1" gutterBottom>
-              Loading...
-            </Typography>
-          )}
+
+          {/* Subscription Modal */}
+          <Modal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Paper
+              sx={{
+                width: { xs: '90%', sm: '80%', md: '60%', lg: '50%' },
+                maxHeight: '90vh',
+                overflow: 'auto',
+                borderRadius: '24px',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Box
+                sx={{
+                  p: 3,
+                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                  color: 'white',
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="h5" fontWeight="bold">
+                  {selectedPlan ? `Subscribe to ${selectedPlan.title}` : 'Loading...'}
+                </Typography>
+              </Box>
+              <CardContent sx={{ p: 4 }}>
+                {selectedPlan && (
+                  <>
+                    <Box
+                      sx={{
+                        mb: 4,
+                        p: 2,
+                        borderRadius: '16px',
+                        backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography variant="h5" fontWeight="bold" color="primary">
+                        Monthly fee: {selectedPlan.monthly}
+                      </Typography>
+                    </Box>
+                    <StripeCheckoutForm
+                      amount={getAmountInCents(selectedPlan.monthly)}
+                      tier={selectedPlan.title}
+                      tierId={selectedPlan.tierId}
+                      userId={user.userId}
+                      onClose={() => setIsModalOpen(false)}
+                    />
+                  </>
+                )}
+              </CardContent>
+            </Paper>
+          </Modal>
         </Box>
-      </Modal>
+      </Container>
     </ThemeProvider>
   );
 };

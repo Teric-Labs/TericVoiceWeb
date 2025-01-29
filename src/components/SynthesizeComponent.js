@@ -1,208 +1,374 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
-  Box, TextField, Button,
-  Typography, Grid, Select, Modal,
-  MenuItem, FormControl, InputLabel, Chip,
-  OutlinedInput, LinearProgress
-} from "@mui/material";
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import axios from "axios";
+  Box,
+  Button,
+  Container,
+  FormControl,
+  Grid,
+  IconButton,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
+  CircularProgress,
+  LinearProgress,
+  Alert,
+  Tab,
+  Tabs,
+  Drawer
+} from '@mui/material';
+import {
+  VolumeUp,
+  CloudUpload,
+  SwapHoriz,
+  Language,
+  InsertDriveFile,
+} from '@mui/icons-material';
+import axios from 'axios';
+import ViewttsAudioComponent from './ViewttsAudioComponent';
 
-const languages = [
-  { name: "English", code: "en" },
-  { name: "Luganda", code: "lg" },
-  { name: "Ateso", code: "at" },
-  { name: "Acholi", code: "ac" },
-  { name: "Lugbara", code: "lgg" },
-  { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" }
+const API_CONFIG = {
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-13747549899.us-central1.run.app',
+  TIMEOUT: 60000,
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_TEXT_LENGTH: 5000,
+  DOC_TYPES: {
+    'application/pdf': '.pdf',
+    'application/msword': '.doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+    'text/plain': '.txt'
+  }
+};
+
+const SUPPORTED_LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'lg', label: 'Luganda' },
+  { value: 'sw', label: 'Kiswahili' },
+  { value: 'ach', label: 'Acholi' },
+  { value: 'teo', label: 'Ateso' },
+  { value: 'nyn', label: 'Runyankore' },
 ];
 
+const SUPPORTED_FILE_TYPES = [
+  { type: 'PDF', extension: '.pdf' },
+  { type: 'Word', extension: '.doc, .docx' },
+  { type: 'Text', extension: '.txt' },
+];
+
+
+const LanguageSelector = ({ sourceLang, targetLangs, onSourceChange, onTargetChange }) => (
+  <Box sx={{ mb: 4 }}>
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+      <Grid container spacing={3} alignItems="center">
+        <Grid item xs={12} md={5}>
+          <Typography variant="subtitle2" gutterBottom>Source Language</Typography>
+          <FormControl fullWidth>
+            <Select
+              value={sourceLang}
+              onChange={(e) => onSourceChange(e.target.value)}
+              sx={{ borderRadius: 1 }}
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <MenuItem key={lang.value} value={lang.value}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Language color="primary" />
+                    {lang.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton
+            onClick={() => {
+              if (targetLangs.length === 1) {
+                onSourceChange(targetLangs[0]);
+                onTargetChange([sourceLang]);
+              }
+            }}
+            sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+          >
+            <SwapHoriz />
+          </IconButton>
+        </Grid>
+
+        <Grid item xs={12} md={5}>
+          <Typography variant="subtitle2" gutterBottom>Target Languages</Typography>
+          <FormControl fullWidth>
+            <Select
+              multiple
+              value={targetLangs}
+              onChange={(e) => onTargetChange(e.target.value)}
+              sx={{ borderRadius: 1 }}
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <MenuItem key={lang.value} value={lang.value}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Language color="primary" />
+                    {lang.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+    </Paper>
+  </Box>
+);
+
 const SynthesizeComponent = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState([]);
-  const [textData, setTextData] = useState("");
-  const [textTitle, setTextTitle] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user, setUser] = useState({ username: '', userId: '' });
+  const [activeTab, setActiveTab] = useState(0);
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [targetLanguages, setTargetLanguages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [documentTitle, setDocumentTitle] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState(null);
+  const [taskId, setTaskId] = useState(null);
+  const [docId, setDocId] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const handleLanguageChange = (event) => {
-    setSelectedLanguage(event.target.value);
-  };
+useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+    }
+  }, []);
+  
+  useEffect(() => {
+    let progressTimer;
+    if (loading) {
+      progressTimer = setInterval(() => {
+        setProgress((prev) => (prev >= 95 ? 95 : prev + 5));
+      }, 500);
+    } else {
+      setProgress(0);
+    }
+    return () => clearInterval(progressTimer);
+  }, [loading]);
 
-  const handleTargetLanguageChange = (event) => {
-    setTargetLanguage(typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value);
-  };
-
-  const handleFileUpload = (event) => {
-    console.log('File Uploaded:', event.target.files[0]);
-  };
-
-  const handleTextChange = (event) => {
-    setTextData(event.target.value);
-  };
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const generateSpeech = async () => {
-    setLoading(true);
+  const handleGenerate = async () => {
     try {
-      const formData = new FormData();
-      formData.append('text_file', textData);
-      formData.append('source_lang_code', selectedLanguage);
-      formData.append('target_lang_code', JSON.stringify(targetLanguage)); // Convert array to string
-      formData.append('user_id', "78");
-      formData.append('title', textTitle);
+      setError(null);
+      setLoading(true);
+      setDocId(null);
+      setIsDrawerOpen(false);
 
-      const result = await axios.post('http://127.0.0.1:8000/tvox_translation', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      const formData = new FormData();
+      formData.append('user_id', user.userId);
+      formData.append('source_lang', sourceLanguage);
+      formData.append('target_langs', targetLanguages);
+
+      let response;
+      if (activeTab === 0) {
+        if (inputText.length > API_CONFIG.MAX_TEXT_LENGTH) {
+          throw new Error(`Text exceeds maximum length of ${API_CONFIG.MAX_TEXT_LENGTH} characters`);
         }
-      });
-      console.log("Results for submitting audio and text", result.data);
-      handleCloseModal();
-    } catch (error) {
-      console.error("Error saving speech", error);
+        formData.append('doc', inputText);
+        formData.append('title', documentTitle || 'Text Synthesis');
+        response = await axios.post(`${API_CONFIG.BASE_URL}/vocify`, formData);
+      } else {
+        if (!selectedFile) {
+          throw new Error('No file selected');
+        }
+        if (selectedFile.size > API_CONFIG.MAX_FILE_SIZE) {
+          throw new Error('File size exceeds 10MB limit');
+        }
+        formData.append('file', selectedFile);
+        formData.append('title', documentTitle || selectedFile.name);
+        response = await axios.post(`${API_CONFIG.BASE_URL}/translate_document_with_tts/`, formData);
+      }
+
+      if (response.data.doc_id) {
+        console.log(response.data.doc_id)
+        setDocId(response.data.doc_id);
+        setIsDrawerOpen(true);
+      } else {
+        throw new Error('No document ID received from the server.');
+      }
+    } catch (err) {
+      setError(err.message || 'Generation failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setError(null);
+      setDocumentTitle(file.name.split('.')[0]);
+    }
+  };
+
+  
+
   return (
-    <Box>
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-        <input
-          accept="text/*"
-          type="file"
-          id="file-upload"
-          style={{ display: 'none' }}
-          onChange={handleFileUpload}
-        />
-        <label htmlFor="file-upload">
-          <Button component="span" startIcon={<CloudUploadIcon />} variant="contained" sx={{ mr: 2, backgroundColor: 'primary.main', '&:hover': { backgroundColor: 'primary.dark', fontFamily: 'Poppins' } }}>
-            Upload Document
-          </Button>
-        </label>
-        <Button type="button" variant="contained" startIcon={<VolumeUpIcon />} onClick={handleOpenModal} sx={{ fontFamily: 'Poppins' }}>
-          Generate Speech
-        </Button>
-      </Box>
-      <Modal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
-        <Box sx={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)', width: 600,
-          bgcolor: 'background.paper', boxShadow: 24, p: 4,
-        }}>
-          {loading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
-          <Typography id="modal-title" variant="h6" component="h2" sx={{ fontFamily: 'Poppins' }}>
-            Generate Speech
-          </Typography>
-          <Box sx={{ padding: 4, alignItems: 'center', display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Grid container spacing={2} sx={{
-              borderRadius: '30px',
-              padding: '10px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '800px',
-              margin: 'auto'
-            }}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Source Language</InputLabel>
-                  <Select
-                    value={selectedLanguage}
-                    onChange={handleLanguageChange}
-                    sx={{ color: 'black', bgcolor: 'rgba(255,255,255,0.15)' }}
-                  >
-                    {languages.map((language) => (
-                      <MenuItem key={language.code} value={language.code} sx={{ fontFamily: 'Poppins' }}>
-                        {language.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+    <Container maxWidth="xl">
+      <Box sx={{ minHeight: '100vh', py: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, newValue) => {
+              setActiveTab(newValue);
+              setError(null);
+              setTaskId(null);
+              setProcessingStatus(null);
+            }}
+            centered
+            sx={{ mb: 4 }}
+          >
+            <Tab
+              icon={<VolumeUp />}
+              label="Text to Speech"
+              sx={{ minHeight: 72 }}
+            />
+            <Tab
+              icon={<CloudUpload />}
+              label="Document to Speech"
+              sx={{ minHeight: 72 }}
+            />
+          </Tabs>
+
+          <LanguageSelector
+            sourceLang={sourceLanguage}
+            targetLangs={targetLanguages}
+            onSourceChange={setSourceLanguage}
+            onTargetChange={setTargetLanguages}
+          />
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          {activeTab === 0 ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Document Title (Optional)"
+                  value={documentTitle}
+                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  sx={{ mb: 3 }}
+                />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Target Languages</InputLabel>
-                  <Select
-                    multiple
-                    value={targetLanguage}
-                    onChange={handleTargetLanguageChange}
-                    input={<OutlinedInput label="Target Languages" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} sx={{ fontFamily: 'Poppins' }} />
-                        ))}
-                      </Box>
-                    )}
-                  >
-                    {languages.map((language) => (
-                      <MenuItem key={language.code} value={language.code} sx={{ fontFamily: 'Poppins' }}>
-                        {language.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={8}
+                  label="Enter text for speech synthesis"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  error={inputText.length > API_CONFIG.MAX_TEXT_LENGTH}
+                  helperText={`${inputText.length}/${API_CONFIG.MAX_TEXT_LENGTH} characters`}
+                />
               </Grid>
             </Grid>
-          </Box>
-          <Box>
-            <TextField
-              fullWidth
-              label="Enter Title"
-              variant="outlined"
-              margin="dense"
-              value={textTitle}
-              onChange={(e) => setTextTitle(e.target.value)}
-              placeholder="Text Title"
+          ) : (
+            <Box sx={{ textAlign: 'center' }}>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                style={{ display: 'none' }}
+                id="file-upload"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="file-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUpload />}
+                  sx={{
+                    borderRadius: '28px',
+                    px: 4,
+                    py: 2,
+                    borderWidth: '2px',
+                    mb: 2
+                  }}
+                >
+                  Upload Document
+                </Button>
+              </label>
+
+              {selectedFile && (
+                <>
+                  <Alert
+                    icon={<InsertDriveFile />}
+                    severity="info"
+                    sx={{ mb: 3 }}
+                  >
+                    {selectedFile.name}
+                  </Alert>
+                  <TextField
+                    fullWidth
+                    label="Document Title (Optional)"
+                    value={documentTitle}
+                    onChange={(e) => setDocumentTitle(e.target.value)}
+                    sx={{ mb: 3 }}
+                  />
+                </>
+              )}
+
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Supported formats: PDF, DOC, DOCX, TXT (Max: 10MB)
+              </Typography>
+            </Box>
+          )}
+
+          {loading && (
+            <Box sx={{ width: '100%', mt: 4 }}>
+              <LinearProgress variant="determinate" value={progress} />
+              <Typography align="center" variant="body2" sx={{ mt: 1 }}>
+                Processing... {progress}%
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              onClick={handleGenerate}
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'grey' },
-                  '&:hover fieldset': { borderColor: '#fff' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
+                borderRadius: '28px',
+                px: 4,
+                py: 2,
+                borderWidth: '2px',
+                mb: 2
               }}
-            />
-            <TextField
-              label="Enter Text"
-              variant="outlined"
-              margin="normal"
-              multiline
-              value={textData}
-              onChange={handleTextChange}
-              rows={4}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'grey' },
-                  '&:hover fieldset': { borderColor: 'black' },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                },
-              }}
-            />
-          </Box>
-          <Box sx={{ my: 2, display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Button type="button" variant="contained" startIcon={<VolumeUpIcon />} onClick={generateSpeech}>
-              Generate Speech
+              disabled={loading || (!inputText && !selectedFile) || !sourceLanguage || targetLanguages.length === 0}
+              startIcon={loading ? <CircularProgress size={20} /> : <VolumeUp />}
+            >
+              {loading ? 'Processing...' : 'Generate Speech'}
             </Button>
           </Box>
-        </Box>
-      </Modal>
-    </Box>
+        </Paper>
+      </Box>
+      <Drawer
+        anchor="right"
+        open={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: { xs: '100%', sm: '600px' },
+          },
+        }}
+      >
+        {docId && <ViewttsAudioComponent audioId={docId} />}
+      </Drawer>
+    </Container>
   );
 };
 

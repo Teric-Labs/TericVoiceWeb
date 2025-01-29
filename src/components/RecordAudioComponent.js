@@ -1,72 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { styled } from '@mui/material/styles';
 import {
-  Button, Select, MenuItem, FormControl, InputLabel,
-  Typography, Box, Grid, Tooltip, Paper, LinearProgress,
-  Snackbar, IconButton
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Box,
+  Grid,
+  Paper,
+  LinearProgress,
+  Snackbar,
+  Alert,
+  Typography,
+  useTheme
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import wrk from '../assets/microphone.png';
-import axios from 'axios';
-
-const PREFIX = 'RecordingAudioComponent';
-
-const classes = {
-  formControl: `${PREFIX}-formControl`,
-  button: `${PREFIX}-button`,
-  audioContainer: `${PREFIX}-audioContainer`,
-  buttonGroup: `${PREFIX}-buttonGroup`,
-  audioPlayer: `${PREFIX}-audioPlayer`,
-  gridContainer: `${PREFIX}-gridContainer`,
-  iconContainer: `${PREFIX}-iconContainer`,
-  icon: `${PREFIX}-icon`,
-};
-
-const Root = styled('div')(({ theme }) => ({
-  [`& .${classes.formControl}`]: {
-    margin: theme.spacing(1),
-    minWidth: 200,
-  },
-  [`& .${classes.button}`]: {
-    margin: theme.spacing(1),
-  },
-  [`& .${classes.audioContainer}`]: {
-    marginTop: theme.spacing(2),
-    textAlign: 'center',
-  },
-  [`& .${classes.buttonGroup}`]: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: theme.spacing(2),
-  },
-  [`& .${classes.audioPlayer}`]: {
-    display: 'block',
-    margin: '0 auto',
-  },
-  [`& .${classes.gridContainer}`]: {
-    padding: theme.spacing(3),
-  },
-  [`& .${classes.iconContainer}`]: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  [`& .${classes.icon}`]: {
-    fontSize: 80,
-    color: 'blue',
-  },
-}));
+import MicIcon from '@mui/icons-material/Mic';
+import StopIcon from '@mui/icons-material/Stop';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import LanguageIcon from '@mui/icons-material/Language';
+import WaveSurfer from 'wavesurfer.js';
+import axios from "axios";
 
 const RecordingAudioComponent = () => {
+  const theme = useTheme();
   const [language, setLanguage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [audioURL, setAudioURL] = useState(null);
+  const [waveSurfer, setWaveSurfer] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const waveformRef = useRef(null);
   const mediaRecorder = useRef(null);
-  const audioPlayer = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
-  const [user, setUser] = useState({ username: '', userId: '' });
+  const [bannerMessage, setBannerMessage] = useState('');
   const apiEndpoint = 'http://127.0.0.1:8000/upload_recorded_audio/';
 
   const languageOptions = [
@@ -80,223 +48,246 @@ const RecordingAudioComponent = () => {
     { label: 'French', value: 'fr' },
   ];
 
+  useEffect(() => {
+    const waveSurferInstance = WaveSurfer.create({
+      container: waveformRef.current,
+      waveColor: theme.palette.grey[300],
+      progressColor: theme.palette.primary.main,
+      cursorColor: theme.palette.primary.dark,
+      barWidth: 2,
+      responsive: true,
+      height: 100,
+      barRadius: 3,
+      normalize: true,
+    });
+
+    waveSurferInstance.on('play', () => setIsPlaying(true));
+    waveSurferInstance.on('pause', () => setIsPlaying(false));
+    
+    setWaveSurfer(waveSurferInstance);
+
+    return () => waveSurferInstance.destroy();
+  }, [theme.palette]);
+
   const handleLanguageChange = (event) => {
     setLanguage(event.target.value);
   };
 
   const handleRecordingStart = async () => {
+    if (!language) {
+      setBannerMessage('Please select a language before recording');
+      setShowBanner(true);
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      const recorder = new MediaRecorder(stream);
       const chunks = [];
 
-      recorder.addEventListener('dataavailable', (event) => {
-        chunks.push(event.data);
-      });
-
-      recorder.addEventListener('stop', () => {
+      recorder.ondataavailable = (event) => chunks.push(event.data);
+      recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(blob);
-        reader.onloadend = () => {
-          const arrayBuffer = reader.result;
-          setAudioBlob(arrayBuffer);
-        };
-        setAudioURL(URL.createObjectURL(blob));
-        console.log(`Recording stopped. Blob size: ${blob.size} bytes`);
-      });
+        setAudioBlob(blob);
+        waveSurfer.loadBlob(blob);
+      };
 
       recorder.start();
       mediaRecorder.current = recorder;
       setIsRecording(true);
     } catch (error) {
-      console.error('Error accessing media devices:', error);
+      setBannerMessage('Error accessing microphone');
+      setShowBanner(true);
     }
   };
 
   const handleRecordingStop = () => {
-    mediaRecorder.current.stop();
-    setIsRecording(false);
+    if (mediaRecorder.current) {
+      mediaRecorder.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handlePlayPause = () => {
+    waveSurfer.playPause();
   };
 
   const handleDiscardRecording = () => {
     setAudioBlob(null);
-    setAudioURL(null);
+    waveSurfer.empty();
   };
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    }
-  }, []);
 
   const handleSubmit = async () => {
-    if (audioBlob) {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append('source_lang', language);
-      formData.append('target_langs', [language]);
-      formData.append('recorded_audio', new Blob([audioBlob], { type: 'audio/webm' }));
-      formData.append('user_id', user.userId);
+    if (!audioBlob) return;
 
-      try {
-        const response = await axios.post(apiEndpoint, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        setLoading(false);
-        setShowBanner(true);
-        setTimeout(() => setShowBanner(false), 5000);
-      } catch (error) {
-        setLoading(false);
-        console.error('Error submitting audio:', error);
-      }
-    }
-  };
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('source_lang', language);
+    formData.append('recorded_audio', audioBlob);
 
-  const handlePlayRecording = () => {
-    if (audioURL) {
-      audioPlayer.current.play();
+    try {
+      await axios.post(apiEndpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setBannerMessage('Recording uploaded successfully!');
+      handleDiscardRecording();
+    } catch (error) {
+      setBannerMessage('Failed to upload the recording.');
+    } finally {
+      setShowBanner(true);
+      setLoading(false);
     }
   };
 
   return (
-    <Paper elevation={2} sx={{ margin: '10px', padding:4 }}>
-      <Root className={classes.gridContainer}>
-        {loading && <LinearProgress />}
-        <Snackbar
-          open={showBanner}
-          autoHideDuration={6000}
-          onClose={() => setShowBanner(false)}
-          message="Transcription is complete"
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    <Paper 
+      elevation={3} 
+      sx={{
+        p: 4,
+        backgroundColor: 'white',
+        borderRadius: 2,
+        maxWidth: 1200,
+        margin: 'auto'
+      }}
+    >
+      {loading && (
+        <LinearProgress 
+          sx={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0,
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8
+          }} 
         />
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontFamily: 'Poppins' }}>
-              Record Audio and Transcribe [Realtime]
-            </Typography>
-            <Box sx={{ p: 2 }}>
-              <FormControl className={classes.formControl} sx={{ width: '60%' }}>
-                <InputLabel id="language-label">Select Language you're going to Speak</InputLabel>
-                <Select
-                  labelId="language-label"
-                  id="language-select"
-                  value={language}
-                  onChange={handleLanguageChange}
-                >
-                  {languageOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value} sx={{ fontFamily: 'Poppins' }}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ p: 2 }}>
-              <Tooltip title={isRecording ? 'Stop Recording' : 'Start Recording'}>
+      )}
+      
+      <Snackbar
+        open={showBanner}
+        autoHideDuration={6000}
+        onClose={() => setShowBanner(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setShowBanner(false)}
+          severity={bannerMessage.includes('successfully') ? 'success' : 'error'}
+          sx={{ width: '100%' }}
+        >
+          {bannerMessage}
+        </Alert>
+      </Snackbar>
+
+      <Grid container spacing={4} alignItems="center">
+        <Grid item xs={12}>
+          <Typography variant="h5" gutterBottom sx={{ color: theme.palette.primary.main }}>
+            Audio Recording Studio
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel id="language-label">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LanguageIcon fontSize="small" />
+                Select Language
+              </Box>
+            </InputLabel>
+            <Select
+              labelId="language-label"
+              value={language}
+              onChange={handleLanguageChange}
+              sx={{ 
+                '& .MuiSelect-select': { 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1 
+                }
+              }}
+            >
+              {languageOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            mt: 4 
+          }}>
+            <Button
+              variant="contained"
+              color={isRecording ? "error" : "primary"}
+              onClick={isRecording ? handleRecordingStop : handleRecordingStart}
+              startIcon={isRecording ? <StopIcon /> : <MicIcon />}
+              sx={{
+                py: 2,
+                px: 4,
+                borderRadius: 2,
+                boxShadow: 3,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  transition: 'transform 0.2s'
+                }
+              }}
+            >
+              {isRecording ? 'Stop Recording' : 'Start Recording'}
+            </Button>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper 
+            elevation={1}
+            sx={{ 
+              p: 3, 
+              backgroundColor: theme.palette.grey[50],
+              borderRadius: 2
+            }}
+          >
+            <Box ref={waveformRef} sx={{ mb: 3 }} />
+            
+            {audioBlob && (
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 2, 
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
                 <Button
                   variant="outlined"
-                  color={isRecording ? 'secondary' : 'primary'}
-                  className={classes.button}
-                  sx={{ width: '60%', fontFamily: 'Poppins' }}
-                  onClick={isRecording ? handleRecordingStop : handleRecordingStart}
+                  onClick={handlePlayPause}
+                  startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />}
+                  sx={{ minWidth: 130 }}
                 >
-                  {isRecording ? 'Stop Recording' : 'Start Recording'}
+                  {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-              </Tooltip>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={6}>
-                <img src={wrk} alt="Recording audio" style={{ width: 150, height: 150 }} />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box className={classes.iconContainer}>
-                  <Tooltip title={
-                    <>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        1. Tap the "Start Recording" button to begin.
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        2. Once you finish, tap the "Stop Recording" button.
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        3. The "Play", "Discard", and "Submit" buttons will appear.
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12, fontWeight: 'bold', mt: 1 }}>
-                        Buttons:
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        • Play: Listen to your recording.
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        • Discard: Delete the recording if you are not satisfied.
-                      </Typography>
-                      <Typography sx={{ fontFamily: 'Poppins', fontSize: 12 }}>
-                        • Submit: Upload your recording.
-                      </Typography>
-                    </>
-                  }>
-                    <IconButton>
-                      <InfoIcon className={classes.icon} />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Grid>
-            </Grid>
-            <Box className={classes.audioContainer} sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-              {audioURL && (
-                <audio ref={audioPlayer} src={audioURL} controls className={classes.audioPlayer} sx={{ width: '100%' }} />
-              )}
-            </Box>
-            <Box className={classes.buttonGroup} sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
-              {audioBlob && (
-                <>
-                  <Tooltip title="Play Recording">
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      className={classes.button}
-                      sx={{ margin: 2 }}
-                      onClick={handlePlayRecording}
-                    >
-                      Play
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Discard Recording">
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      sx={{ margin: 2 }}
-                      className={classes.button}
-                      onClick={handleDiscardRecording}
-                    >
-                      Discard
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Submit Recording">
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      sx={{ margin: 2 }}
-                      className={classes.button}
-                      onClick={handleSubmit}
-                      disabled={!audioBlob || loading}
-                    >
-                      Submit
-                    </Button>
-                  </Tooltip>
-                </>
-              )}
-            </Box>
-          </Grid>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleDiscardRecording}
+                  startIcon={<DeleteOutlineIcon />}
+                  sx={{ minWidth: 130 }}
+                >
+                  Discard
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ minWidth: 130 }}
+                >
+                  Upload
+                </Button>
+              </Box>
+            )}
+          </Paper>
         </Grid>
-      </Root>
+      </Grid>
     </Paper>
   );
 };

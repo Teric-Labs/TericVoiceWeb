@@ -220,7 +220,7 @@ public class VoiceToTextExample {
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, "UTF-8"), true);
 
             writer.println("--" + boundary);
-            writer.println("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"");
+            writer.println("Content-Disposition: form-data; name="audio"; filename="recording.wav"");
             writer.println("Content-Type: audio/wav");
             writer.println();
             writer.flush();

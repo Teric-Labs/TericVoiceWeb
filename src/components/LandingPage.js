@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Grid,Paper } from '@mui/material';
+import { Box} from '@mui/material';
 import MainComponent from "./MainComponent";
 import '../App.css';
 import AppBarComponent from "./AppBarComponent";

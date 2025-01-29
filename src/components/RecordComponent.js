@@ -1,9 +1,23 @@
-import React from 'react';
-import { Card, CardContent, IconButton, Box, keyframes, Grid, useTheme } from '@mui/material';
-import MicIcon from '@mui/icons-material/Mic';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import GraphicEqIcon from '@mui/icons-material/GraphicEq'; // Represents the audio wave visually
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  IconButton, 
+  Box, 
+  Typography,
+  Grid,
+  LinearProgress,
+  useTheme 
+} from '@mui/material';
+import { 
+  Mic,
+  MicNone,
+  PlayArrow,
+  Pause,
+  Stop,
+  GraphicEq,
+  Timer
+} from '@mui/icons-material';
 
 const pulse = keyframes`
   0% {
@@ -19,37 +33,114 @@ const pulse = keyframes`
 
 const RecordComponent = () => {
   const theme = useTheme();
-
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingTime, setRecordingTime] = useState('00:00');
   return (
-    <Card sx={{
-      minWidth: 275,
-      margin: '20px',
-      boxShadow: theme.shadows[3],
-      transition: '0.3s',
-      backgroundColor: '#121212', // Dark theme background
-      color: '#FFFFFF', // White text color
-      '&:hover': {
-        boxShadow: theme.shadows[5]
-      }
-    }}>
+    <Card 
+      elevation={3}
+      sx={{
+        borderRadius: 2,
+        bgcolor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          boxShadow: theme.shadows[8]
+        }
+      }}
+    >
       <CardContent>
-        <Grid container spacing={2} alignItems="center" justifyContent="center">
-          <Grid item xs={12} sm={4}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', p: 2 }}>
-              <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }}>
-                <MicIcon fontSize="large" />
+        <Grid container spacing={3}>
+          {/* Recording Controls */}
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              gap: 2 
+            }}>
+              <IconButton 
+                size="large"
+                color={isRecording ? "error" : "primary"}
+                sx={{ 
+                  width: 64, 
+                  height: 64,
+                  transition: 'all 0.3s ease',
+                  animation: isRecording ? 'pulse 1.5s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(1)' },
+                    '50%': { transform: 'scale(1.1)' },
+                    '100%': { transform: 'scale(1)' }
+                  }
+                }}
+                onClick={() => setIsRecording(!isRecording)}
+              >
+                {isRecording ? <Mic fontSize="large" /> : <MicNone fontSize="large" />}
               </IconButton>
-              <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }}>
-                <PlayArrowIcon fontSize="large" />
-              </IconButton>
-              <IconButton color="primary" sx={{ color: theme.palette.common.white, '&:hover': { animation: `${pulse} 1s infinite` } }}>
-                <PauseIcon fontSize="large" />
-              </IconButton>
+              
+              <Typography variant="h6" color="text.secondary">
+                {recordingTime}
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconButton 
+                  color="primary"
+                  disabled={!isRecording}
+                  onClick={() => setIsPlaying(!isPlaying)}
+                >
+                  {isPlaying ? <Pause /> : <PlayArrow />}
+                </IconButton>
+                <IconButton 
+                  color="error"
+                  disabled={!isRecording}
+                >
+                  <Stop />
+                </IconButton>
+              </Box>
             </Box>
           </Grid>
-          <Grid item xs={12} sm={8}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px' }} id="audio">
-              <GraphicEqIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
+
+          {/* Visualization */}
+          <Grid item xs={12} md={8}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              height: '100%',
+              gap: 2
+            }}>
+              <Box sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 120,
+                bgcolor: 'rgba(0,0,0,0.02)',
+                borderRadius: 2,
+                p: 2
+              }}>
+                {isRecording ? (
+                  <GraphicEq 
+                    sx={{ 
+                      fontSize: 60,
+                      color: theme.palette.primary.main,
+                      animation: 'wave 1s infinite',
+                      '@keyframes wave': {
+                        '0%': { transform: 'scaleY(1)' },
+                        '50%': { transform: 'scaleY(0.6)' },
+                        '100%': { transform: 'scaleY(1)' }
+                      }
+                    }} 
+                  />
+                ) : (
+                  <Timer sx={{ fontSize: 60, color: 'text.secondary' }} />
+                )}
+              </Box>
+              
+              {isRecording && (
+                <LinearProgress 
+                  variant="determinate" 
+                  value={70}
+                  sx={{ height: 4, borderRadius: 2 }}
+                />
+              )}
             </Box>
           </Grid>
         </Grid>
@@ -57,5 +148,4 @@ const RecordComponent = () => {
     </Card>
   );
 };
-
 export default RecordComponent;

@@ -16,13 +16,8 @@ const TranslationComponent = () => {
   }, []);
 
   return (
-    <Box sx={{ margin: 'auto', maxWidth: '100%', p: 2 }}>
-      <Card sx={{ boxShadow: 3, borderRadius: 2, mb: 3 }}>
-        <CardContent>
+    <Box sx={{maxWidth: '100%', p: 2 }}>
          <TranslationCard />
-        </CardContent>
-      </Card>
-      
     </Box>
   );
 }

@@ -218,26 +218,6 @@ const APIComponent = () => (
           },
         ]}
       />
-
-      <Typography variant="h3" component="h2" align="center" gutterBottom sx={{ mt: 8, mb: 6 }}>
-        Choose Your Plan
-      </Typography>
-
-      <Grid container spacing={4}>
-        {[
-          { title: 'Basic', price: '$19/month', features: ['100,000 API calls', '24/7 support', 'Multiple language pairs'] },
-          { title: 'Pro', price: '$49/month', features: ['100,000 API calls', '24/7 support', 'Multiple language pairs', 'Advanced analytics'] },
-          { title: 'Enterprise', price: 'Custom Pricing', features: ['Unlimited API calls', '24/7 priority support', 'All language pairs', 'Advanced analytics', 'Dedicated account manager'] }
-        ].map((plan, index) => (
-          <Grid item key={index} xs={12} sm={6} md={4}>
-            <PricingCard
-              title={plan.title}
-              monthly={plan.price}
-              features={plan.features}
-            />
-          </Grid>
-        ))}
-      </Grid>
     </Container>
   </ThemeProvider>
 );
