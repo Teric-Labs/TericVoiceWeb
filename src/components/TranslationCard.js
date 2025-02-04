@@ -35,7 +35,6 @@ import axios from 'axios';
 
 const API_CONFIG = {
   BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-13747549899.us-central1.run.app',
-  TIMEOUT: 30000,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_TEXT_LENGTH: 5000,
 };
@@ -100,8 +99,7 @@ const TranslationCard = () => {
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}/translate`,
-        formData,
-        { timeout: API_CONFIG.TIMEOUT }
+        formData
       );
       return Object.values(response.data)[0];
     },
@@ -116,8 +114,7 @@ const TranslationCard = () => {
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}/translate_document`,
-        formData,
-        { timeout: API_CONFIG.TIMEOUT }
+        formData
       );
       return Object.values(response.data["msg"])[0];
     }
