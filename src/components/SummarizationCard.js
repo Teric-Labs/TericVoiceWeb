@@ -39,7 +39,9 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-137
 const languageOptions = [
   { name: "English", code: "en" },
   { name: "Luganda", code: "lg" },
-  { name: "Acholi", code: "ach" },
+  { name: "Acholi", code: "ac" },
+  { name: "Ateso", code: "at" },
+  { name: "Lugbara", code: "lgg" },
   { name: "Swahili", code: "sw" },
   { name: "French", code: "fr" },
   { name: "Kinyarwanda", code: "rw" }

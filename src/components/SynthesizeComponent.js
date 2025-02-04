@@ -45,8 +45,8 @@ const SUPPORTED_LANGUAGES = [
   { value: 'en', label: 'English' },
   { value: 'lg', label: 'Luganda' },
   { value: 'sw', label: 'Kiswahili' },
-  { value: 'ach', label: 'Acholi' },
-  { value: 'teo', label: 'Ateso' },
+  { value: 'ac', label: 'Acholi' },
+  { value: 'at', label: 'Ateso' },
   { value: 'nyn', label: 'Runyankore' },
 ];
 

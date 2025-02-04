@@ -53,7 +53,7 @@ const VideoCard = () => {
     { value: "en", label: "English" },
     { value: "lg", label: "Luganda" },
     { value: "at", label: "Ateso" },
-    { value: "ach", label: "Acholi" },
+    { value: "ac", label: "Acholi" },
     { value: "sw", label: "Swahili" },
     { value: "fr", label: "French" },
     { value: "rw", label: "Kinyarwanda" },

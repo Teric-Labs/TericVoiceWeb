@@ -35,13 +35,13 @@ const RecordingAudioComponent = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerMessage, setBannerMessage] = useState('');
-  const apiEndpoint = 'http://127.0.0.1:8000/upload_recorded_audio/';
+  const apiEndpoint = 'https://avoicesfinny-13747549899.us-central1.run.app/upload_recorded_audio/';
 
   const languageOptions = [
     { label: 'Luganda', value: 'lg' },
     { label: 'English', value: 'en' },
     { label: 'Ateso', value: 'at' },
-    { label: 'Acholi', value: 'ach' },
+    { label: 'Acholi', value: 'ac' },
     { label: 'Swahili', value: 'sw' },
     { label: 'Runyankore', value: 'nyn' },
     { label: 'Kinyarwanda', value: 'rw' },
