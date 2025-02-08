@@ -78,7 +78,7 @@ const AIAgentsDashboard = () => {
     setCreateLoading(true);
     try {
       const formData = new FormData();
-      formData.append('user_id', userId);
+      formData.append('user_id', user.userId);
       formData.append('title', newAgent.title);
       formData.append('description', newAgent.description);
       formData.append('source_lang', newAgent.sourceLanguage);
