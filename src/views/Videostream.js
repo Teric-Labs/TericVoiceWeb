@@ -1,6 +1,6 @@
 import React from "react";
 import { Box} from "@mui/material";
-import VideoStreamComponent from '../components/VideoStreamComponent'
+import VideoStreamComponent from '../components/VoiceAI'
 
 const VideoStream =()=>{
     return(

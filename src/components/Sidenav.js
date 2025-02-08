@@ -144,8 +144,9 @@ export default function Sidenav() {
     {
       category: 'Overview',
       items: [
-        { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-        // { text: 'Analytics', icon: <AnalyticsIcon />, path: '/dashboard/analytics' },
+        { text: 'Translations', icon: <DashboardIcon />, path: '/dashboard' },
+        { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
+        // { text: 'Conversational AI', icon: <AnalyticsIcon />, path: '/dashboard/conversational-ai' },
       ],
     },
     

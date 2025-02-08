@@ -13,9 +13,11 @@ import Voice2Voice from "./views/Voice2Voice";
 import ViewttsAudio from "./views/ViewttsAudio";
 import ViewTranslations from "./views/ViewTranslations";
 import VoiceLingo from "./views/VoiceLingo";
+import ViewAIVoice from "./views/ViewAIVoice";
 import ViewVoxTrans from "./views/ViewVoxTrans";
 import Summarization from "./views/Summarization";
 import ViewSummary from "./views/ViewSummary";
+import ViewChat from "./views/ViewChat";
 import Home from "./views/Home";
 import GetStarted from "./views/GetStarted";
 import ContactSupport from "./views/ContactSupport";
@@ -47,14 +49,16 @@ function App() {
           <Route path="/api-reference" element={<PublicRoute><APIReference /></PublicRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Sidenav /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
-            <Route path="livestream" element={<LiveStream />} />
-            <Route path="videostream" element={<VideoStream />} />
+            <Route path="agents" element={<LiveStream />} />
+            <Route path="conversational-ai" element={<VideoStream />} />
             <Route path="history" element={<Transcribe />} />
             <Route path="synthesize" element={<Text2Speech />} />
             <Route path="summarize" element={<Summarization />} />
             <Route path="translate" element={<Translation />} />
             <Route path="voxtrans" element={<VoiceLingo />} />
             <Route path="audio/:id" element={<ViewAudio />} />
+            <Route path="chats/:id" element={<ViewChat />} />
+            <Route path="aivoice/:id" element={<ViewAIVoice />} />
             <Route path="voice/:id" element={<ViewVoxTrans />} />
             <Route path="tts/:id" element={<ViewttsAudio />} />
             <Route path="ttdata/:id" element={<ViewTranslations />} />
