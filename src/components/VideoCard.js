@@ -31,7 +31,7 @@ import {
 import axios from "axios";
 import ViewVideoComponent from "./ViewVideoComponent";
 
-const API_BASE_URL = "https://avoicesfinny-13747549899.us-central1.run.app";
+const API_BASE_URL = "https://avoices-13747549899.us-central1.run.app";
 
 const VideoCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });

@@ -29,7 +29,7 @@ const Text2SpeechComponent = () => {
             Text to Voice Services
           </Typography>
           <Typography variant="body2" sx={{ mt: 1.5,fontFamily:'Poppins' }}>
-            A-Voices converts documents into audios of various Ugandan languages, enabling easy download of these transcriptions. It's designed to improve engagement and understanding across diverse local communities.
+            A-Voices converts documents into audios of various Ugandan languages, enabling easy download of these transcriptions. Its designed to improve engagement and understanding across diverse local communities.
           </Typography>
         </CardContent>
       </Card>

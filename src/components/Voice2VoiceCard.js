@@ -61,7 +61,7 @@ const Voice2VoiceCard = () => {
     formData.append('title', textTitle);
 
     try {
-      const response = await axios.post('https://teric-asr-api-wlivbm2klq-ue.a.run.app/voice_translation', formData, {
+      const response = await axios.post('https://avoices-13747549899.us-central1.run.app/voice_translation', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setLoading(false);

@@ -26,24 +26,31 @@ const AIAgentsDashboard = () => {
         }
       }, []);
 
-
-  useEffect(() => {
-    console.log(user.userId)
-    fetchUserAgents();
-  }, []);
-
-  const fetchUserAgents = async () => {
-    try {
-      const formData = new FormData();
-      formData.append('user_id', user.userId);
-      const response = await axios.post(`${API_BASE_URL}/user-agents`, formData);
-      setAgents(response.data.agents || []);
-    } catch (err) {
-      setError('Failed to load AI agents. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          
+          // Fetch agents immediately after setting user
+          const fetchAgents = async () => {
+            try {
+              const formData = new FormData();
+              formData.append('user_id', userData.userId);
+              const response = await axios.post(`${API_BASE_URL}/user-agents`, formData);
+              setAgents(response.data.agents || []);
+            } catch (err) {
+              setError('Failed to load AI agents. Please try again later.');
+            } finally {
+              setLoading(false);
+            }
+          };
+      
+          fetchAgents();
+        } else {
+          setLoading(false);
+        }
+      }, []);
 
   const handleDialogOpen = () => {
     setOpenDialog(true);
@@ -87,8 +94,6 @@ const AIAgentsDashboard = () => {
       await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      fetchUserAgents();
       handleDialogClose();
     } catch (err) {
       setError('Failed to create AI agent. Please try again.');

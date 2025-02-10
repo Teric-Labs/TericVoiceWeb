@@ -29,7 +29,7 @@ import axios from 'axios';
 import ViewttsAudioComponent from './ViewttsAudioComponent';
 
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-13747549899.us-central1.run.app',
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoices-13747549899.us-central1.run.app',
   TIMEOUT: 60000,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_TEXT_LENGTH: 5000,

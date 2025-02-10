@@ -120,7 +120,7 @@ export default function TranslationsTable() {
       return;
     }
     
-    const apiEndpoint = 'https://avoicesfinny-13747549899.us-central1.run.app/get_translations';
+    const apiEndpoint = 'https://avoices-13747549899.us-central1.run.app/get_translations';
     try {
       const response = await axios.post(apiEndpoint, { user_id: user.userId });
       setEntries(response.data.entries);

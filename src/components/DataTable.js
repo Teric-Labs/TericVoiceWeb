@@ -121,7 +121,7 @@ export default function DataTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://avoicesfinny-13747549899.us-central1.run.app/get_audios';
+    const apiEndpoint = 'https://avoices-13747549899.us-central1.run.app/get_audios';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

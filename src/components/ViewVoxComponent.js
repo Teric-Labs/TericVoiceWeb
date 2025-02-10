@@ -31,7 +31,7 @@ const ViewVoxComponent = ({ voiceId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://avoicesfinny-13747549899.us-central1.run.app/get_ttsvoice";
+    const apiEndpoint = "https://avoices-13747549899.us-central1.run.app/get_ttsvoice";
 
     const fetchData = async () => {
       try {

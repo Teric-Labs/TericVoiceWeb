@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import ViewSummaryComponent from './ViewSummaryComponent ';
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-13747549899.us-central1.run.app';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://avoices-13747549899.us-central1.run.app';
 
 const languageOptions = [
   { name: "English", code: "en" },

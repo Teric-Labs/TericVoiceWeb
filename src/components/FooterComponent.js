@@ -160,11 +160,7 @@ const FooterComponent = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PhoneIcon sx={{ color: 'primary.main' }} />
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  +256 750 371313
-                  <br />
-                  +256 773 245500
-                </Typography>
+                
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EmailIcon sx={{ color: 'primary.main' }} />

@@ -34,7 +34,7 @@ import {
 import axios from 'axios';
 
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoicesfinny-13747549899.us-central1.run.app',
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://avoices-13747549899.us-central1.run.app',
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_TEXT_LENGTH: 5000,
 };

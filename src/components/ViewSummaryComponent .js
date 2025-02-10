@@ -101,7 +101,7 @@ const ViewSummaryComponent = ({ translationId }) => {
 
     setIsTranslating(true);
     try {
-      const response = await axios.post("https://avoicesfinny-13747549899.us-central1.run.app/translate_text", {
+      const response = await axios.post("https://avoices-13747549899.us-central1.run.app/translate_text", {
         text: summary,
         source_lang: language,
         target_lang: targetLanguage,
