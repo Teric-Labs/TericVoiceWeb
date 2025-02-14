@@ -26,6 +26,9 @@ import Pricing from "./views/Pricing";
 import Subscription from "./views/Subscription";
 import APIReference from "./views/APIReference";
 import APis from "./views/APis";
+import LanguageView from "./views/LangaugeView";
+import LanguageSupport from "./views/LanguageSupport";
+import ChatbotGuideView from "./views/ChatbotGuideView";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -46,7 +49,7 @@ function App() {
           <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />
           <Route path="/pricing" element={<PublicRoute><Pricing /></PublicRoute>} />
           <Route path="/documentation" element={<PublicRoute><APis /></PublicRoute>} />
-          <Route path="/api-reference" element={<PublicRoute><APIReference /></PublicRoute>} />
+          <Route path="/language-support" element={<PublicRoute><LanguageView /></PublicRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Sidenav /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="agents" element={<LiveStream />} />
@@ -65,7 +68,10 @@ function App() {
             <Route path="summarydata/:id" element={<ViewSummary />} />
             <Route path="video/:id" element={<ViewVideo />} />
             <Route path="voice" element={<Voice2Voice />} />
+            <Route path="chat-guide" element={<ChatbotGuideView />} />
             <Route path="subscription" element={<Subscription />} />
+            <Route path="api-reference" element={<APIReference />} />
+            <Route path="lang-support" element={<LanguageSupport />} />
             <Route path="contact-support" element={<ContactSupport />} />
           </Route>
         </Routes>

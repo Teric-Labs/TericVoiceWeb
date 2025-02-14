@@ -48,7 +48,8 @@ const AppBarComponent = () => {
   const navigationItems = [
     { title: 'Get Started', path: '/get-started' },
     { title: 'Pricing', path: '/pricing' },
-    { title: 'API Doc', path: '/documentation' },
+    { title: 'APIs', path: '/documentation' },
+    { title: 'Supported Languages', path: '/language-support' },
   ];
 
   const isActive = (path) => location.pathname === path;

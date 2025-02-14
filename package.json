@@ -5,7 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.5",
-    "@mui/icons-material": "^5.15.19",
+    "@mui/icons-material": "^5.16.14",
     "@mui/material": "^5.15.19",
     "@mui/styled-engine-sc": "^6.0.0-alpha.13",
     "@stripe/react-stripe-js": "^2.7.3",
@@ -23,6 +23,7 @@
     "lucide-react": "^0.469.0",
     "node": "^20.14.0",
     "react": "^18.3.1",
+    "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^18.3.1",
     "react-h5-audio-player": "^3.9.1",
     "react-i18next": "^15.2.0",
@@ -32,12 +33,12 @@
     "react-scripts": "^5.0.1",
     "react-swipeable-views": "^0.14.0",
     "react-swipeable-views-utils": "^0.14.0",
+    "react-syntax-highlighter": "^15.6.1",
     "react-youtube": "^10.1.0",
     "stripe": "^16.2.0",
     "styled-components": "^6.1.11",
     "wavesurfer.js": "^7.8.14",
     "web-vitals": "^2.1.4"
-    
   },
   "scripts": {
     "start": "react-scripts start",

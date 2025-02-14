@@ -4,7 +4,7 @@ import { Add as AddIcon, Language as LanguageIcon, Chat as ChatIcon, Upload as U
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'
 
-const API_BASE_URL = 'https://phosai-dbec65d5-46be-45ae-9062.cranecloud.io';
+const API_BASE_URL = 'https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io';
   
 const AIAgentsDashboard = () => {
   const theme = useTheme();

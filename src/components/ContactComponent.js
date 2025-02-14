@@ -19,7 +19,7 @@ import { DiscAlbumIcon, Slack } from 'lucide-react';
 
 const contactInfo = {
   email: 'labteric@gmail.com',
-  phone: '(256) 750371313/(256) 702560814',
+  phone: '',
   instagram: 'https://www.instagram.com/tericdatalabs',
   twitter: 'https://www.twitter.com/tericdatalabs',
   linkedin: 'https://www.linkedin.com/company/tericdatalabs',

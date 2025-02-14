@@ -146,7 +146,7 @@ export default function Sidenav() {
       items: [
         { text: 'Translations', icon: <DashboardIcon />, path: '/dashboard' },
         { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
-        // { text: 'Conversational AI', icon: <AnalyticsIcon />, path: '/dashboard/conversational-ai' },
+        { text: 'Export Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
       ],
     },
     
@@ -154,8 +154,8 @@ export default function Sidenav() {
       category: 'Management',
       items: [
         { text: 'History', icon: <HistoryIcon />, path: '/dashboard/history' },
-        // { text: 'Storage', icon: <StorageIcon />, path: '/dashboard/storage' },
-        // { text: 'Settings', icon: <SettingsIcon />, path: '/dashboard/settings' },
+        { text: 'Langauges', icon: <SettingsIcon />, path: '/dashboard/lang-support' },
+        { text: 'APIs', icon: <StorageIcon />, path: '/dashboard/api-reference' },
       ],
     },
     {
