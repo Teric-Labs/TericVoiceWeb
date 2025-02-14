@@ -16,7 +16,7 @@ const AIAgentsDashboard = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [newAgent, setNewAgent] = useState({ title: '', description: '', sourceLanguage: '', documents: [] });
   const [createLoading, setCreateLoading] = useState(false);
-  const supportedLanguages = ['en', 'French', 'Spanish', 'German', 'Chinese', 'Japanese'];
+  const supportedLanguages = ['en', 'lg', 'sw', 'at', 'ac', 'nyn','rw','lgg','fr'];
   const navigate = useNavigate();
   useEffect(() => {
         const storedUser = localStorage.getItem('user');
