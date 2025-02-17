@@ -29,6 +29,7 @@ import APis from "./views/APis";
 import LanguageView from "./views/LangaugeView";
 import LanguageSupport from "./views/LanguageSupport";
 import ChatbotGuideView from "./views/ChatbotGuideView";
+import ProfileView from "./views/ProfileView";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -55,6 +56,7 @@ function App() {
             <Route path="agents" element={<LiveStream />} />
             <Route path="conversational-ai" element={<VideoStream />} />
             <Route path="history" element={<Transcribe />} />
+            <Route path="profile" element={<ProfileView />} />
             <Route path="synthesize" element={<Text2Speech />} />
             <Route path="summarize" element={<Summarization />} />
             <Route path="translate" element={<Translation />} />

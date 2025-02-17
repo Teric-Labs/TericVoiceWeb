@@ -166,6 +166,9 @@ useEffect(() => {
                       </Typography>
                       <Chip icon={<LanguageIcon sx={{ fontSize: 16 }} />} label={agent.sourceLanguage} size="small" sx={{ backgroundColor: 'rgba(25, 118, 210, 0.1)', color: '#1976d2', fontWeight: 500 }} />
                     </Stack>
+                    <Typography variant="h6" sx={{ fontWeight: 100,fontSize: 10, color: '#1976d2' }}>
+                        AgentID: {agent.agent_id}
+                      </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: '48px', lineHeight: 1.6 }}>
                       {agent.description}
                     </Typography>

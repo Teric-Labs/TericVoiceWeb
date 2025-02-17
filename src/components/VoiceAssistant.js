@@ -1,328 +1,368 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useCallback ,useEffect} from 'react';
+import { styled } from '@mui/material/styles';
 import {
   Box,
   Container,
-  IconButton,
   Typography,
   Paper,
-  Grid,
-  CircularProgress,
   Fade,
-  Select,
-  MenuItem,
-  Button,
-  Avatar,
-  Chip,
-  useTheme,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  ButtonBase,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent
+  IconButton,
+  Menu,
+  MenuItem
 } from '@mui/material';
-import {
-  Mic,
-  MicOff,
-  Language as LanguageIcon,
-  Settings as SettingsIcon,
-  VolumeUp,
-  History as HistoryIcon,
-  Lightbulb as TipIcon,
-  Close as CloseIcon
-} from '@mui/icons-material';
+import { Mic, MicOff, Language as LanguageIcon } from '@mui/icons-material';
 
-const VoiceAssistant = ({agentId}) => {
-  const theme = useTheme();
-  const [isListening, setIsListening] = useState(false);
+// Language options remain the same
+const languages = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'lg', label: 'Luganda', flag: '🇺🇬' },
+  { code: 'at', label: 'Ateso', flag: '🇺🇬' },
+  { code: 'ac', label: 'Acholi', flag: '🇺🇬' },
+  { code: 'rw', label: 'Kinyarwanda', flag: '🇷🇼' },
+  { code: 'nyn', label: 'Runyankore', flag: '🇺🇬' },
+  { code: 'sw', label: 'Swahili', flag: '🇹🇿' }
+];
+
+// Styled components remain the same
+const StyledContainer = styled(Container)(({ theme }) => ({
+  // ... same styling
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+  padding: theme.spacing(3),
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+}));
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  // ... same styling
+  width: '100%',
+  maxWidth: 500,
+  minHeight: 400,
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  borderRadius: theme.spacing(4),
+  position: 'relative',
+  background: 'rgba(68, 121, 170, 0.53)',
+  border: '1px solid rgba(68, 121, 170, 0.53)',
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: theme.shadows[24]
+  }
+}));
+
+const MicButton = styled(ButtonBase)(({ theme, isRecording }) => ({
+  // ... same styling as before
+  width: 140,
+  height: 140,
+  borderRadius: '50%',
+  background: isRecording
+    ? 'linear-gradient(45deg, #ff4444, #ff6666)'
+    : 'linear-gradient(45deg, #4444ff, #6666ff)',
+  color: theme.palette.common.white,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  '&:hover': {
+    transform: 'scale(1.05)',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    background: isRecording
+      ? 'linear-gradient(45deg, #ff4444, #ff6666)'
+      : 'linear-gradient(45deg, #4444ff, #6666ff)',
+    borderRadius: '50%',
+    opacity: 0.5,
+    animation: 'ripple 1.5s infinite',
+  },
+  '&:disabled': {
+    opacity: 0.5,
+    cursor: 'not-allowed'
+  }
+}));
+
+const VoiceAssistant = ({ agentId }) => {
+  const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
-  const [showTip, setShowTip] = useState(true);
-  const [confidence, setConfidence] = useState(0);
-  const [transcripts, setTranscripts] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [error, setError] = useState(null);
+  const [soundWaves, setSoundWaves] = useState([]);
+  const [targetLanguage, setTargetLanguage] = useState(languages[0].code);
+  const [selectedLanguageInfo, setSelectedLanguageInfo] = useState(languages[0]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [agentInfo, setAgentInfo] = useState(null);
+  const [isLoadingInfo, setIsLoadingInfo] = useState(true);
 
-  const languages = [
-    { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
-    { code: 'es-ES', label: 'Spanish', flag: '🇪🇸' },
-    { code: 'fr-FR', label: 'French', flag: '🇫🇷' },
-    { code: 'de-DE', label: 'German', flag: '🇩🇪' },
-  ];
+  const mediaRecorder = useRef(null);
+  const audioChunks = useRef([]);
+  const audioPlayer = useRef(new Audio());
 
   useEffect(() => {
-    if (isListening) {
-      const interval = setInterval(() => {
-        setConfidence((prev) => {
-          const newValue = prev + (Math.random() * 20);
-          return newValue > 100 ? 100 : newValue;
-        });
-      }, 500);
+      const fetchAgentInfo = async () => {
+        try {
+          const formData = new FormData();
+          formData.append("agent_id", agentId);
+          
+          const response = await fetch('https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io/agent-info', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!response.ok) throw new Error('Failed to fetch agent info');
+          
+          const data = await response.json();
+          setAgentInfo(data);
+        } catch (error) {
+          console.log("Printed code")
+        } finally {
+          setIsLoadingInfo(false);
+        }
+      };
+  
+      fetchAgentInfo();
+    }, [agentId]);
 
-      return () => clearInterval(interval);
-    } else {
-      setConfidence(0);
+  // handleAudioUpload is now a useCallback that depends on targetLanguage
+  const handleAudioUpload = useCallback(async (audioBlob) => {
+    setIsProcessing(true);
+    const formData = new FormData();
+    formData.append('audio_file', audioBlob, 'recording.webm');
+    formData.append('agent_id', agentId);
+    formData.append('target_lang', targetLanguage);
+
+    console.log('Uploading with language code:', targetLanguage);
+    console.log('Agent ID:', agentId);
+
+    try {
+      const response = await fetch('https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io/process_voice', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Failed to process audio');
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      audioPlayer.current.src = data.audio_url;
+      audioPlayer.current.play();
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsProcessing(false);
     }
-  }, [isListening]);
+  }, [targetLanguage, agentId]); // Add dependencies here
 
-  const handleMicToggle = () => {
-    setIsListening(!isListening);
-    if (!isListening) {
-      setIsProcessing(true);
-      setTimeout(() => {
-        setIsProcessing(false);
-        setTranscripts(prev => [...prev, {
-          text: 'Sample transcription text...',
-          timestamp: new Date()
-        }]);
-      }, 2000);
+  // startRecording is now dependent on handleAudioUpload
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+      });
+      
+      mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      audioChunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        console.log('Audio Blob Created:', audioBlob);
+        await handleAudioUpload(audioBlob);
+      };
+
+      mediaRecorder.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      setError("Microphone access denied. Please enable microphone permissions.");
     }
-  };
+  }, [handleAudioUpload]); // Add handleAudioUpload as dependency
 
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder.current?.state === 'recording') {
+      mediaRecorder.current.stop();
+      mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    }
+  }, []);
+
+  const handleLanguageMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleLanguageMenuClose = () => setAnchorEl(null);
+
+  const handleLanguageSelect = useCallback((language) => {
+    console.log('Selected language code:', language.code);
+    setTargetLanguage(language.code);
+    setSelectedLanguageInfo(language);
+    handleLanguageMenuClose();
+  }, []);
+
+  // Rest of the JSX remains the same
   return (
-    <Container maxWidth={false} disableGutters>
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: `linear-gradient(135deg, ${theme.palette.primary.light}15, ${theme.palette.primary.dark}05)`,
-          p: 3
-        }}
-      >
-        <Paper
-          elevation={4}
-          sx={{
-            width: '100%',
-            maxWidth: 800,
-            minHeight: 500,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            borderRadius: 4,
-            position: 'relative',
-            backdropFilter: 'blur(10px)',
-            background: 'rgba(255, 255, 255, 0.9)',
-          }}
-        >
-          {/* Header */}
-          <Box
-            sx={{
-              p: 2,
-              borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <Typography 
-              variant="h5" 
+    <StyledContainer maxWidth={false} disableGutters>
+      <StyledPaper elevation={24}>
+        {/* Language Selector */}
+        <Box sx={{ 
+          position: 'absolute', 
+          top: 16, 
+          right: 16, 
+          zIndex: 1 
+        }}>
+          <Tooltip title="Select Language">
+            <IconButton 
+              onClick={handleLanguageMenuOpen}
               sx={{ 
-                fontWeight: 600,
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent'
+                color: 'white',
+                backgroundColor: 'rgba(245, 240, 240, 0.92)',
+                '&:hover': {
+                  backgroundColor: 'rgba(250, 243, 243, 0.2)'
+                }
               }}
             >
-              Voice Assistant Pro
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                size="small"
-                sx={{
-                  minWidth: 150,
-                  '& .MuiSelect-select': {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }
-                }}
-                startAdornment={<LanguageIcon sx={{ fontSize: 20, mr: 1 }} />}
+              <LanguageIcon />
+            </IconButton>
+          </Tooltip>
+          <Menu 
+            anchorEl={anchorEl} 
+            open={Boolean(anchorEl)} 
+            onClose={handleLanguageMenuClose}
+          >
+            {languages.map((language) => (
+              <MenuItem 
+                key={language.code} 
+                onClick={() => handleLanguageSelect(language)}
+                selected={targetLanguage === language.code}
               >
-                {languages.map((lang) => (
-                  <MenuItem key={lang.code} value={lang.code}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-              
-              <Tooltip title="View History">
-                <IconButton onClick={() => setShowHistory(true)}>
-                  <HistoryIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
+                {language.flag} {language.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
 
-          {/* Main Content Area */}
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              p: 4
-            }}
-          >
-            {showTip && (
-              <Fade in={showTip}>
-                <Paper
-                  sx={{
-                    position: 'absolute',
-                    top: 20,
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    borderRadius: 2,
-                    boxShadow: theme.shadows[2]
-                  }}
-                >
-                  <TipIcon color="primary" />
-                  <Typography variant="body2">
-                    Tap the microphone and start speaking
-                  </Typography>
-                  <IconButton size="small" onClick={() => setShowTip(false)}>
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Paper>
-              </Fade>
-            )}
-
-            <Grid container direction="column" alignItems="center" spacing={3}>
-              <Grid item>
-                <Box position="relative">
-                  <IconButton
-                    onClick={handleMicToggle}
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      background: isListening
-                        ? `linear-gradient(45deg, ${theme.palette.error.main}, ${theme.palette.error.light})`
-                        : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                      color: 'white',
-                      '&:hover': {
-                        transform: 'scale(1.05)',
-                      },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: isListening ? theme.shadows[8] : theme.shadows[4]
-                    }}
-                  >
-                    {isProcessing ? (
-                      <CircularProgress color="inherit" size={40} />
-                    ) : isListening ? (
-                      <MicOff sx={{ fontSize: 40 }} />
-                    ) : (
-                      <Mic sx={{ fontSize: 40 }} />
-                    )}
-                  </IconButton>
-                  {isListening && (
-                    <CircularProgress
-                      variant="determinate"
-                      value={confidence}
-                      size={108}
-                      sx={{
-                        position: 'absolute',
-                        top: -4,
-                        left: -4,
-                        color: theme.palette.primary.main,
-                        opacity: 0.3
-                      }}
-                    />
-                  )}
-                </Box>
-              </Grid>
-
-              <Grid item>
-                <Fade in={isListening || isProcessing}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {isListening && <VolumeUp color="primary" />}
-                    <Typography
-                      variant="h6"
-                      color="primary"
-                      sx={{ 
-                        fontWeight: 500,
-                        animation: isListening ? 'pulse 1.5s infinite' : 'none',
-                        '@keyframes pulse': {
-                          '0%': { opacity: 1 },
-                          '50%': { opacity: 0.6 },
-                          '100%': { opacity: 1 },
-                        }
-                      }}
-                    >
-                      {isProcessing ? 'Processing...' : isListening ? 'Listening...' : ''}
-                    </Typography>
-                  </Box>
-                </Fade>
-              </Grid>
-            </Grid>
-          </Box>
-
-          {/* Footer */}
-          <Box
-            sx={{
-              p: 2,
-              borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <Chip 
-              label="Premium" 
-              color="primary" 
-              size="small"
-              variant="outlined"
-            />
-            <Typography variant="body2" color="text.secondary">
-              Confidence: {Math.round(confidence)}%
-            </Typography>
-          </Box>
-        </Paper>
-
-        {/* History Dialog */}
-        <Dialog 
-          open={showHistory} 
-          onClose={() => setShowHistory(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Transcription History</Typography>
-              <IconButton onClick={() => setShowHistory(false)}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            {transcripts.map((transcript, index) => (
-              <Paper
+        {/* Main Content */}
+        <Box sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+          position: 'relative'
+        }}>
+        <Typography variant="h6" sx={{color: '#ffff', textTransform: 'uppercase'}} component="div">{agentInfo?.agent_name || 'Unknown Agent'}</Typography>
+          {/* Sound Wave Visualization */}
+          <Box sx={{
+            display: 'flex',
+            gap: 1,
+            height: 120,
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 4
+          }}>
+            {soundWaves.map((height, index) => (
+              <Box
                 key={index}
                 sx={{
-                  p: 2,
-                  mb: 2,
-                  background: theme.palette.grey[50],
-                  borderRadius: 2
+                  width: 4,
+                  height: `${height}%`,
+                  background: isRecording ? '#ff4444' : '#4444ff',
+                  borderRadius: 4,
+                  transition: 'height 0.1s ease-in-out'
                 }}
-              >
-                <Typography variant="body1">{transcript.text}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {transcript.timestamp.toLocaleTimeString()}
-                </Typography>
-              </Paper>
+              />
             ))}
-          </DialogContent>
-        </Dialog>
-      </Box>
-      
-    </Container>
+          </Box>
+
+          {/* Selected Language Display */}
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: 'white',
+              opacity: 0.8,
+              mb: 3
+            }}
+          >
+            {selectedLanguageInfo.flag} {selectedLanguageInfo.label}
+          </Typography>
+
+          {/* Microphone Button */}
+          <Tooltip title={isRecording ? "Stop Recording" : "Start Recording"}>
+            <MicButton
+              onClick={() => isRecording ? stopRecording() : startRecording()}
+              disabled={isProcessing}
+              isRecording={isRecording}
+            >
+              {isProcessing ? (
+                <CircularProgress size={48} color="inherit" />
+              ) : (
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: 'rgba(0, 0, 0, 0.2)'
+                }}>
+                  {isRecording ? (
+                    <MicOff sx={{ fontSize: 48 }} />
+                  ) : (
+                    <Mic sx={{ fontSize: 48 }} />
+                  )}
+                </Box>
+              )}
+            </MicButton>
+          </Tooltip>
+
+          {/* Status Text */}
+          <Fade in={isRecording || isProcessing}>
+            <Typography
+              variant="h6"
+              sx={{
+                mt: 4,
+                color: 'white',
+                fontWeight: 500,
+                opacity: 0.8,
+                animation: isRecording ? 'pulse 1.5s infinite' : 'none'
+              }}
+            >
+              {isProcessing ? 'Processing...' : isRecording ? 'Recording...' : 'Tap to start'}
+            </Typography>
+          </Fade>
+        </Box>
+
+        {/* Error Snackbar */}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setError(null)} 
+            severity="error" 
+            variant="filled"
+          >
+            {error}
+          </Alert>
+        </Snackbar>
+        
+      </StyledPaper>
+    </StyledContainer>
   );
 };
 
