@@ -113,7 +113,7 @@ const VoiceAssistant = ({ agentId }) => {
           const formData = new FormData();
           formData.append("agent_id", agentId);
           
-          const response = await fetch('https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io/agent-info', {
+          const response = await fetch('http://20.106.179.250:8000/agent-info', {
             method: 'POST',
             body: formData
           });
@@ -144,7 +144,7 @@ const VoiceAssistant = ({ agentId }) => {
     console.log('Agent ID:', agentId);
 
     try {
-      const response = await fetch('https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io/process_voice', {
+      const response = await fetch('http://20.106.179.250:8000/process_voice', {
         method: 'POST',
         body: formData
       });

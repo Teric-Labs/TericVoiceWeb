@@ -51,7 +51,7 @@ const ViewVideoComponent = ({ audioId }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.post('https://avoices-13747549899.us-central1.run.app/get_audio_data', { 
+        const response = await axios.post('http://20.106.179.250:8080/get_audio_data', { 
           doc_id: audioId 
         });
 

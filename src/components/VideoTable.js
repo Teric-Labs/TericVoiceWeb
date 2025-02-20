@@ -120,7 +120,7 @@ export default function VideoTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://avoices-13747549899.us-central1.run.app/get_video';
+    const apiEndpoint = 'http://20.106.179.250:8080/get_video';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

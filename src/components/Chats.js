@@ -39,7 +39,7 @@ import {
   DeleteOutline as RemoveFileIcon
 } from '@mui/icons-material';
 
-const API_BASE_URL = 'https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io';
+const API_BASE_URL = 'http://20.106.179.250:8000';
 const SIDEBAR_WIDTH = 300;
 
 // Styled components

@@ -35,7 +35,7 @@ const ViewAudioComponent = ({ audioId }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.post('https://avoices-13747549899.us-central1.run.app/get_audio', { doc_id: audioId });
+        const response = await axios.post('http://20.106.179.250:8080/get_audio', { doc_id: audioId });
         const data = response.data.entries;
         setEntries(data);
 

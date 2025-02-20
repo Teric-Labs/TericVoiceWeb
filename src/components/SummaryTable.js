@@ -42,7 +42,7 @@ import axios from 'axios';
 import './Pagination.css';
 
 const ENTRIES_PER_PAGE = 10;
-const API_ENDPOINT = 'https://avoices-13747549899.us-central1.run.app/get_summaries';
+const API_ENDPOINT = 'http://20.106.179.250:8080/get_summaries';
 
 export default function SummaryTable() {
   // State management

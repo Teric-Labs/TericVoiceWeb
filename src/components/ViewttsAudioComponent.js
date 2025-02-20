@@ -35,7 +35,7 @@ const ViewttsAudioComponent = ({ audioId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://avoices-13747549899.us-central1.run.app/get_vocify_voice";
+    const apiEndpoint = "http://20.106.179.250:8080/get_vocify_voice";
 
     const fetchEntries = async () => {
       try {

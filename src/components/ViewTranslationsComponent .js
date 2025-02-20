@@ -29,7 +29,7 @@ const ViewTranslationsComponent = ({ translationId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = 'https://avoices-13747549899.us-central1.run.app/get_translation';
+    const apiEndpoint = 'http://20.106.179.250:8080/get_translation';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: translationId });

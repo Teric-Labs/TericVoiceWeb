@@ -83,7 +83,7 @@ const VoiceTransTable = () => {
     }
     
     try {
-      const response = await axios.post('https://avoices-13747549899.us-central1.run.app/get_voices', {
+      const response = await axios.post('http://20.106.179.250:8080/get_voices', {
         user_id: user.userId
       });
       

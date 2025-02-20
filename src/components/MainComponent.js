@@ -265,7 +265,7 @@ const LanguageSelector = ({
 };
 
 
- const BASE_URL="https://avoices-13747549899.us-central1.run.app"
+ const BASE_URL="http://20.106.179.250:8080"
 const MainComponent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);

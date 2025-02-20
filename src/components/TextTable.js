@@ -113,7 +113,7 @@ export default function TextTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://avoicesfinny-13747549899.us-central1.run.app/get_vocify_voices';
+    const apiEndpoint = 'http://20.106.179.250:8080/get_vocify_voices';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

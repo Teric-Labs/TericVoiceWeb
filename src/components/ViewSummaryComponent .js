@@ -55,7 +55,7 @@ const ViewSummaryComponent = ({ translationId }) => {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const response = await axios.post("https://avoicesfinny-13747549899.us-central1.run.app/get_summary", {
+        const response = await axios.post("http://20.106.179.250:8080/get_summary", {
           doc_id: translationId,
         });
 

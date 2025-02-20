@@ -47,7 +47,7 @@ const VoiceAI = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await fetch('https://phosai-dbec65d5-46be-45ae-9062.cranecloud.io/agents');
+      const response = await fetch('http://20.106.179.250:8000/agents');
       if (!response.ok) throw new Error('Failed to fetch agents');
       const data = await response.json();
       setAgents(data);
@@ -77,7 +77,7 @@ const VoiceAI = () => {
         }
       });
 
-      const response = await fetch('https://phosai-dbec65d5-46be-45ae-9062.cranecloud.io/agents', {
+      const response = await fetch('http://20.106.179.250:8000/agents', {
         method: 'POST',
         body: formData
       });
