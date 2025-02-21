@@ -31,7 +31,7 @@ import {
 import axios from "axios";
 import ViewVideoComponent from "./ViewVideoComponent";
 
-const API_BASE_URL = "https://20.106.179.250:8080";
+const API_BASE_URL = "https://agents.tericlab.com:8080";
 
 const VideoCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });

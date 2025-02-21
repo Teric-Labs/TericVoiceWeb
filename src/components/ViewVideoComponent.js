@@ -51,7 +51,7 @@ const ViewVideoComponent = ({ audioId }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.post('https://20.106.179.250:8080/get_audio_data', { 
+        const response = await axios.post('https://agents.tericlab.com:8080/get_audio_data', { 
           doc_id: audioId 
         });
 

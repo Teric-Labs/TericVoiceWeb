@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import ViewSummaryComponent from './ViewSummaryComponent ';
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://20.106.179.250:8080';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://agents.tericlab.com:8080';
 
 const languageOptions = [
   { name: "English", code: "en" },

@@ -35,7 +35,7 @@ const ViewttsAudioComponent = ({ audioId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://20.106.179.250:8080/get_vocify_voice";
+    const apiEndpoint = "https://agents.tericlab.com:8080/get_vocify_voice";
 
     const fetchEntries = async () => {
       try {

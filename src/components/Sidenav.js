@@ -145,17 +145,32 @@ export default function Sidenav() {
       category: 'Overview',
       items: [
         { text: 'Translations', icon: <DashboardIcon />, path: '/dashboard' },
-        { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
-        { text: 'Export Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+        { text: 'History', icon: <HistoryIcon />, path: '/dashboard/history' },
+        { text: 'APIs', icon: <StorageIcon />, path: '/dashboard/api-reference' },
       ],
     },
     
     {
-      category: 'Management',
+      category: 'Conversation AI',
       items: [
-        { text: 'History', icon: <HistoryIcon />, path: '/dashboard/history' },
+        { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
+        { text: 'Text Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+        { text: 'Voice Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+      ],
+    },
+
+    {
+      category: 'Customer Care',
+      items: [
+        { text: 'IVR', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
+        { text: 'SMS Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+        { text: 'Whatsapp Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+      ],
+    },
+    {
+      category: 'Docs',
+      items: [
         { text: 'Langauges', icon: <SettingsIcon />, path: '/dashboard/lang-support' },
-        { text: 'APIs', icon: <StorageIcon />, path: '/dashboard/api-reference' },
       ],
     },
     {

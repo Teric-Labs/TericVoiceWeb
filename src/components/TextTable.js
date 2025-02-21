@@ -113,7 +113,7 @@ export default function TextTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://20.106.179.250:8080/get_vocify_voices';
+    const apiEndpoint = 'https://agents.tericlab.com:8080/get_vocify_voices';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

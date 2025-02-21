@@ -39,7 +39,7 @@ import {
   DeleteOutline as RemoveFileIcon
 } from '@mui/icons-material';
 
-const API_BASE_URL = 'https://20.106.179.250:8000';
+const API_BASE_URL = 'https://agents.tericlab.com:8000';
 const SIDEBAR_WIDTH = 300;
 
 // Styled components

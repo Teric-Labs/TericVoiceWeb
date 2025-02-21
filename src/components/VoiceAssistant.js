@@ -219,7 +219,7 @@ const VoiceAssistant = ({ agentId }) => {
         const formData = new FormData();
         formData.append("agent_id", agentId);
         
-        const response = await fetch('https://20.106.179.250:8000/agent-info', {
+        const response = await fetch('https://agents.tericlab.com:8000/agent-info', {
           method: 'POST',
           body: formData
         });
@@ -247,7 +247,7 @@ const VoiceAssistant = ({ agentId }) => {
     formData.append('target_lang', targetLanguage);
 
     try {
-      const response = await fetch('https://20.106.179.250:8000/process_voice', {
+      const response = await fetch('https://agents.tericlab.com:8000/process_voice', {
         method: 'POST',
         body: formData
       });

@@ -35,7 +35,7 @@ const RecordingAudioComponent = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerMessage, setBannerMessage] = useState('');
-  const apiEndpoint = 'https://20.106.179.250:8080/upload_recorded_audio/';
+  const apiEndpoint = 'https://agents.tericlab.com:8080/upload_recorded_audio/';
 
   const languageOptions = [
     { label: 'Luganda', value: 'lg' },

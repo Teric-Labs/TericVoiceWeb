@@ -4,7 +4,7 @@ import { Add as AddIcon, Language as LanguageIcon, Chat as ChatIcon, Upload as U
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'
 
-const API_BASE_URL = 'https://20.106.179.250:8000';
+const API_BASE_URL = 'https://agents.tericlab.com:8000';
   
 const AIAgentsDashboard = () => {
   const theme = useTheme();

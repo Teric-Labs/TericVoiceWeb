@@ -265,7 +265,7 @@ const LanguageSelector = ({
 };
 
 
- const BASE_URL="https://20.106.179.250:8080"
+ const BASE_URL="https://agents.tericlab.com:8080"
 const MainComponent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
