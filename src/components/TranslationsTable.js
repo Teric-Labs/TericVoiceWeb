@@ -120,7 +120,7 @@ export default function TranslationsTable() {
       return;
     }
     
-    const apiEndpoint = 'http://20.106.179.250:8080/get_translations';
+    const apiEndpoint = 'https://20.106.179.250:8080/get_translations';
     try {
       const response = await axios.post(apiEndpoint, { user_id: user.userId });
       setEntries(response.data.entries);

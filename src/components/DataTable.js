@@ -121,7 +121,7 @@ export default function DataTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'http://20.106.179.250:8080/get_audios';
+    const apiEndpoint = 'https://20.106.179.250:8080/get_audios';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

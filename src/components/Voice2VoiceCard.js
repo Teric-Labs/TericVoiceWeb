@@ -61,7 +61,7 @@ const Voice2VoiceCard = () => {
     formData.append('title', textTitle);
 
     try {
-      const response = await axios.post('http://20.106.179.250:8080/voice_translation', formData, {
+      const response = await axios.post('https://20.106.179.250:8080/voice_translation', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setLoading(false);
