@@ -30,6 +30,7 @@ import LanguageView from "./views/LangaugeView";
 import LanguageSupport from "./views/LanguageSupport";
 import ChatbotGuideView from "./views/ChatbotGuideView";
 import ProfileView from "./views/ProfileView";
+import Chatbot from "./components/Chatbot";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -76,7 +77,9 @@ function App() {
             <Route path="lang-support" element={<LanguageSupport />} />
             <Route path="contact-support" element={<ContactSupport />} />
           </Route>
+          
         </Routes>
+        <Chatbot/>
       </Router>
     </AuthProvider>
   );

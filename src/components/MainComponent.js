@@ -731,6 +731,8 @@ const MainComponent = () => {
       </Box>
     )
   );
+
+
   const features = [
     { icon: <Translate />, label: 'Text Translation' },
     { icon: <VolumeUp />, label: 'Text to Voice' },
@@ -1098,6 +1100,7 @@ const MainComponent = () => {
               </form>
               
             )}
+            
           </Box>
           <LoginPromptDialog />
           <Snackbar

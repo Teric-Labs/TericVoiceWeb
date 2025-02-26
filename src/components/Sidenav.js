@@ -142,7 +142,7 @@ export default function Sidenav() {
 
   const menuItems = [
     {
-      category: 'Overview',
+      category: 'Translate',
       items: [
         { text: 'Translations', icon: <DashboardIcon />, path: '/dashboard' },
         { text: 'History', icon: <HistoryIcon />, path: '/dashboard/history' },
@@ -154,19 +154,11 @@ export default function Sidenav() {
       category: 'Conversation AI',
       items: [
         { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
-        { text: 'Text Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
-        { text: 'Voice Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+        { text: 'Export Text Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
+        { text: 'Export Voice Agent', icon: <AnalyticsIcon />, path: '' },
       ],
     },
 
-    {
-      category: 'Customer Care',
-      items: [
-        { text: 'IVR', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
-        { text: 'SMS Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
-        { text: 'Whatsapp Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
-      ],
-    },
     {
       category: 'Docs',
       items: [
