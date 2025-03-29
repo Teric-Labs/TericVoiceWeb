@@ -159,17 +159,17 @@ const SummarizationCard = () => {
           formData.append('doc', textContent);
           break;
         case 1: // Document
-          endpoint = `${BASE_URL}/summarize_document`;
+          endpoint = `${BASE_URL}/summarize_document/`;
           if (!uploadedFile) throw new Error('Please select a document to upload');
           formData.append('file', uploadedFile);
           break;
         case 2: // Audio
-          endpoint = `${BASE_URL}/summarize_upload`;
+          endpoint = `${BASE_URL}/summarize_upload/`;
           if (!uploadedFile) throw new Error('Please select an audio file to upload');
           formData.append('audio_file', uploadedFile);
           break;
         case 3: // Video
-          endpoint = `${BASE_URL}/surmarize_audio_from_video`;
+          endpoint = `${BASE_URL}/surmarize_audio_from_video/`;
           if (!videoUrl || videoSource.length === 0) {
             throw new Error('Please provide both video URL and source');
           }

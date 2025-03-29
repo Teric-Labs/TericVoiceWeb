@@ -55,7 +55,7 @@ const ViewSummaryComponent = ({ translationId }) => {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const response = await axios.post("https://avoices-13747549899.us-central1.run.app/get_summary", {
+        const response = await axios.post("https://agents.tericlab.com:8080/get_summary", {
           doc_id: translationId,
         });
 
