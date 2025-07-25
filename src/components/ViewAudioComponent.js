@@ -35,7 +35,7 @@ const ViewAudioComponent = ({ audioId }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.post('https://agents.tericlab.com:8080/get_audio', { doc_id: audioId });
+        const response = await axios.post('https://phosai-main-api.onrender.com/get_audio', { doc_id: audioId });
         const data = response.data.entries;
         setEntries(data);
 

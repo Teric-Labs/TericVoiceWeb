@@ -19,6 +19,7 @@ import {
   Snackbar,
   Stack
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import {
   Translate,
   CloudUpload,
@@ -34,7 +35,7 @@ import {
 import axios from 'axios';
 
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://agents.tericlab.com:8080',
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://phosai-main-api.onrender.com',
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_TEXT_LENGTH: 5000,
 };
@@ -54,6 +55,68 @@ const SUPPORTED_FILE_TYPES = [
   { icon: <Article color="action" />, type: 'Text', extension: '.txt' },
 ];
 
+// Custom styled components
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: '16px',
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)', // Light black shadow
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  '& .MuiTab-root': {
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: '1rem',
+    color: '#000000', // Black text
+    '&.Mui-selected': {
+      color: '#1976d2', // Blue for selected tab
+    },
+  },
+  '& .MuiTabs-indicator': {
+    backgroundColor: '#1976d2', // Blue indicator
+  },
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: '12px',
+  textTransform: 'none',
+  fontWeight: 600,
+  padding: theme.spacing(1, 4),
+  background: 'linear-gradient(45deg, #1976d2, #42a5f5)', // Blue gradient
+  color: '#ffffff',
+  '&:hover': {
+    background: 'linear-gradient(45deg, #1565c0, #2196f3)', // Darker blue on hover
+    boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
+  },
+  '&:disabled': {
+    background: 'rgba(25, 118, 210, 0.5)',
+    color: '#ffffff',
+  },
+  transition: 'all 0.3s ease',
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    backgroundColor: '#ffffff',
+    '& fieldset': {
+      borderColor: 'rgba(0, 0, 0, 0.1)', // Subtle black border
+    },
+    '&:hover fieldset': {
+      borderColor: '#1976d2', // Blue on hover
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#000000', // Black label
+    '&.Mui-focused': {
+      color: '#1976d2', // Blue when focused
+    },
+  },
+}));
+
 const TranslationCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
   const [activeTab, setActiveTab] = useState(0);
@@ -61,7 +124,6 @@ const TranslationCard = () => {
   const [targetLanguage, setTargetLanguage] = useState('lg');
   const [inputText, setInputText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
-  const [documentTitle, setDocumentTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -89,13 +151,13 @@ const TranslationCard = () => {
   }, [loading]);
 
   const TranslationService = {
-    async translateText(text, sourceLang, targetLang, title) {
+    async translateText(text, sourceLang, targetLang) {
       const formData = new FormData();
       formData.append('user_id', user.userId);
       formData.append('source_lang', sourceLang);
       formData.append('target_langs', targetLang);
       formData.append('doc', text);
-      formData.append('title', title || 'Text Translation');
+      formData.append('title', 'Text Translation');
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}/translate`,
@@ -104,13 +166,13 @@ const TranslationCard = () => {
       return Object.values(response.data)[0];
     },
 
-    async translateDocument(file, sourceLang, targetLang, title) {
+    async translateDocument(file, sourceLang, targetLang) {
       const formData = new FormData();
       formData.append('user_id', user.userId);
       formData.append('source_lang', sourceLang);
       formData.append('target_langs', targetLang);
       formData.append('file', file);
-      formData.append('title', title || 'Document Translation');
+      formData.append('title', 'Document Translation');
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}/translate_document`,
@@ -133,8 +195,7 @@ const TranslationCard = () => {
         result = await TranslationService.translateText(
           inputText,
           sourceLanguage,
-          targetLanguage,
-          documentTitle
+          targetLanguage
         );
       } else {
         if (!selectedFile) {
@@ -146,8 +207,7 @@ const TranslationCard = () => {
         result = await TranslationService.translateDocument(
           selectedFile,
           sourceLanguage,
-          targetLanguage,
-          documentTitle
+          targetLanguage
         );
       }
       setTranslatedText(result);
@@ -221,9 +281,21 @@ const TranslationCard = () => {
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 4 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-          <Tabs
+      <Box sx={{ minHeight: '100vh', py: 6, bgcolor: '#f5f5f5' }}>
+        <StyledPaper elevation={0}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: '#1976d2', // Blue text
+              textAlign: 'center',
+              mb: 4,
+            }}
+          >
+            Translate Your Content
+          </Typography>
+
+          <StyledTabs
             value={activeTab}
             onChange={(_, newValue) => {
               setActiveTab(newValue);
@@ -235,25 +307,36 @@ const TranslationCard = () => {
           >
             <Tab icon={<Translate />} label="Text Translation" />
             <Tab icon={<CloudUpload />} label="Document Translation" />
-          </Tabs>
+          </StyledTabs>
 
           {/* Language Selector */}
           <Box sx={{ mb: 4 }}>
-            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '12px',
+                background: '#ffffff',
+                border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)', // Light black shadow
+              }}
+            >
               <Grid container spacing={3} alignItems="center">
                 <Grid item xs={12} md={5}>
-                  <Typography variant="subtitle2" gutterBottom>Source Language</Typography>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
+                    Source Language
+                  </Typography>
                   <FormControl fullWidth>
                     <Select
                       value={sourceLanguage}
                       onChange={(e) => setSourceLanguage(e.target.value)}
-                      sx={{ borderRadius: 1 }}
+                      sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
                     >
                       {SUPPORTED_LANGUAGES.map((lang) => (
                         <MenuItem key={lang.value} value={lang.value}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Language color="primary" />
-                            {lang.label}
+                            <Language sx={{ color: '#1976d2' }} />
+                            <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
                           </Box>
                         </MenuItem>
                       ))}
@@ -267,25 +350,33 @@ const TranslationCard = () => {
                       setSourceLanguage(targetLanguage);
                       setTargetLanguage(sourceLanguage);
                     }}
-                    sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                    sx={{
+                      bgcolor: '#1976d2',
+                      color: '#ffffff',
+                      '&:hover': { bgcolor: '#1565c0' },
+                      borderRadius: '50%',
+                      p: 1.5,
+                    }}
                   >
                     <SwapHoriz />
                   </IconButton>
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Typography variant="subtitle2" gutterBottom>Target Language</Typography>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
+                    Target Language
+                  </Typography>
                   <FormControl fullWidth>
                     <Select
                       value={targetLanguage}
                       onChange={(e) => setTargetLanguage(e.target.value)}
-                      sx={{ borderRadius: 1 }}
+                      sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
                     >
                       {SUPPORTED_LANGUAGES.map((lang) => (
                         <MenuItem key={lang.value} value={lang.value}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Language color="primary" />
-                            {lang.label}
+                            <Language sx={{ color: '#1976d2' }} />
+                            <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
                           </Box>
                         </MenuItem>
                       ))}
@@ -299,17 +390,8 @@ const TranslationCard = () => {
           {/* Translation UI */}
           {activeTab === 0 ? (
             <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Document Title (Optional)"
-                  value={documentTitle}
-                  onChange={(e) => setDocumentTitle(e.target.value)}
-                  sx={{ mb: 3 }}
-                />
-              </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   multiline
                   rows={8}
@@ -321,7 +403,7 @@ const TranslationCard = () => {
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   multiline
                   rows={8}
@@ -330,30 +412,27 @@ const TranslationCard = () => {
                   InputProps={{ readOnly: true }}
                 />
                 <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
-                  <Button
+                  <StyledButton
                     variant="outlined"
                     startIcon={<ContentCopy />}
                     onClick={handleCopy}
-                    sx={{ textTransform: 'none' }}
                   >
                     Copy
-                  </Button>
-                  <Button
+                  </StyledButton>
+                  <StyledButton
                     variant="outlined"
                     startIcon={<Download />}
                     onClick={handleDownload}
-                    sx={{ textTransform: 'none' }}
                   >
                     Download TXT
-                  </Button>
-                  <Button
+                  </StyledButton>
+                  <StyledButton
                     variant="outlined"
                     startIcon={<Download />}
                     onClick={handleDownloadDocx}
-                    sx={{ textTransform: 'none' }}
                   >
                     Download DOCX
-                  </Button>
+                  </StyledButton>
                 </Stack>
               </Grid>
             </Grid>
@@ -367,33 +446,25 @@ const TranslationCard = () => {
                 onChange={handleFileChange}
               />
               <label htmlFor="file-upload">
-                <Button
+                <StyledButton
                   variant="outlined"
                   component="span"
                   startIcon={<CloudUpload />}
-                  sx={{ textTransform: 'none' }}
                 >
                   Upload Document
-                </Button>
+                </StyledButton>
               </label>
 
               {selectedFile && (
                 <>
                   <Alert
-                    icon={<InsertDriveFile />}
+                    icon={<InsertDriveFile sx={{ color: '#1976d2' }} />}
                     severity="info"
-                    sx={{ mb: 3 }}
+                    sx={{ mb: 3, bgcolor: '#ffffff', borderRadius: '12px' }}
                   >
                     {selectedFile.name}
                   </Alert>
-                  <TextField
-                    fullWidth
-                    label="Document Title (Optional)"
-                    value={documentTitle}
-                    onChange={(e) => setDocumentTitle(e.target.value)}
-                    sx={{ mb: 3 }}
-                  />
-                  <TextField
+                  <StyledTextField
                     fullWidth
                     multiline
                     rows={6}
@@ -402,30 +473,27 @@ const TranslationCard = () => {
                     InputProps={{ readOnly: true }}
                   />
                   <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
-                    <Button
+                    <StyledButton
                       variant="outlined"
                       startIcon={<ContentCopy />}
                       onClick={handleCopy}
-                      sx={{ textTransform: 'none' }}
                     >
                       Copy
-                    </Button>
-                    <Button
+                    </StyledButton>
+                    <StyledButton
                       variant="outlined"
                       startIcon={<Download />}
                       onClick={handleDownload}
-                      sx={{ textTransform: 'none' }}
                     >
                       Download TXT
-                    </Button>
-                    <Button
+                    </StyledButton>
+                    <StyledButton
                       variant="outlined"
                       startIcon={<Download />}
                       onClick={handleDownloadDocx}
-                      sx={{ textTransform: 'none' }}
                     >
                       Download DOCX
-                    </Button>
+                    </StyledButton>
                   </Stack>
                 </>
               )}
@@ -435,33 +503,52 @@ const TranslationCard = () => {
           {/* Loading Indicator */}
           {loading && (
             <Box sx={{ width: '100%', mt: 4 }}>
-              <LinearProgress variant="determinate" value={progress} />
-              <Typography align="center" variant="body2" sx={{ mt: 1 }}>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)', // Light blue background
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: '#1976d2', // Blue progress bar
+                  },
+                }}
+              />
+              <Typography align="center" variant="body2" sx={{ mt: 1, color: '#000000' }}>
                 Translating... {progress}%
               </Typography>
             </Box>
           )}
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
+            <StyledButton
               variant="contained"
               onClick={handleTranslate}
               disabled={loading || (!inputText && !selectedFile)}
-              startIcon={loading ? <CircularProgress size={20} /> : <Translate />}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Translate />}
             >
               {loading ? 'Translating...' : 'Translate'}
-            </Button>
+            </StyledButton>
           </Box>
-        </Paper>
+        </StyledPaper>
       </Box>
 
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        message={snackbar.message}
-        severity={snackbar.severity}
-      />
+      >
+        <Alert
+          severity={snackbar.severity}
+          sx={{
+            bgcolor: snackbar.severity === 'success' ? '#1976d2' : '#d32f2f',
+            color: '#ffffff',
+            borderRadius: '12px',
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

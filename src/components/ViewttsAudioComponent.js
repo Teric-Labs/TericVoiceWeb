@@ -35,7 +35,7 @@ const ViewttsAudioComponent = ({ audioId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://agents.tericlab.com:8080/get_vocify_voice";
+    const apiEndpoint = "https://phosai-main-api.onrender.com/get_vocify_voice";
 
     const fetchEntries = async () => {
       try {

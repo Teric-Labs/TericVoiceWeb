@@ -120,7 +120,7 @@ export default function TranslationsTable() {
       return;
     }
     
-    const apiEndpoint = 'https://agents.tericlab.com:8080/get_translations';
+    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_translations';
     try {
       const response = await axios.post(apiEndpoint, { user_id: user.userId });
       setEntries(response.data.entries);

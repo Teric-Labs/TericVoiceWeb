@@ -121,7 +121,7 @@ export default function DataTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://agents.tericlab.com:8080/get_audios';
+    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_audios';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

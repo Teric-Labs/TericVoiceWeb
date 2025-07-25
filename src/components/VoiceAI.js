@@ -77,7 +77,7 @@ const VoiceAI = () => {
         }
       });
 
-      const response = await fetch('https://agents.tericlab.com:8000/agents', {
+      const response = await fetch('https://phosai-main-api.onrender.com/agents', {
         method: 'POST',
         body: formData
       });

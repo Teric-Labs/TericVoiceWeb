@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -15,8 +15,6 @@ import {
   IconButton,
   TextField,
   Chip,
-  ToggleButton,
-  ToggleButtonGroup,
   LinearProgress,
   Snackbar,
   Alert,
@@ -26,15 +24,12 @@ import {
   CloudUpload,
   Article,
   AudioFile,
-  YouTube,
+  Movie,
   SwapHoriz,
-  CloudQueue,
-  OndemandVideo,
-  LinkedIn,
 } from '@mui/icons-material';
 import ViewSummaryComponent from './ViewSummaryComponent ';
 
-const BASE_URL = 'https://agents.tericlab.com:8080';
+const BASE_URL = 'https://phosai-main-api.onrender.com';
 
 const languageOptions = [
   { name: "English", code: "en" },
@@ -47,15 +42,6 @@ const languageOptions = [
   { name: "Kinyarwanda", code: "rw" }
 ];
 
-const videoSources = [
-  { icon: <YouTube />, name: 'YouTube', value: 'youtube' },
-  { icon: <CloudQueue />, name: 'Vimeo', value: 'vimeo' },
-  { icon: <CloudQueue />, name: 'DropBox', value: 'dropbox' },
-  { icon: <CloudQueue />, name: 'facebook', value: 'facebook' },
-  { icon: <OndemandVideo />, name: 'Daily Motion', value: 'dailymotion' },
-  { icon: <LinkedIn />, name: 'LinkedIn', value: 'linkedin' },
-];
-
 const ALLOWED_FILE_TYPES = {
   document: {
     extensions: ['.pdf', '.doc', '.docx', '.txt'],
@@ -64,171 +50,181 @@ const ALLOWED_FILE_TYPES = {
   audio: {
     extensions: ['.wav', '.mp3'],
     message: 'Please upload a WAV or MP3 file'
+  },
+  video: {
+    extensions: ['.mp4', '.avi', '.mov'],
+    message: 'Please upload an MP4, AVI, or MOV file'
   }
 };
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 const SummarizationCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
   const [activeTab, setActiveTab] = useState(0);
   const [sourceLanguage, setSourceLanguage] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('');
-  const [title, setTitle] = useState('');
   const [textContent, setTextContent] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoSource, setVideoSource] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
   const [translationId, setTranslationId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  const showNotification = (message, severity = 'success') => {
+  const showNotification = useCallback((message, severity = 'success') => {
     setNotification({
       open: true,
       message,
       severity,
     });
-  };
+  }, []);
 
   useEffect(() => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        console.log('User data loaded:', userData);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        showNotification('Failed to load user data', 'error');
       }
-    }, []);
+    } else {
+      console.warn('No user data found in localStorage');
+    }
+  }, [showNotification]);
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = useCallback((event, newValue) => {
     setActiveTab(newValue);
     setUploadedFile(null);
-    setVideoUrl('');
     setTextContent('');
     setTranslationId(null);
-  };
+    console.log('Tab changed to:', newValue);
+  }, []);
 
-  const handleLanguageSwap = () => {
+  const handleLanguageSwap = useCallback(() => {
     const temp = sourceLanguage;
     setSourceLanguage(targetLanguage);
     setTargetLanguage(temp);
-  };
+    console.log('Languages swapped:', { source: targetLanguage, target: temp });
+  }, [sourceLanguage, targetLanguage]);
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = useCallback((event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
 
     const fileExtension = `.${file.name.split('.').pop().toLowerCase()}`;
-    const fileType = activeTab === 1 ? 'document' : 'audio';
+    const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
     const allowedTypes = ALLOWED_FILE_TYPES[fileType];
 
-    if (allowedTypes.extensions.includes(fileExtension)) {
-      setUploadedFile(file);
-      showNotification('File uploaded successfully');
-    } else {
+    if (!allowedTypes.extensions.includes(fileExtension)) {
+      console.error('Invalid file type:', fileExtension);
       setUploadedFile(null);
       showNotification(allowedTypes.message, 'error');
+      return;
     }
-  };
 
-  const handleVideoSourceChange = (event, newSources) => {
-    setVideoSource(newSources);
-  };
+    if (file.size > MAX_FILE_SIZE) {
+      console.error('File too large:', file.size);
+      setUploadedFile(null);
+      showNotification(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`, 'error');
+      return;
+    }
 
-  const handleSubmit = async () => {
-    setTranslationId(null);
-    setIsDrawerOpen(false);
-    
-    if (!sourceLanguage || !title) {
+    setUploadedFile(file);
+    showNotification(`File uploaded: ${file.name}`);
+    console.log('File uploaded:', file.name, 'Size:', file.size);
+  }, [activeTab, showNotification]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!sourceLanguage || !user.userId) {
+      console.error('Missing required fields:', { sourceLanguage, userId: user.userId });
       showNotification('Please fill in all required fields', 'error');
       return;
     }
 
+    setTranslationId(null);
+    setIsDrawerOpen(false);
     setIsProcessing(true);
+
     const formData = new FormData();
     formData.append('source_lang', sourceLanguage);
-    formData.append('title', title);
     formData.append('user_id', user.userId);
 
     try {
       let endpoint;
-      let response;
-
       switch (activeTab) {
         case 0: // Text
           endpoint = `${BASE_URL}/surmarize`;
+          if (!textContent.trim()) {
+            throw new Error('Text content is required');
+          }
           formData.append('doc', textContent);
           break;
         case 1: // Document
           endpoint = `${BASE_URL}/summarize_document/`;
-          if (!uploadedFile) throw new Error('Please select a document to upload');
+          if (!uploadedFile) {
+            throw new Error('Please select a document to upload');
+          }
           formData.append('file', uploadedFile);
           break;
         case 2: // Audio
           endpoint = `${BASE_URL}/summarize_upload/`;
-          if (!uploadedFile) throw new Error('Please select an audio file to upload');
+          if (!uploadedFile) {
+            throw new Error('Please select an audio file to upload');
+          }
           formData.append('audio_file', uploadedFile);
           break;
         case 3: // Video
-          endpoint = `${BASE_URL}/surmarize_audio_from_video/`;
-          if (!videoUrl || videoSource.length === 0) {
-            throw new Error('Please provide both video URL and source');
+          endpoint = `${BASE_URL}/summarize_video/`;
+          if (!uploadedFile) {
+            throw new Error('Please select a video file to upload');
           }
-          formData.append('video_type', videoSource[0]);
-          formData.append('video_link', videoUrl);
+          formData.append('video_file', uploadedFile);
           break;
         default:
           throw new Error('Invalid tab selection');
       }
 
-      // First, try to make the request
-      response = await fetch(endpoint, {
+      console.log('Submitting to endpoint:', endpoint);
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
-        // Add this to handle redirects manually
-        redirect: 'follow'
+        redirect: 'follow',
       });
 
-      // If we get a redirect, follow it manually
-      if (response.status === 307) {
-        const redirectUrl = response.headers.get('Location');
-        response = await fetch(redirectUrl, {
-          method: 'POST',
-          body: formData,
-        });
-      }
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      // Handle the response consistently across all endpoints
-      if (data && typeof data === 'object') {
-        const docId = data.doc_id;
-        if (docId) {
-          setTranslationId(docId);
-          setIsDrawerOpen(true);
-          showNotification('Summary generated successfully');
-        } else {
-          throw new Error('No document ID received from server');
-        }
+      console.log('API response:', data);
+
+      if (data?.doc_id) {
+        setTranslationId(data.doc_id);
+        setIsDrawerOpen(true);
+        showNotification('Summary generated successfully');
       } else {
-        throw new Error('Invalid response format from server');
+        throw new Error('No document ID received from server');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Submission error:', error);
       showNotification(error.message || 'Error processing request', 'error');
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [sourceLanguage, user.userId, activeTab, textContent, uploadedFile, showNotification]);
 
-  const renderFileUpload = () => {
-    const isDocument = activeTab === 1;
-    const fileType = isDocument ? 'document' : 'audio';
+  const renderFileUpload = useCallback(() => {
+    const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
     const allowedTypes = ALLOWED_FILE_TYPES[fileType];
+    const label = fileType.charAt(0).toUpperCase() + fileType.slice(1);
 
     return (
       <Box sx={{ textAlign: 'center' }}>
@@ -238,6 +234,7 @@ const SummarizationCard = () => {
           ref={fileInputRef}
           onChange={handleFileUpload}
           accept={allowedTypes.extensions.join(',')}
+          aria-label={`Upload ${label} file`}
         />
         <Button
           variant="outlined"
@@ -248,47 +245,85 @@ const SummarizationCard = () => {
             px: 4,
             py: 2,
             borderWidth: '2px',
-            mb: 2
+            mb: 2,
+            background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+            color: 'white',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+            },
           }}
+          aria-label={`Select ${label} file`}
         >
-          {isDocument ? 'Upload Document' : 'Upload Audio'}
+          Upload {label}
         </Button>
         {uploadedFile && (
           <Box sx={{ mt: 2 }}>
             <Chip
               label={uploadedFile.name}
-              onDelete={() => setUploadedFile(null)}
+              onDelete={() => {
+                setUploadedFile(null);
+                console.log('File removed:', uploadedFile.name);
+              }}
               sx={{ mb: 2 }}
+              aria-label={`Uploaded file: ${uploadedFile.name}`}
             />
           </Box>
         )}
       </Box>
     );
+  }, [activeTab, handleFileUpload, uploadedFile]);
+
+  const styles = {
+    paper: {
+      p: 6,
+      borderRadius: '24px',
+      maxWidth: '1200px',
+      margin: 'auto',
+      background: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(25, 118, 210, 0.1)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+      transition: 'transform 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+      },
+    },
+    submitButton: {
+      px: 4,
+      py: 1.5,
+      borderRadius: '28px',
+      background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+      color: 'white',
+      '&:hover': {
+        background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+      },
+      '&:disabled': {
+        background: 'grey.500',
+        color: 'grey.300',
+      },
+    },
+    swapButton: {
+      backgroundColor: 'primary.main',
+      color: 'white',
+      '&:hover': {
+        backgroundColor: 'primary.dark',
+      },
+    },
   };
 
   return (
     <Container maxWidth="lg">
-      <Paper
-        elevation={0}
-        sx={{
-          p: 6,
-          borderRadius: '24px',
-          maxWidth: '1200px',
-          margin: 'auto',
-          background: 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(25, 118, 210, 0.1)',
-          mb: 8,
-        }}
-      >
+      <Paper elevation={0} sx={styles.paper} role="region" aria-label="Summarization Card">
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md={5}>
             <FormControl fullWidth>
-              <InputLabel>Source Language</InputLabel>
+              <InputLabel id="source-language-label">Source Language</InputLabel>
               <Select
+                labelId="source-language-label"
                 value={sourceLanguage}
                 onChange={(e) => setSourceLanguage(e.target.value)}
                 label="Source Language"
+                aria-label="Select source language"
               >
                 {languageOptions.map((lang) => (
                   <MenuItem key={lang.code} value={lang.code}>
@@ -299,25 +334,24 @@ const SummarizationCard = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <IconButton 
+            <IconButton
               onClick={handleLanguageSwap}
-              sx={{ 
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' }
-              }}
+              sx={styles.swapButton}
+              aria-label="Swap source and target languages"
             >
               <SwapHoriz />
             </IconButton>
           </Grid>
           <Grid item xs={12} md={5}>
             <FormControl fullWidth>
-              <InputLabel>Target Language</InputLabel>
+              <InputLabel id="target-language-label">Target Language</InputLabel>
               <Select
+                labelId="target-language-label"
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value)}
                 label="Target Language"
                 disabled
+                aria-label="Target language (disabled)"
               >
                 {languageOptions.map((lang) => (
                   <MenuItem key={lang.code} value={lang.code}>
@@ -330,21 +364,12 @@ const SummarizationCard = () => {
         </Grid>
       </Paper>
 
-      <TextField
-        fullWidth
-        label="Summary Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        sx={{ mb: 4 }}
-        required
-      />
-
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} centered>
-          <Tab icon={<Article />} label="Paste Text" />
-          <Tab icon={<CloudUpload />} label="Upload Document" />
-          <Tab icon={<AudioFile />} label="Upload Audio" />
-          <Tab icon={<OndemandVideo />} label="Video Link" />
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, mt: 4 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} centered aria-label="Input type tabs">
+          <Tab icon={<Article />} label="Paste Text" aria-label="Paste Text Tab" />
+          <Tab icon={<CloudUpload />} label="Upload Document" aria-label="Upload Document Tab" />
+          <Tab icon={<AudioFile />} label="Upload Audio" aria-label="Upload Audio Tab" />
+          <Tab icon={<Movie />} label="Upload Video" aria-label="Upload Video Tab" />
         </Tabs>
       </Box>
 
@@ -358,90 +383,45 @@ const SummarizationCard = () => {
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             sx={{ mb: 2 }}
+            aria-label="Text input for summarization"
           />
         )}
 
-        {(activeTab === 1 || activeTab === 2) && renderFileUpload()}
-
-        {activeTab === 3 && (
-          <Box>
-            <TextField
-              fullWidth
-              label="Video URL"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              sx={{ mb: 3 }}
-            />
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>
-              Select Video Source:
-            </Typography>
-            <ToggleButtonGroup
-              value={videoSource}
-              onChange={handleVideoSourceChange}
-              aria-label="video source"
-              sx={{ flexWrap: 'wrap', gap: 1 }}
-            >
-              {videoSources.map((source) => (
-                <ToggleButton 
-                  key={source.value} 
-                  value={source.value}
-                  aria-label={source.name}
-                  sx={{
-                    p: 2,
-                    borderRadius: '12px',
-                    '&.Mui-selected': {
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      }
-                    }
-                  }}
-                >
-                  {source.icon}
-                  <Typography sx={{ ml: 1 }}>{source.name}</Typography>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
-        )}
+        {(activeTab === 1 || activeTab === 2 || activeTab === 3) && renderFileUpload()}
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2}}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={isProcessing || 
+          disabled={
+            isProcessing ||
             !sourceLanguage ||
-            !title ||
-            (activeTab === 0 && !textContent) ||
-            ((activeTab === 1 || activeTab === 2) && !uploadedFile) ||
-            (activeTab === 3 && (!videoUrl || !videoSource.length))
+            (activeTab === 0 && !textContent.trim()) ||
+            (activeTab !== 0 && !uploadedFile)
           }
-          sx={{
-            px: 4,
-            py: 1.5,
-            borderRadius: '28px',
-            background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
-          }}
+          sx={styles.submitButton}
+          aria-label="Generate summary"
         >
           {isProcessing ? 'Processing...' : 'Generate Summary'}
         </Button>
       </Box>
 
       {isProcessing && (
-        <LinearProgress sx={{ mt: 3 }} />
+        <LinearProgress sx={{ mt: 3 }} aria-label="Processing progress" />
       )}
 
       <Snackbar
         open={notification.open}
         autoHideDuration={6000}
         onClose={() => setNotification({ ...notification, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setNotification({ ...notification, open: false })} 
+        <Alert
+          onClose={() => setNotification({ ...notification, open: false })}
           severity={notification.severity}
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', borderRadius: 2 }}
+          aria-live="assertive"
         >
           {notification.message}
         </Alert>
@@ -456,11 +436,17 @@ const SummarizationCard = () => {
             width: { xs: '100%', sm: '600px' },
           },
         }}
+        aria-label="Summary results drawer"
       >
-        {translationId && <ViewSummaryComponent translationId={translationId}  onError={(error) => {
-          showNotification(error.message, 'error');
-          setIsDrawerOpen(false);
-        }}/>}
+        {translationId && (
+          <ViewSummaryComponent
+            translationId={translationId}
+            onError={(error) => {
+              showNotification(error.message, 'error');
+              setIsDrawerOpen(false);
+            }}
+          />
+        )}
       </Drawer>
     </Container>
   );

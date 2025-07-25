@@ -29,7 +29,7 @@ const ViewTranslationsComponent = ({ translationId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = 'https://agents.tericlab.com:8080/get_translation';
+    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_translation';
     const fetchEntries = async () => {
       try {
         const response = await axios.post(apiEndpoint, { doc_id: translationId });

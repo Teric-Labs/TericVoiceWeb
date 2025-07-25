@@ -5,7 +5,6 @@ import {
   AppBar as MuiAppBar,
   Box,
   Avatar,
-  Badge,
   CssBaseline,
   Divider,
   Drawer as MuiDrawer,
@@ -21,32 +20,27 @@ import {
   Tooltip,
   Menu,
   MenuItem,
-  Snackbar,
-  Alert,
 } from '@mui/material';
-
-// Icons
 import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
-  GridView as DashboardIcon,
+  Translate as TranslateIcon,
   History as HistoryIcon,
+  Api as ApiIcon,
+  SmartToy as SmartToyIcon,
+  Language as LanguageIcon,
   SupportAgent as SupportIcon,
   Upgrade as UpgradeIcon,
   AccountCircle as AccountCircleIcon,
-  Notifications as NotificationIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Analytics as AnalyticsIcon,
-  Storage as StorageIcon,
 } from '@mui/icons-material';
-
 import { useAuth } from '../components/AuthContext';
 import mvetlogo from '../assets/livestock.png';
 
 const drawerWidth = 260;
 
-// Styled components remain the same as before, just update the styling values
+// Styled components
 const openedMixin = (theme) => ({
   width: drawerWidth,
   transition: theme.transitions.create('width', {
@@ -54,8 +48,8 @@ const openedMixin = (theme) => ({
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: 'hidden',
-  backgroundColor: theme.palette.background.paper,
-  borderRight: `1px solid ${theme.palette.divider}`,
+  backgroundColor: '#ffffff', // White background
+  borderRight: '1px solid rgba(0, 0, 0, 0.1)', // Subtle black divider
 });
 
 const closedMixin = (theme) => ({
@@ -68,8 +62,8 @@ const closedMixin = (theme) => ({
   [theme.breakpoints.up('sm')]: {
     width: `calc(${theme.spacing(8)} + 1px)`,
   },
-  backgroundColor: theme.palette.background.paper,
-  borderRight: `1px solid ${theme.palette.divider}`,
+  backgroundColor: '#ffffff',
+  borderRight: '1px solid rgba(0, 0, 0, 0.1)',
 });
 
 const DrawerHeader = styled('div')(({ theme }) => ({
@@ -78,15 +72,16 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 1),
   ...theme.mixins.toolbar,
   justifyContent: 'space-between',
+  background: 'linear-gradient(90deg, #1976d2, #42a5f5)', // Blue gradient
 }));
 
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
-  backgroundColor: theme.palette.background.paper,
-  color: theme.palette.text.primary,
-  boxShadow: 'none',
-  borderBottom: `1px solid ${theme.palette.divider}`,
+  backgroundColor: '#ffffff',
+  color: '#000000', // Black text
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Black shadow
+  borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
   zIndex: theme.zIndex.drawer + 1,
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
@@ -125,7 +120,7 @@ const MainContent = styled('main')(({ theme, open }) => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: 0,
-  backgroundColor: theme.palette.grey[100],
+  backgroundColor: '#f5f5f5', // Light gray-white background
   minHeight: '100vh',
 }));
 
@@ -135,34 +130,30 @@ export default function Sidenav() {
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const { logout, user } = useAuth();
-  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const menuItems = [
     {
       category: 'Translate',
       items: [
-        { text: 'Translations', icon: <DashboardIcon />, path: '/dashboard' },
+        { text: 'Translations', icon: <TranslateIcon />, path: '/dashboard' },
         { text: 'History', icon: <HistoryIcon />, path: '/dashboard/history' },
-        { text: 'APIs', icon: <StorageIcon />, path: '/dashboard/api-reference' },
+        { text: 'APIs', icon: <ApiIcon />, path: '/dashboard/api-reference' },
       ],
     },
-    
     {
       category: 'Conversation AI',
       items: [
-        { text: 'AI Agents', icon: <AnalyticsIcon />, path: '/dashboard/agents' },
-        { text: 'Export Text Agent', icon: <AnalyticsIcon />, path: '/dashboard/chat-guide' },
-        { text: 'Export Voice Agent', icon: <AnalyticsIcon />, path: '' },
+        { text: 'AI Agents', icon: <SmartToyIcon />, path: '/dashboard/agents' },
+        { text: 'Export Text Agent', icon: <SmartToyIcon />, path: '/dashboard/chat-guide' },
+        { text: 'Export Voice Agent', icon: <SmartToyIcon />, path: '/dashboard/voice-guide' },
       ],
     },
-
     {
       category: 'Docs',
       items: [
-        { text: 'Langauges', icon: <SettingsIcon />, path: '/dashboard/lang-support' },
+        { text: 'Languages', icon: <LanguageIcon />, path: '/dashboard/lang-support' },
       ],
     },
     {
@@ -188,13 +179,8 @@ export default function Sidenav() {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleNotificationMenu = (event) => {
-    setNotificationAnchorEl(event.currentTarget);
-  };
-
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setNotificationAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -215,34 +201,25 @@ export default function Sidenav() {
             edge="start"
             sx={{ mr: 2 }}
           >
-            <MenuIcon />
+            <MenuIcon sx={{ color: '#1976d2' }} /> {/* Blue icon */}
           </IconButton>
-
           <Typography
             variant="h6"
             noWrap
             component="div"
-            sx={{ flexGrow: 1, fontWeight: 600 }}
+            sx={{ flexGrow: 1, fontWeight: 600, color: '#1976d2' }} // Blue text
           >
+            A-Voices
           </Typography>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title="Notifications">
-              <IconButton onClick={handleNotificationMenu}>
-                <Badge badgeContent={3} color="error">
-                  <NotificationIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-
             <Tooltip title="Account">
               <IconButton onClick={handleProfileMenu}>
                 <Avatar
-                  sx={{ width: 32, height: 32 }}
+                  sx={{ width: 32, height: 32, bgcolor: '#1976d2' }} // Blue avatar
                   alt={user?.username || 'User'}
                   src={user?.avatar}
                 >
-                  <AccountCircleIcon />
+                  <AccountCircleIcon sx={{ color: '#ffffff' }} />
                 </Avatar>
               </IconButton>
             </Tooltip>
@@ -258,34 +235,23 @@ export default function Sidenav() {
       >
         <MenuItem onClick={() => navigate('/dashboard/profile')}>
           <ListItemIcon>
-            <AccountCircleIcon fontSize="small" />
+            <AccountCircleIcon fontSize="small" sx={{ color: '#1976d2' }} /> {/* Blue icon */}
           </ListItemIcon>
           Profile
         </MenuItem>
         <MenuItem onClick={() => navigate('/dashboard/settings')}>
           <ListItemIcon>
-            <SettingsIcon fontSize="small" />
+            <SettingsIcon fontSize="small" sx={{ color: '#1976d2' }} />
           </ListItemIcon>
           Settings
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
-            <LogoutIcon fontSize="small" />
+            <LogoutIcon fontSize="small" sx={{ color: '#1976d2' }} />
           </ListItemIcon>
           Logout
         </MenuItem>
-      </Menu>
-
-      <Menu
-        anchorEl={notificationAnchorEl}
-        open={Boolean(notificationAnchorEl)}
-        onClose={handleMenuClose}
-        sx={{ mt: 1 }}
-      >
-        <MenuItem>New transcription completed</MenuItem>
-        <MenuItem>Storage space alert</MenuItem>
-        <MenuItem>System update available</MenuItem>
       </Menu>
 
       <Drawer variant="permanent" open={open}>
@@ -298,16 +264,17 @@ export default function Sidenav() {
                 width: 40,
                 height: 40,
                 borderRadius: 1,
+                border: '2px solid #ffffff',
               }}
             />
             {open && (
-              <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" noWrap sx={{ fontWeight: 600, color: '#ffffff' }}>
                 A-Voices
               </Typography>
             )}
           </Box>
           <IconButton onClick={handleDrawerToggle}>
-            <ChevronLeftIcon />
+            <ChevronLeftIcon sx={{ color: '#ffffff' }} />
           </IconButton>
         </DrawerHeader>
 
@@ -317,8 +284,7 @@ export default function Sidenav() {
               {open && (
                 <Typography
                   variant="caption"
-                  color="text.secondary"
-                  sx={{ px: 1, fontWeight: 500 }}
+                  sx={{ px: 1, fontWeight: 500, color: '#000000' }} // Black text
                 >
                   {category.category}
                 </Typography>
@@ -338,13 +304,14 @@ export default function Sidenav() {
                         px: 2.5,
                         borderRadius: 1,
                         backgroundColor: isActive(item.path)
-                          ? theme.palette.primary.light
+                          ? 'rgba(25, 118, 210, 0.1)' // Light blue active background
                           : 'transparent',
                         '&:hover': {
                           backgroundColor: isActive(item.path)
-                            ? theme.palette.primary.light
-                            : theme.palette.action.hover,
+                            ? 'rgba(25, 118, 210, 0.1)'
+                            : 'rgba(66, 165, 245, 0.1)', // Lighter blue hover
                         },
+                        transition: 'all 0.3s ease',
                       }}
                     >
                       <Tooltip title={open ? '' : item.text} placement="right">
@@ -353,9 +320,7 @@ export default function Sidenav() {
                             minWidth: 0,
                             mr: open ? 2 : 'auto',
                             justifyContent: 'center',
-                            color: isActive(item.path)
-                              ? theme.palette.primary.main
-                              : theme.palette.text.secondary,
+                            color: isActive(item.path) ? '#1976d2' : '#000000', // Blue or black
                           }}
                         >
                           {item.icon}
@@ -365,9 +330,7 @@ export default function Sidenav() {
                         primary={item.text}
                         sx={{
                           opacity: open ? 1 : 0,
-                          color: isActive(item.path)
-                            ? theme.palette.primary.main
-                            : theme.palette.text.primary,
+                          color: isActive(item.path) ? '#1976d2' : '#000000', // Blue or black
                         }}
                       />
                     </ListItemButton>
@@ -383,21 +346,6 @@ export default function Sidenav() {
         <DrawerHeader />
         <Outlet />
       </MainContent>
-
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={6000}
-        onClose={() => setShowSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          severity="info"
-          sx={{ width: '100%' }}
-          onClose={() => setShowSnackbar(false)}
-        >
-          Contact support at support@africanvoices.com
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

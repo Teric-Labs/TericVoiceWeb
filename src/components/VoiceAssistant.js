@@ -137,7 +137,7 @@ const VoiceAssistant = ({ agentId }) => {
     formData.append('target_lang', targetLanguage);
 
     try {
-      const response = await fetch('https://agents.tericlab.com:8000/process_voice', {
+      const response = await fetch('https://phosai-main-api.onrender.com/process_voice', {
         method: 'POST',
         body: formData,
         headers: {

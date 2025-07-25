@@ -4,7 +4,9 @@ import {
   Container, 
   Paper, 
   Chip,
+  Typography,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { 
   Mic, 
   VideoCameraBack,
@@ -16,39 +18,44 @@ import {
 import TranscribeComponent from "./TranscribeComponent";
 import VideoStreamComponent from "./VideoStreamComponent";
 import TranslationComponent from "./TranslationComponent";
-import SummarizeComponent from './SummarizeComponent.js'
+import SummarizeComponent from './SummarizeComponent.js';
 import SynthesizeComponent from './SynthesizeComponent.js';
 import SpeechToSpeechForm from './SpeechToSpeechForm.js';
-// Custom styled tab component using Chip
-const FeatureChip = ({ icon: Icon, label, isSelected, onClick }) => (
-  <Chip
-    icon={<Icon />}
-    label={label}
-    onClick={onClick}
-    sx={{
-      height: '48px',
-      borderRadius: '24px',
-      fontWeight: 600,
-      fontSize: '14px',
-      px: 2,
-      py: 3,
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-      backgroundColor: isSelected ? 'primary.main' : 'background.paper',
-      color: isSelected ? 'white' : 'text.primary',
-      boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.25)' : 'none',
-      '&:hover': {
-        transform: 'scale(1.05)',
-        backgroundColor: isSelected ? 'primary.main' : 'background.paper',
-      },
-      '& .MuiChip-icon': {
-        color: isSelected ? 'white' : 'primary.main',
-        marginRight: '8px',
-      }
-    }}
-  />
-);
+
+// Custom styled FeatureChip component
+const FeatureChip = styled(Chip)(({ theme, isSelected }) => ({
+  height: '50px',
+  borderRadius: '25px',
+  fontWeight: 600,
+  fontSize: '0.9rem',
+  padding: theme.spacing(0, 2),
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+  backgroundColor: isSelected ? '#1976d2' : '#ffffff', // Blue when selected, white otherwise
+  color: isSelected ? '#ffffff' : '#000000', // White text when selected, black otherwise
+  boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)', // Blue or black shadow
+  border: '1px solid rgba(25, 118, 210, 0.2)', // Light blue border
+  '&:hover': {
+    transform: 'scale(1.05)',
+    backgroundColor: isSelected ? '#1565c0' : '#f5f5f5', // Darker blue or light gray on hover
+    boxShadow: '0 6px 24px rgba(25, 118, 210, 0.2)',
+  },
+  '& .MuiChip-icon': {
+    color: isSelected ? '#ffffff' : '#1976d2', // White or blue icon
+    marginRight: theme.spacing(1),
+  },
+}));
+
+// Custom styled container for the active component
+const ComponentContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: '#ffffff', // White background
+  borderRadius: '16px',
+  padding: theme.spacing(4),
+  border: '1px solid rgba(0, 0, 0, 0.05)', // Subtle black border
+  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)', // Light black shadow
+  transition: 'all 0.3s ease',
+}));
 
 const HomeComponent = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -66,17 +73,17 @@ const HomeComponent = () => {
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 2 }}>
-        {/* Main Interface */}
+      <Box sx={{ minHeight: '100vh', py: 6, bgcolor: '#f5f5f5' }}> {/* Light gray-white background */}
         <Paper
           elevation={0}
           sx={{
-            p:2,
+            p: 4,
             borderRadius: '24px',
             margin: 'auto',
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(25, 118, 210, 0.1)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)', // Light black shadow
           }}
         >
           {/* Features Navigation */}
@@ -101,14 +108,9 @@ const HomeComponent = () => {
           </Box>
 
           {/* Component Container */}
-          <Box
-            sx={{
-              backgroundColor: 'rgba(0, 0, 0, 0.02)',
-              borderRadius: '16px'
-            }}
-          >
+          <ComponentContainer>
             <ActiveComponent />
-          </Box>
+          </ComponentContainer>
         </Paper>
       </Box>
     </Container>

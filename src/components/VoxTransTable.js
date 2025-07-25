@@ -83,7 +83,7 @@ const VoiceTransTable = () => {
     }
     
     try {
-      const response = await axios.post('https://agents.tericlab.com:8080/get_voices', {
+      const response = await axios.post('https://phosai-main-api.onrender.com/get_voices', {
         user_id: user.userId
       });
       

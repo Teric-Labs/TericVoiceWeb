@@ -55,7 +55,7 @@ const ViewSummaryComponent = ({ translationId }) => {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const response = await axios.post("https://agents.tericlab.com:8080/get_summary", {
+        const response = await axios.post("https://phosai-main-api.onrender.com/get_summary", {
           doc_id: translationId,
         });
 
@@ -101,7 +101,7 @@ const ViewSummaryComponent = ({ translationId }) => {
 
     setIsTranslating(true);
     try {
-      const response = await axios.post("https://agents.tericlab.com:8080/translate_text", {
+      const response = await axios.post("https://phosai-main-api.onrender.com/translate_text", {
         text: summary,
         source_lang: language,
         target_lang: targetLanguage,

@@ -113,7 +113,7 @@ export default function TextTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://agents.tericlab.com:8080/get_vocify_voices';
+    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_vocify_voices';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

@@ -42,7 +42,7 @@ import axios from 'axios';
 import './Pagination.css';
 
 const ENTRIES_PER_PAGE = 10;
-const API_ENDPOINT = 'https://agents.tericlab.com:8080/get_summaries';
+const API_ENDPOINT = 'https://phosai-main-api.onrender.com/get_summaries';
 
 export default function SummaryTable() {
   // State management

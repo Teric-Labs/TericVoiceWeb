@@ -120,7 +120,7 @@ export default function VideoTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://agents.tericlab.com:8080/get_video';
+    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_video';
     try {
       
       const response = await axios.post(apiEndpoint, { user_id: user.userId });

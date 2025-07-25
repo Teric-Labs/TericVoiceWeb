@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Box, 
   Container, 
   Paper, 
-  Chip,
+  Typography,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { 
   Mic, 
   VideoCameraBack,
@@ -13,75 +14,92 @@ import {
   RecordVoiceOver,
   Summarize
 } from '@mui/icons-material';
-
-import DataTable from "./DataTable.js";
-import VideoTable from "./VideoTable";
-import TranslationsTable from "./TranslationsTable";
-import SummaryTable from "./SummaryTable";
+import DataTable from './DataTable.js';
+import VideoTable from './VideoTable';
+import TranslationsTable from './TranslationsTable';
+import SummaryTable from './SummaryTable';
 import VoxTransTable from './VoxTransTable.js';
 import TextTable from './TextTable.js';
 
-const FeatureChip = ({ icon: Icon, label, isSelected, onClick }) => (
-  <Chip
-    icon={<Icon />}
-    label={label}
-    onClick={onClick}
-    sx={{
-      height: '48px',
-      borderRadius: '24px',
-      fontWeight: 600,
-      fontSize: '0.95rem',
-      px: 2,
-      py: 3,
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-      backgroundColor: isSelected ? 'primary.main' : 'background.paper',
-      color: isSelected ? 'white' : 'text.primary',
-      boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.25)' : 'none',
-      '&:hover': {
-        transform: 'scale(1.05)',
-        backgroundColor: isSelected ? 'primary.main' : 'background.paper',
-      },
-      '& .MuiChip-icon': {
-        color: isSelected ? 'white' : 'primary.main',
-        marginRight: '8px',
-      }
-    }}
-  />
-);
+// Custom styled FeatureChip component
+const FeatureChip = styled('div')(({ theme, isSelected }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  height: '50px',
+  borderRadius: '25px',
+  fontWeight: 600,
+  fontSize: '0.9rem',
+  padding: theme.spacing(0, 2),
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+  backgroundColor: isSelected ? '#1976d2' : '#ffffff',
+  color: isSelected ? '#ffffff' : '#000000',
+  boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(25, 118, 210, 0.2)',
+  '&:hover': {
+    transform: 'scale(1.05)',
+    backgroundColor: isSelected ? '#1565c0' : '#f5f5f5',
+    boxShadow: '0 6px 24px rgba(25, 118, 210, 0.2)',
+  },
+  '& .MuiSvgIcon-root': {
+    color: isSelected ? '#ffffff' : '#1976d2',
+    marginRight: theme.spacing(1),
+  },
+  '&:focus': {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: '2px',
+  },
+}));
 
+// Custom styled container for the active component
+const ComponentContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  padding: theme.spacing(4),
+  border: '1px solid rgba(0, 0, 0, 0.05)',
+  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+  transition: 'all 0.3s ease',
+}));
 
 const History = () => {
   const [selectedTab, setSelectedTab] = useState(0);
 
   const features = [
     { icon: TextFields, label: 'Text Translation', component: TranslationsTable },
-    { icon: VolumeUp, label: 'Text to Voice', component: TextTable},
+    { icon: VolumeUp, label: 'Text to Voice', component: TextTable },
     { icon: Mic, label: 'Voice Recognition', component: DataTable },
     { icon: VideoCameraBack, label: 'Video Transcription', component: VideoTable },
-    { icon: RecordVoiceOver, label: 'Voice to Voice', component: VoxTransTable},
-    { icon: Summarize, label: 'Summarization', component: SummaryTable}
+    { icon: RecordVoiceOver, label: 'Voice to Voice', component: VoxTransTable },
+    { icon: Summarize, label: 'Summarization', component: SummaryTable }
   ];
+
+  const handleTabChange = useCallback((index) => {
+    setSelectedTab(index);
+    console.log('Selected tab:', features[index].label);
+  }, []);
 
   const ActiveComponent = features[selectedTab].component;
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 2 }}>
-        {/* Main Interface */}
+      <Box sx={{ minHeight: '100vh', py: 6, bgcolor: '#f5f5f5' }}>
         <Paper
           elevation={0}
           sx={{
-            p:2,
+            p: 4,
             borderRadius: '24px',
-            maxWidth: '1200px',
             margin: 'auto',
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
             border: '1px solid rgba(25, 118, 210, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
           }}
+          role="region"
+          aria-label="History Section"
         >
+          
+
           {/* Features Navigation */}
           <Box
             sx={{
@@ -91,30 +109,39 @@ const History = () => {
               flexWrap: 'wrap',
               mb: 6,
             }}
+            role="tablist"
+            aria-label="Feature Navigation"
           >
             {features.map((feature, index) => (
               <FeatureChip
                 key={index}
-                icon={feature.icon}
-                label={feature.label}
                 isSelected={selectedTab === index}
-                onClick={() => setSelectedTab(index)}
-              />
+                onClick={() => handleTabChange(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'Space') {
+                    handleTabChange(index);
+                    e.preventDefault();
+                  }
+                }}
+                tabIndex={0}
+                role="tab"
+                aria-selected={selectedTab === index}
+                aria-label={`Select ${feature.label}`}
+              >
+                <feature.icon />
+                <span>{feature.label}</span>
+              </FeatureChip>
             ))}
           </Box>
 
           {/* Component Container */}
-          <Box
-            sx={{
-              backgroundColor: 'rgba(0, 0, 0, 0.02)',
-              borderRadius: '16px'
-            }}
-          >
+          <ComponentContainer role="tabpanel" aria-label={`${features[selectedTab].label} Content`}>
             <ActiveComponent />
-          </Box>
+          </ComponentContainer>
         </Paper>
       </Box>
     </Container>
   );
 };
+
 export default History;
