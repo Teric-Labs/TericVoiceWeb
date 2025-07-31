@@ -137,7 +137,7 @@ const VoiceAssistant = ({ agentId }) => {
     formData.append('target_lang', targetLanguage);
 
     try {
-      const response = await fetch('https://phosai-main-api.onrender.com/process_voice', {
+      const response = await fetch('https://jellyfish-app-aum6y.ondigitalocean.app/process_voice', {
         method: 'POST',
         body: formData,
         headers: {

@@ -1,36 +1,32 @@
 import React from 'react';
-import { Box, Typography, Container, Grid, Paper } from '@mui/material';
+import { Box, Container, Grid, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import EnhancedHeroSection from './EnhancedHeroSection';
 import ServiceSections from './ServiceSections';
 
-// Custom styled components
 const HeroContainer = styled(Container)(({ theme }) => ({
-  minHeight: '100vh',
+  minHeight: '80vh',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  background: 'linear-gradient(135deg, #f1faee 0%, #ffffff 100%)',
+  textAlign: 'center',
   paddingTop: theme.spacing(8),
   paddingBottom: theme.spacing(8),
+  background: 'ur[](https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80) no-repeat center right',
+  backgroundSize: '40%',
 }));
 
 const SectionPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   borderRadius: '16px',
-  backgroundColor: '#fff',
-  boxShadow: '0 8px 32px rgba(230, 57, 70, 0.1)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 12px 48px rgba(230, 57, 70, 0.2)',
-  },
+  backgroundColor: 'transparent',
+  boxShadow: 'none',
 }));
 
 const MainComponent = () => {
   return (
-    <Box sx={{ bgcolor: '#f1faee', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: '#000', minHeight: '80vh', color: '#fff' }}>
       <HeroContainer maxWidth="xl">
         <Grid container spacing={4} justifyContent="center">
           <Grid item xs={12}>

@@ -291,20 +291,8 @@ const SynthesizeComponent = () => {
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 6, bgcolor: '#f5f5f5' }}>
+      <Box sx={{ py: 6 }}>
         <StyledPaper elevation={0}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: '#1976d2', // Blue text
-              textAlign: 'center',
-              mb: 4,
-            }}
-          >
-            Text to Speech Synthesis
-          </Typography>
-
           <StyledTabs
             value={activeTab}
             onChange={(_, newValue) => {

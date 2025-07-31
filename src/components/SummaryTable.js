@@ -155,7 +155,6 @@ export default function SummaryTable() {
   // Data fetching
   const fetchEntries = useCallback(async () => {
     if (!user.userId) {
-      showSnackbar('Invalid user ID format', 'error');
       setLoading(false);
       return;
     }

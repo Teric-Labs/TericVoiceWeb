@@ -47,7 +47,7 @@ const VoiceAI = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await fetch('https://agents.tericlab.com:8000/agents');
+      const response = await fetch('https://jellyfish-app-aum6y.ondigitalocean.app/agents');
       if (!response.ok) throw new Error('Failed to fetch agents');
       const data = await response.json();
       setAgents(data);
@@ -77,7 +77,7 @@ const VoiceAI = () => {
         }
       });
 
-      const response = await fetch('https://phosai-main-api.onrender.com/agents', {
+      const response = await fetch('https://jellyfish-app-aum6y.ondigitalocean.app/agents', {
         method: 'POST',
         body: formData
       });
