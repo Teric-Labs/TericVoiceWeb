@@ -4,6 +4,7 @@ import Dashboard from "./views/Dashboard";
 import LiveStream from "./views/Livestream";
 import VideoStream from "./views/Videostream";
 import Transcribe from "./views/Transcribe";
+import History from "./views/History";
 import Sidenav from "./components/Sidenav";
 import Translation from "./views/Translation";
 import Text2Speech from "./views/Text2Speech";
@@ -56,7 +57,9 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="agents" element={<LiveStream />} />
             <Route path="conversational-ai" element={<VideoStream />} />
-            <Route path="history" element={<Transcribe />} />
+            <Route path="history" element={<History />} />
+            <Route path="transcribe" element={<Transcribe />} />
+            <Route path="video-transcribe" element={<VideoStream />} />
             <Route path="profile" element={<ProfileView />} />
             <Route path="synthesize" element={<Text2Speech />} />
             <Route path="summarize" element={<Summarization />} />
@@ -77,7 +80,6 @@ function App() {
             <Route path="lang-support" element={<LanguageSupport />} />
             <Route path="contact-support" element={<ContactSupport />} />
           </Route>
-          
         </Routes>
         <Chatbot/>
       </Router>

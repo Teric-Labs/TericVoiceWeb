@@ -3,6 +3,7 @@ import { Box, Typography, Button, Chip, Container, Grid, Paper, IconButton } fro
 import { Link } from 'react-router-dom';
 import { styled, keyframes } from '@mui/material/styles';
 import { PlayArrow, Translate, RecordVoiceOver, Mic } from '@mui/icons-material';
+import { useAppSelector } from '../store/hooks';
 
 // Enhanced floating animation
 const float = keyframes`
@@ -202,6 +203,7 @@ const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
 
 const EnhancedHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
   
   useEffect(() => {
     setIsVisible(true);
@@ -221,7 +223,7 @@ const EnhancedHeroSection = () => {
     { text: 'Transcribe', delay: '0.2s', icon: Mic },
     { text: 'Translate', delay: '0.4s', icon: Translate },
     { text: 'Speak', delay: '0.6s', icon: RecordVoiceOver },
-    { text: 'Surmarize', delay: '0.6s', icon: RecordVoiceOver },
+    { text: 'Summarize', delay: '0.8s', icon: RecordVoiceOver },
   ];
 
   return (
@@ -302,172 +304,100 @@ const EnhancedHeroSection = () => {
                 transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
               }}
             >
-              Advanced AI for African languages and Communication apps
+              Transform your content across African languages with our powerful AI-driven platform. 
+              From transcription to translation, we make communication seamless and accessible.
             </Typography>
 
-            {/* Enhanced service chips */}
-            <Box sx={{ mb: 5, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1 }}>
+            {/* Service chips */}
+            <Box sx={{ mb: 4, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(40px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s' }}>
               {services.map((service, index) => (
-                <AnimatedWord 
-                  key={index} 
-                  word={service.text} 
-                  delay={service.delay} 
+                <AnimatedWord
+                  key={service.text}
+                  word={service.text}
+                  delay={service.delay}
                   icon={service.icon}
                 />
               ))}
             </Box>
 
-            {/* Action buttons with enhanced styling */}
-            <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', mb: 3 }}>
-              <Button
-                variant="contained"
-                component={Link}
-                to="/get-started"
-                size="large"
-                startIcon={<PlayArrow />}
-                sx={{
-                  borderRadius: '50px',
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
-                  boxShadow: '0 10px 30px rgba(25, 118, 210, 0.4)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: '-100%',
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                    transition: 'left 0.6s',
-                  },
-                  '&:hover': { 
-                    background: 'linear-gradient(135deg, #1565c0 0%, #42a5f5 100%)',
-                    transform: 'translateY(-3px) scale(1.02)',
-                    boxShadow: '0 15px 40px rgba(25, 118, 210, 0.5)',
-                    '&::before': {
-                      left: '100%',
-                    },
-                  },
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              >
-                Get Started
-              </Button>
-              
-              <Button
-                variant="outlined"
-                component={Link}
-                to="/documentation"
-                size="large"
-                sx={{
-                  borderRadius: '50px',
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  borderWidth: '2px',
-                  color: '#64b5f6',
-                  borderColor: '#64b5f6',
-                  background: 'rgba(100, 181, 246, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  '&:hover': { 
-                    borderWidth: '2px', 
-                    backgroundColor: 'rgba(100, 181, 246, 0.15)',
-                    transform: 'translateY(-3px) scale(1.02)',
-                    boxShadow: '0 15px 40px rgba(100, 181, 246, 0.2)',
-                  },
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              >
-                API Documention
-              </Button>
-            </Box>
-          </Grid>
-
-          {/* Right side - African visual and languages */}
-          <Grid item xs={12} md={6}>
-            {/* African-inspired visual */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                mb: 4,
-                position: 'relative',
-              }}
-            >
-              <Box
-                sx={{
-                  animation: `${rotate} 30s linear infinite`,
-                  transform: isVisible ? 'scale(1)' : 'scale(0.8)',
-                  opacity: isVisible ? 1 : 0,
-                  transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.8s',
-                }}
-              >
-                <AfricanPattern size={280} color="#1976d2" />
-              </Box>
-            </Box>
-
-            {/* Languages showcase */}
-            <Paper
-              elevation={24}
-              sx={{
-                p: 4,
-                borderRadius: '25px',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                transform: isVisible ? 'translateX(0)' : 'translateX(50px)',
-                opacity: isVisible ? 1 : 0,
-                transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.5s',
-              }}
-            >
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  mb: 3, 
-                  color: '#fff', 
-                  fontSize: '1.3rem', 
-                  fontWeight: 700,
-                  textAlign: 'center',
-                }}
-              >
-                16+ African Languages
+            {/* Language chips */}
+            <Box sx={{ mb: 6, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(50px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s' }}>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 2 }}>
+                Supported Languages
               </Typography>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1 }}>
                 {languages.map((lang) => (
-                  <LanguageChip 
-                    key={lang.name} 
-                    label={lang.name} 
+                  <LanguageChip
+                    key={lang.name}
+                    label={lang.name}
                     flag={lang.flag}
                     isPrimary={lang.isPrimary}
                   />
                 ))}
               </Box>
-            </Paper>
+            </Box>
+
+            {/* CTA Buttons */}
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(60px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 1.2s' }}>
+              <Button
+                component={Link}
+                to="/get-started"
+                variant="contained"
+                size="large"
+                startIcon={<PlayArrow />}
+                sx={{
+                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                  color: '#ffffff',
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: '28px',
+                  boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+                    boxShadow: '0 12px 40px rgba(25, 118, 210, 0.4)',
+                    transform: 'translateY(-2px)',
+                  },
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
+                Get Started Free
+              </Button>
+              <Button
+                component={Link}
+                to="/pricing"
+                variant="outlined"
+                size="large"
+                sx={{
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  color: '#ffffff',
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: '28px',
+                  '&:hover': {
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    transform: 'translateY(-2px)',
+                  },
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
+                View Pricing
+              </Button>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            {/* African pattern and visual elements */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateX(0)' : 'translateX(50px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s' }}>
+              <AfricanPattern size={400} color="#1976d2" />
+            </Box>
           </Grid>
         </Grid>
       </Container>
-
-      {/* Bottom gradient fade */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '100px',
-          background: 'linear-gradient(to top, rgba(10, 14, 39, 0.8), transparent)',
-          zIndex: 1,
-        }}
-      />
     </Box>
   );
 };

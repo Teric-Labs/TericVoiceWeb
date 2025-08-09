@@ -19,7 +19,9 @@ import {
   TextField,
   Drawer,
   Stack,
-  Divider
+  Divider,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -32,10 +34,23 @@ import {
   Language as LanguageIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
-import axios from 'axios';
-import ViewAudioComponent from './ViewAudioComponent'
-
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://phosai-main-api.onrender.com';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import {
+  setSourceLanguage,
+  setTargetLanguages,
+  setAudioBlob,
+  setAudioURL,
+  setSelectedFile,
+  setIsRecording,
+  setIsPlaying,
+  setProgress,
+  clearAudio,
+  clearError,
+  uploadAudio,
+  uploadRecordedAudio,
+} from '../store/slices/transcriptionSlice';
+import { addNotification } from '../store/slices/uiSlice';
+import ViewAudioComponent from './ViewAudioComponent';
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -49,42 +64,37 @@ const languageOptions = [
 ];
 
 const TranscribeComponent = () => {
-  // State management
-  const [user, setUser] = useState({ username: '', userId: '' });
+  const dispatch = useAppDispatch();
+  const {
+    sourceLanguage,
+    targetLanguages,
+    audioBlob,
+    audioURL,
+    selectedFile,
+    isRecording,
+    isPlaying,
+    isLoading,
+    progress,
+    response,
+    docId,
+    error,
+  } = useAppSelector((state) => state.transcription);
+  const { user } = useAppSelector((state) => state.auth);
+
   const [selectedTab, setSelectedTab] = useState(0);
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguages, setTargetLanguages] = useState([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [audioURL, setAudioURL] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [response, setResponse] = useState(null);
-  const [docId, setDocId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  
 
   // Refs
   const mediaRecorder = useRef(null);
   const audioPlayerRef = useRef(null);
   const uploadInputRef = useRef(null);
 
-  // Mock user ID - Replace with actual user authentication
-  useEffect(() => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-      }
-    }, []);
-
   // Notification helper
   const showNotification = (message, severity = 'success') => {
+    dispatch(addNotification({ message, severity }));
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setShowSnackbar(true);
@@ -107,7 +117,7 @@ const TranscribeComponent = () => {
   const toggleRecording = async () => {
     if (isRecording) {
       mediaRecorder.current?.stop();
-      setIsRecording(false);
+      dispatch(setIsRecording(false));
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -117,13 +127,13 @@ const TranscribeComponent = () => {
         recorder.ondataavailable = (e) => chunks.push(e.data);
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'audio/webm' });
-          setAudioBlob(blob);
-          setAudioURL(URL.createObjectURL(blob));
+          dispatch(setAudioBlob(blob));
+          dispatch(setAudioURL(URL.createObjectURL(blob)));
         };
 
         recorder.start();
         mediaRecorder.current = recorder;
-        setIsRecording(true);
+        dispatch(setIsRecording(true));
       } catch (error) {
         console.error('Recording error:', error);
         showNotification('Error accessing microphone', 'error');
@@ -135,7 +145,7 @@ const TranscribeComponent = () => {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
+      dispatch(setSelectedFile(file));
       showNotification('File selected successfully');
     }
   };
@@ -149,13 +159,11 @@ const TranscribeComponent = () => {
     } else {
       audioPlayerRef.current.play();
     }
-    setIsPlaying(!isPlaying);
+    dispatch(setIsPlaying(!isPlaying));
   };
 
   const handleDiscardRecording = () => {
-    setAudioBlob(null);
-    setAudioURL('');
-    setIsPlaying(false);
+    dispatch(clearAudio());
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
     }
@@ -163,12 +171,10 @@ const TranscribeComponent = () => {
 
   // Submit functionality
   const handleSubmit = async () => {
-    setDocId(null);
-    setIsDrawerOpen(false);
     if (!validateInput()) return;
 
     let formData = new FormData();
-    formData.append('user_id', user.userId);
+    formData.append('user_id', user?.userId || '');
     formData.append('source_lang', sourceLanguage);
     targetLanguages.forEach(lang => formData.append('target_langs', lang));
 
@@ -179,559 +185,265 @@ const TranscribeComponent = () => {
         return;
       }
       formData.append('audio_file', selectedFile);
+      await dispatch(uploadAudio(formData));
     } else {
       if (!audioBlob) {
         showNotification('Please record audio first', 'error');
         return;
       }
       formData.append('recorded_audio', audioBlob, 'recording.webm');
-    }
-
-    setIsLoading(true);
-    setProgress(0);
-
-    try {
-      const endpoint = selectedTab === 0 ? 'upload/' : 'upload_recorded_audio/';
-      const response = await axios.post(`${BASE_URL}/${endpoint}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          // Cap progress at 90% until we get the response
-          setProgress(Math.min(percentCompleted, 90));
-        }
-      });
-
-      // Set progress to 100% only after response is received
-      setProgress(100);
-      setResponse(response.data);
-      console.log('Response data:', response.data);
-      setDocId(response.data.doc_id);
-      setIsDrawerOpen(true);
-      showNotification(selectedTab === 0 ? 'File uploaded successfully!' : 'Recording submitted successfully!');
-      
-      // Reset form
-     
-      setSelectedFile(null);
-      if (uploadInputRef.current) {
-        uploadInputRef.current.value = '';
-      }
-      handleDiscardRecording();
-      
-    } catch (error) {
-      console.error('Submission Error:', error);
-      showNotification(error.response?.data?.message || 'Error during submission', 'error');
-      setProgress(0);
-    } finally {
-      setIsLoading(false);
+      await dispatch(uploadRecordedAudio(formData));
     }
   };
 
-  // Audio player effect
-  useEffect(() => {
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.onended = () => {
-        setIsPlaying(false);
-      };
-    }
-  }, [audioURL]);
-
-  // Reset progress when loading stops
-  useEffect(() => {
-    if (!isLoading) {
-      const timer = setTimeout(() => {
-        setProgress(0);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading]);
-
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography 
-            variant="body1" 
-            color="text.secondary"
-            sx={{ maxWidth: 500, mx: 'auto' }}
-          >
-            Upload or record audio to translate between multiple languages
-          </Typography>
-        </Box>
+    <Container maxWidth="xl">
+      <Box sx={{ py: 4 }}>
+        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+              Voice Recognition & Transcription
+            </Typography>
 
-        {/* Language Selection Card */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '20px',
-            background: 'linear-gradient(145deg, #f5f7fa 0%, #ffffff 100%)',
-            border: '1px solid rgba(25, 118, 210, 0.08)',
-            p: 4,
-            mb: 3,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.1)',
-              transform: 'translateY(-2px)',
-            }
-          }}
-        >
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              mb: 3, 
-              fontWeight: 600,
-              color: 'text.primary',
-              textAlign: 'center'
-            }}
-          >
-            Language Settings
-          </Typography>
-          
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={5}>
-              <Stack spacing={2}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+              <Tabs
+                value={selectedTab}
+                onChange={(_, newValue) => setSelectedTab(newValue)}
+                sx={{
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                  },
+                }}
+              >
+                <Tab label="Upload Audio/Video" />
+                <Tab label="Record Audio" />
+              </Tabs>
+            </Box>
+
+            {/* Language Selection */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                   Source Language
                 </Typography>
                 <FormControl fullWidth>
                   <Select
                     value={sourceLanguage}
-                    onChange={(e) => setSourceLanguage(e.target.value)}
-                    sx={{ 
-                      height: 56, 
-                      borderRadius: '12px',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(25, 118, 210, 0.2)',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'primary.main',
-                      }
-                    }}
+                    onChange={(e) => dispatch(setSourceLanguage(e.target.value))}
+                    sx={{ borderRadius: '12px' }}
                   >
-                    {languageOptions.map((lang) => (
-                      <MenuItem key={lang.value} value={lang.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <LanguageIcon sx={{ color: 'primary.main', fontSize: 20, mr: 2 }} />
-                          {lang.label}
+                    {languageOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LanguageIcon sx={{ color: 'primary.main' }} />
+                          {option.label}
                         </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Stack>
-            </Grid>
-
-            <Grid item xs={12} md={2}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: 80
-              }}>
-                <IconButton
-                  onClick={() => {
-                    const temp = sourceLanguage;
-                    setSourceLanguage(targetLanguages[0] || '');
-                    setTargetLanguages([temp]);
-                  }}
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    backgroundColor: 'primary.main',
-                    color: 'white',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
-                    '&:hover': { 
-                      backgroundColor: 'primary.dark',
-                      transform: 'scale(1.05)',
-                      boxShadow: '0 6px 16px rgba(25, 118, 210, 0.4)',
-                    },
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }}
-                >
-                  <SwapHoriz />
-                </IconButton>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={5}>
-              <Stack spacing={2}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                   Target Languages
                 </Typography>
                 <FormControl fullWidth>
                   <Select
                     multiple
                     value={targetLanguages}
-                    onChange={(e) => setTargetLanguages(e.target.value)}
-                    sx={{ 
-                      minHeight: 56, 
-                      borderRadius: '12px',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(25, 118, 210, 0.2)',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'primary.main',
-                      }
-                    }}
+                    onChange={(e) => dispatch(setTargetLanguages(e.target.value))}
                     renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selected.map((value) => (
-                          <Chip
-                            key={value}
-                            label={languageOptions.find((lang) => lang.value === value)?.label}
-                            size="small"
-                            sx={{
-                              backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                              color: 'primary.main',
-                              borderRadius: '8px',
-                              fontWeight: 500,
-                              '& .MuiChip-deleteIcon': {
-                                color: 'primary.main',
-                              }
-                            }}
-                          />
-                        ))}
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => {
+                          const option = languageOptions.find(opt => opt.value === value);
+                          return (
+                            <Chip
+                              key={value}
+                              label={option?.label || value}
+                              size="small"
+                              sx={{ backgroundColor: 'primary.main', color: 'white' }}
+                            />
+                          );
+                        })}
                       </Box>
                     )}
+                    sx={{ borderRadius: '12px' }}
                   >
-                    {languageOptions.map((lang) => (
-                      <MenuItem key={lang.value} value={lang.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <LanguageIcon sx={{ color: 'primary.main', fontSize: 20, mr: 2 }} />
-                          {lang.label}
+                    {languageOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LanguageIcon sx={{ color: 'primary.main' }} />
+                          {option.label}
                         </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Stack>
+              </Grid>
             </Grid>
-          </Grid>
-        </Paper>
 
-        {/* Main Content Card */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '20px',
-            background: '#ffffff',
-            border: '1px solid rgba(25, 118, 210, 0.08)',
-            overflow: 'hidden',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Tabs */}
-          <Tabs
-            value={selectedTab}
-            onChange={(_, newValue) => setSelectedTab(newValue)}
-            variant="fullWidth"
-            sx={{ 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              '& .MuiTab-root': {
-                minHeight: 72,
-                fontSize: '1rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                '&.Mui-selected': {
-                  color: 'primary.main',
-                }
-              }
-            }}
-          >
-            <Tab
-              icon={<CloudUploadIcon sx={{ fontSize: 28 }} />}
-              label="Upload Audio"
-              iconPosition="start"
-              sx={{ gap: 2 }}
-            />
-            <Tab
-              icon={<MicIcon sx={{ fontSize: 28 }} />}
-              label="Record Audio"
-              iconPosition="start"
-              sx={{ gap: 2 }}
-            />
-          </Tabs>
-
-          {/* Tab Content */}
-          <Box sx={{ p: 4, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {/* Upload Tab */}
-            {selectedTab === 0 && (
-              <Stack spacing={4} alignItems="center" sx={{ flex: 1, justifyContent: 'center' }}>
-                <Box 
-                  sx={{ 
-                    border: '2px dashed rgba(25, 118, 210, 0.3)',
-                    borderRadius: '16px',
-                    p: 6,
+            {/* File Upload or Recording Section */}
+            {selectedTab === 0 ? (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Upload Audio/Video File
+                </Typography>
+                <Box
+                  sx={{
+                    border: '2px dashed',
+                    borderColor: 'primary.main',
+                    borderRadius: '12px',
+                    p: 4,
                     textAlign: 'center',
                     backgroundColor: 'rgba(25, 118, 210, 0.02)',
-                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
                     '&:hover': {
-                      borderColor: 'primary.main',
                       backgroundColor: 'rgba(25, 118, 210, 0.05)',
                     },
-                    width: '100%',
-                    maxWidth: 480
                   }}
+                  onClick={() => uploadInputRef.current?.click()}
                 >
                   <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    Choose Audio File
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    Click to upload or drag and drop
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    Supports MP3, WAV, M4A and other audio formats
+                  <Typography variant="body2" color="text.secondary">
+                    Supports MP3, WAV, MP4, AVI (Max 10MB)
                   </Typography>
-                  <Button
-                    variant="contained"
-                    component="label"
-                    startIcon={<CloudUploadIcon />}
-                    sx={{
-                      borderRadius: '12px',
-                      px: 4,
-                      py: 1.5,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
-                      '&:hover': {
-                        boxShadow: '0 6px 16px rgba(25, 118, 210, 0.4)',
-                      }
-                    }}
-                  >
-                    Browse Files
-                    <input
-                      ref={uploadInputRef}
-                      type="file"
-                      hidden
-                      accept="audio/*"
-                      onChange={handleFileChange}
-                    />
-                  </Button>
+                  <input
+                    ref={uploadInputRef}
+                    type="file"
+                    accept="audio/*,video/*"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
                 </Box>
-                
                 {selectedFile && (
-                  <Box sx={{ textAlign: 'center', p: 3, backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '12px' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: 'success.main', mb: 1 }}>
-                      File Selected
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedFile.name}
+                  <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
+                    <Typography variant="body2">
+                      Selected: {selectedFile.name}
                     </Typography>
                   </Box>
                 )}
-              </Stack>
-            )}
-
-            {/* Record Tab */}
-            {selectedTab === 1 && (
-              <Stack spacing={4} alignItems="center" sx={{ flex: 1, justifyContent: 'center' }}>
-                <Box sx={{ textAlign: 'center', maxWidth: 480 }}>
-                  <IconButton
+              </Box>
+            ) : (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Record Audio
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
+                  <Button
+                    variant={isRecording ? "contained" : "outlined"}
+                    color={isRecording ? "error" : "primary"}
+                    startIcon={isRecording ? <StopIcon /> : <MicIcon />}
                     onClick={toggleRecording}
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      backgroundColor: isRecording ? 'error.main' : 'primary.main',
-                      color: 'white',
-                      mb: 3,
-                      boxShadow: isRecording 
-                        ? '0 8px 24px rgba(244, 67, 54, 0.4)' 
-                        : '0 8px 24px rgba(25, 118, 210, 0.4)',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      '&:hover': { 
-                        backgroundColor: isRecording ? 'error.dark' : 'primary.dark',
-                        transform: 'scale(1.05)',
-                      }
-                    }}
+                    sx={{ borderRadius: '24px', px: 3 }}
                   >
-                    {isRecording ? <StopIcon sx={{ fontSize: 48 }} /> : <MicIcon sx={{ fontSize: 48 }} />}
-                  </IconButton>
-
-                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                    {isRecording ? 'Recording in Progress' : 'Ready to Record'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    {isRecording 
-                      ? 'Click the stop button when you\'re finished' 
-                      : 'Click the microphone to start recording your audio'
-                    }
-                  </Typography>
-
-                  {isRecording && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                      <Box 
-                        sx={{ 
-                          width: 12, 
-                          height: 12, 
-                          backgroundColor: 'error.main', 
-                          borderRadius: '50%',
-                          animation: 'pulse 1.5s ease-in-out infinite',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.5 },
-                            '100%': { opacity: 1 },
-                          }
-                        }} 
-                      />
-                    </Box>
-                  )}
-                </Box>
-
-                {audioBlob && (
-                  <Paper
-                    elevation={2}
-                    sx={{
-                      p: 3,
-                      borderRadius: '16px',
-                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                      border: '1px solid rgba(76, 175, 80, 0.3)',
-                      width: '100%',
-                      maxWidth: 400
-                    }}
-                  >
-                    <audio ref={audioPlayerRef} src={audioURL} />
-                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
-                      Recording Ready
-                    </Typography>
-                    <Stack direction="row" spacing={2} justifyContent="center">
+                    {isRecording ? 'Stop Recording' : 'Start Recording'}
+                  </Button>
+                  {audioURL && (
+                    <>
                       <Button
-                        variant="contained"
-                        onClick={handlePlayPause}
+                        variant="outlined"
                         startIcon={isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                        sx={{
-                          borderRadius: '10px',
-                          px: 3,
-                          fontWeight: 600,
-                          textTransform: 'none'
-                        }}
+                        onClick={handlePlayPause}
+                        sx={{ borderRadius: '24px' }}
                       >
                         {isPlaying ? 'Pause' : 'Play'}
                       </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
+                      <IconButton
                         onClick={handleDiscardRecording}
-                        startIcon={<DeleteOutlineIcon />}
-                        sx={{
-                          borderRadius: '10px',
-                          px: 3,
-                          fontWeight: 600,
-                          textTransform: 'none'
-                        }}
+                        sx={{ color: 'error.main' }}
                       >
-                        Discard
-                      </Button>
-                    </Stack>
-                  </Paper>
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </>
+                  )}
+                </Box>
+                {audioURL && (
+                  <audio
+                    ref={audioPlayerRef}
+                    src={audioURL}
+                    style={{ display: 'none' }}
+                    onEnded={() => dispatch(setIsPlaying(false))}
+                  />
                 )}
-              </Stack>
+              </Box>
             )}
 
-            <Divider sx={{ my: 4 }} />
+            {/* Progress */}
+            {isLoading && (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Processing... {progress}%
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={progress}
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+              </Box>
+            )}
 
-            {/* Submit Section */}
-            <Box sx={{ textAlign: 'center' }}>
+            {/* Submit Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Button
                 variant="contained"
-                color="primary"
+                size="large"
                 onClick={handleSubmit}
-                disabled={isLoading}
-                startIcon={isLoading ? null : <SendIcon />}
+                disabled={isLoading || (!selectedFile && !audioBlob)}
+                startIcon={<SendIcon />}
                 sx={{
-                  borderRadius: '16px',
-                  px: 8,
-                  py: 2,
+                  borderRadius: '24px',
+                  px: 4,
+                  py: 1.5,
                   fontSize: '1.1rem',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  minWidth: 200,
-                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
-                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
-                    boxShadow: '0 8px 25px rgba(25, 118, 210, 0.5)',
-                    transform: 'translateY(-2px)',
-                  },
-                  '&:disabled': {
-                    background: 'linear-gradient(45deg, #bbbbbb, #cccccc)',
-                    boxShadow: 'none',
-                    transform: 'none',
-                  }
+                  fontWeight: 600,
                 }}
               >
-                {isLoading ? 'Processing...' : 'Start Translation'}
+                {isLoading ? 'Processing...' : 'Transcribe Audio'}
               </Button>
-
-              {/* Loading Progress */}
-              {isLoading && (
-                <Box sx={{ mt: 4, maxWidth: 400, mx: 'auto' }}>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={progress} 
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 4,
-                        background: 'linear-gradient(90deg, #1976d2, #64b5f6)',
-                      }
-                    }}
-                  />
-                  <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Processing your {selectedTab === 0 ? 'file' : 'recording'}...
-                    </Typography>
-                    <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                      {progress}%
-                    </Typography>
-                  </Stack>
-                </Box>
-              )}
             </Box>
-          </Box>
-        </Paper>
-      </Box>
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
+            {/* Error Display */}
+            {error && (
+              <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
+                {error}
+              </Alert>
+            )}
+
+            {/* Results Drawer */}
+            <Drawer
+              anchor="right"
+              open={isDrawerOpen}
+              onClose={() => setIsDrawerOpen(false)}
+              sx={{
+                '& .MuiDrawer-paper': {
+                  width: { xs: '100%', sm: 400 },
+                  p: 3,
+                },
+              }}
+            >
+              {docId && <ViewAudioComponent docId={docId} />}
+            </Drawer>
+          </CardContent>
+        </Card>
+
+        {/* Snackbar */}
+        <Snackbar
+          open={showSnackbar}
+          autoHideDuration={6000}
           onClose={handleCloseSnackbar}
-          severity={snackbarSeverity}
-          sx={{ 
-            width: '100%',
-            borderRadius: '12px',
-            '& .MuiAlert-icon': {
-              fontSize: '24px'
-            }
-          }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-
-      <Drawer
-        anchor="right"
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: { xs: '100%', sm: '600px' },
-          },
-        }}
-      >
-        {docId && <ViewAudioComponent audioId={docId} />}
-      </Drawer>
+          <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Container>
   );
 };

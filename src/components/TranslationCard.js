@@ -17,7 +17,10 @@ import {
   Tab,
   Tabs,
   Snackbar,
-  Stack
+  Stack,
+  Card,
+  CardContent,
+  Chip,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -32,10 +35,22 @@ import {
   ContentCopy,
   Download,
 } from '@mui/icons-material';
-import axios from 'axios';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import {
+  setSourceLanguage,
+  setTargetLanguage,
+  setInputText,
+  setTranslatedText,
+  setSelectedFile,
+  setActiveTab,
+  clearError,
+  clearTranslation,
+  translateText,
+  translateDocument,
+} from '../store/slices/translationSlice';
+import { addNotification } from '../store/slices/uiSlice';
 
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://phosai-main-api.onrender.com',
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_TEXT_LENGTH: 5000,
 };
@@ -61,8 +76,8 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   borderRadius: '16px',
   background: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(12px)',
-  border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)', // Light black shadow
+  border: '1px solid rgba(25, 118, 210, 0.1)',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
 }));
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
@@ -70,13 +85,13 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
     textTransform: 'none',
     fontWeight: 600,
     fontSize: '1rem',
-    color: '#000000', // Black text
+    color: '#000000',
     '&.Mui-selected': {
-      color: '#1976d2', // Blue for selected tab
+      color: '#1976d2',
     },
   },
   '& .MuiTabs-indicator': {
-    backgroundColor: '#1976d2', // Blue indicator
+    backgroundColor: '#1976d2',
   },
 }));
 
@@ -85,10 +100,10 @@ const StyledButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',
   fontWeight: 600,
   padding: theme.spacing(1, 4),
-  background: 'linear-gradient(45deg, #1976d2, #42a5f5)', // Blue gradient
+  background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
   color: '#ffffff',
   '&:hover': {
-    background: 'linear-gradient(45deg, #1565c0, #2196f3)', // Darker blue on hover
+    background: 'linear-gradient(45deg, #1565c0, #2196f3)',
     boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
   },
   '&:disabled': {
@@ -103,100 +118,58 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     borderRadius: '12px',
     backgroundColor: '#ffffff',
     '& fieldset': {
-      borderColor: 'rgba(0, 0, 0, 0.1)', // Subtle black border
+      borderColor: 'rgba(0, 0, 0, 0.1)',
     },
     '&:hover fieldset': {
-      borderColor: '#1976d2', // Blue on hover
+      borderColor: '#1976d2',
     },
   },
   '& .MuiInputLabel-root': {
-    color: '#000000', // Black label
+    color: '#000000',
     '&.Mui-focused': {
-      color: '#1976d2', // Blue when focused
+      color: '#1976d2',
     },
   },
 }));
 
 const TranslationCard = () => {
-  const [user, setUser] = useState({ username: '', userId: '' });
-  const [activeTab, setActiveTab] = useState(0);
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguage, setTargetLanguage] = useState('lg');
-  const [inputText, setInputText] = useState('');
-  const [translatedText, setTranslatedText] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [progress, setProgress] = useState(0);
+  const dispatch = useAppDispatch();
+  const {
+    sourceLanguage,
+    targetLanguage,
+    inputText,
+    translatedText,
+    selectedFile,
+    loading,
+    error,
+    activeTab,
+  } = useAppSelector((state) => state.translation);
+  const { user } = useAppSelector((state) => state.auth);
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    }
-  }, []);
-
-  useEffect(() => {
-    let progressTimer;
-    if (loading) {
-      progressTimer = setInterval(() => {
-        setProgress((prev) => (prev >= 95 ? 95 : prev + 5));
-      }, 500);
-    } else {
-      setProgress(0);
-    }
-    return () => clearInterval(progressTimer);
-  }, [loading]);
-
-  const TranslationService = {
-    async translateText(text, sourceLang, targetLang) {
-      const formData = new FormData();
-      formData.append('user_id', user.userId);
-      formData.append('source_lang', sourceLang);
-      formData.append('target_langs', targetLang);
-      formData.append('doc', text);
-      formData.append('title', 'Text Translation');
-
-      const response = await axios.post(
-        `${API_CONFIG.BASE_URL}/translate`,
-        formData
-      );
-      return Object.values(response.data)[0];
-    },
-
-    async translateDocument(file, sourceLang, targetLang) {
-      const formData = new FormData();
-      formData.append('user_id', user.userId);
-      formData.append('source_lang', sourceLang);
-      formData.append('target_langs', targetLang);
-      formData.append('file', file);
-      formData.append('title', 'Document Translation');
-
-      const response = await axios.post(
-        `${API_CONFIG.BASE_URL}/translate_document`,
-        formData
-      );
-      return Object.values(response.data["msg"])[0];
-    }
+  const showNotification = (message, severity = 'success') => {
+    dispatch(addNotification({ message, severity }));
+    setSnackbar({ open: true, message, severity });
   };
 
   const handleTranslate = async () => {
-    try {
-      setError(null);
-      setLoading(true);
+    if (!user?.userId) {
+      showNotification('Please log in to use translation services', 'error');
+      return;
+    }
 
-      let result;
+    try {
       if (activeTab === 0) {
         if (inputText.length > API_CONFIG.MAX_TEXT_LENGTH) {
           throw new Error(`Text exceeds maximum length of ${API_CONFIG.MAX_TEXT_LENGTH} characters`);
         }
-        result = await TranslationService.translateText(
-          inputText,
-          sourceLanguage,
-          targetLanguage
-        );
+        await dispatch(translateText({
+          userId: user.userId,
+          sourceLang: sourceLanguage,
+          targetLang: targetLanguage,
+          text: inputText,
+        })).unwrap();
       } else {
         if (!selectedFile) {
           throw new Error('No file selected');
@@ -204,18 +177,16 @@ const TranslationCard = () => {
         if (selectedFile.size > API_CONFIG.MAX_FILE_SIZE) {
           throw new Error('File size exceeds 10MB limit');
         }
-        result = await TranslationService.translateDocument(
-          selectedFile,
-          sourceLanguage,
-          targetLanguage
-        );
+        await dispatch(translateDocument({
+          userId: user.userId,
+          sourceLang: sourceLanguage,
+          targetLang: targetLanguage,
+          file: selectedFile,
+        })).unwrap();
       }
-      setTranslatedText(result);
+      showNotification('Translation completed successfully!', 'success');
     } catch (err) {
-      setError(err.message || 'Translation failed. Please try again.');
-      console.error('Translation error:', err);
-    } finally {
-      setLoading(false);
+      showNotification(err.message || 'Translation failed. Please try again.', 'error');
     }
   };
 
@@ -228,10 +199,10 @@ const TranslationCard = () => {
       ).flat();
 
       if (validTypes.includes(fileType)) {
-        setSelectedFile(file);
-        setError(null);
+        dispatch(setSelectedFile(file));
+        dispatch(clearError());
       } else {
-        setError('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.');
+        showNotification('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.', 'error');
         event.target.value = null;
       }
     }
@@ -240,303 +211,293 @@ const TranslationCard = () => {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(translatedText);
-      setSnackbar({
-        open: true,
-        message: 'Translation copied to clipboard!',
-        severity: 'success'
-      });
-    } catch {
-      setSnackbar({
-        open: true,
-        message: 'Failed to copy text.',
-        severity: 'error'
-      });
+      showNotification('Text copied to clipboard!', 'success');
+    } catch (err) {
+      showNotification('Failed to copy text', 'error');
     }
   };
 
   const handleDownload = () => {
-    const blob = new Blob([translatedText], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'translation.txt';
-    link.click();
+    const element = document.createElement('a');
+    const file = new Blob([translatedText], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'translation.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   const handleDownloadDocx = () => {
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <body>
-          <h2>Translated Content</h2>
-          <p>${translatedText.replace(/\n/g, '<br>')}</p>
-        </body>
-      </html>
-    `;
-    const blob = new Blob([htmlContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'translation.docx';
-    link.click();
+    // Implementation for DOCX download would go here
+    showNotification('DOCX download feature coming soon!', 'info');
+  };
+
+  const handleSwapLanguages = () => {
+    dispatch(setSourceLanguage(targetLanguage));
+    dispatch(setTargetLanguage(sourceLanguage));
   };
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{py: 6}}>
-        <StyledPaper elevation={0}>
-          <StyledTabs
-            value={activeTab}
-            onChange={(_, newValue) => {
-              setActiveTab(newValue);
-              setError(null);
-              setTranslatedText('');
-            }}
-            centered
-            sx={{ mb: 4 }}
-          >
-            <Tab icon={<Translate />} label="Text Translation" />
-            <Tab icon={<CloudUpload />} label="Document Translation" />
-          </StyledTabs>
+      <Box sx={{ py: 4 }}>
+        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+              Text & Document Translation
+            </Typography>
 
-          {/* Language Selector */}
-          <Box sx={{ mb: 4 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                borderRadius: '12px',
-                background: '#ffffff',
-                border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)', // Light black shadow
-              }}
-            >
-              <Grid container spacing={3} alignItems="center">
-                <Grid item xs={12} md={5}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
-                    Source Language
-                  </Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      value={sourceLanguage}
-                      onChange={(e) => setSourceLanguage(e.target.value)}
-                      sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
-                    >
-                      {SUPPORTED_LANGUAGES.map((lang) => (
-                        <MenuItem key={lang.value} value={lang.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Language sx={{ color: '#1976d2' }} />
-                            <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+              <StyledTabs
+                value={activeTab}
+                onChange={(_, newValue) => dispatch(setActiveTab(newValue))}
+                centered
+              >
+                <Tab label="Text Translation" />
+                <Tab label="Document Translation" />
+              </StyledTabs>
+            </Box>
 
-                <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <IconButton
-                    onClick={() => {
-                      setSourceLanguage(targetLanguage);
-                      setTargetLanguage(sourceLanguage);
-                    }}
-                    sx={{
-                      bgcolor: '#1976d2',
-                      color: '#ffffff',
-                      '&:hover': { bgcolor: '#1565c0' },
-                      borderRadius: '50%',
-                      p: 1.5,
-                    }}
+            {/* Language Selection */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={5}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Source Language
+                </Typography>
+                <FormControl fullWidth>
+                  <Select
+                    value={sourceLanguage}
+                    onChange={(e) => dispatch(setSourceLanguage(e.target.value))}
+                    sx={{ borderRadius: '12px' }}
                   >
-                    <SwapHoriz />
-                  </IconButton>
-                </Grid>
-
-                <Grid item xs={12} md={5}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
-                    Target Language
-                  </Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      value={targetLanguage}
-                      onChange={(e) => setTargetLanguage(e.target.value)}
-                      sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
-                    >
-                      {SUPPORTED_LANGUAGES.map((lang) => (
-                        <MenuItem key={lang.value} value={lang.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Language sx={{ color: '#1976d2' }} />
-                            <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <MenuItem key={lang.value} value={lang.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Language sx={{ color: 'primary.main' }} />
+                          {lang.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
-            </Paper>
-          </Box>
 
-          {/* Translation UI */}
-          {activeTab === 0 ? (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <StyledTextField
-                  fullWidth
-                  multiline
-                  rows={8}
-                  label="Enter text to translate"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  error={inputText.length > API_CONFIG.MAX_TEXT_LENGTH}
-                  helperText={`${inputText.length}/${API_CONFIG.MAX_TEXT_LENGTH} characters`}
-                />
+              <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <IconButton
+                  onClick={handleSwapLanguages}
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                    borderRadius: '50%',
+                    p: 1.5,
+                  }}
+                >
+                  <SwapHoriz />
+                </IconButton>
               </Grid>
-              <Grid item xs={12} md={6}>
-                <StyledTextField
-                  fullWidth
-                  multiline
-                  rows={8}
-                  label="Translation"
-                  value={translatedText}
-                  InputProps={{ readOnly: true }}
-                />
-                <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
-                  <StyledButton
-                    variant="outlined"
-                    startIcon={<ContentCopy />}
-                    onClick={handleCopy}
+
+              <Grid item xs={12} md={5}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Target Language
+                </Typography>
+                <FormControl fullWidth>
+                  <Select
+                    value={targetLanguage}
+                    onChange={(e) => dispatch(setTargetLanguage(e.target.value))}
+                    sx={{ borderRadius: '12px' }}
                   >
-                    Copy
-                  </StyledButton>
-                  <StyledButton
-                    variant="outlined"
-                    startIcon={<Download />}
-                    onClick={handleDownload}
-                  >
-                    Download TXT
-                  </StyledButton>
-                  <StyledButton
-                    variant="outlined"
-                    startIcon={<Download />}
-                    onClick={handleDownloadDocx}
-                  >
-                    Download DOCX
-                  </StyledButton>
-                </Stack>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <MenuItem key={lang.value} value={lang.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Language sx={{ color: 'primary.main' }} />
+                          {lang.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
-          ) : (
-            <Box sx={{ textAlign: 'center' }}>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                style={{ display: 'none' }}
-                id="file-upload"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="file-upload">
-                <StyledButton
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUpload />}
-                >
-                  Upload Document
-                </StyledButton>
-              </label>
 
-              {selectedFile && (
-                <>
-                  <Alert
-                    icon={<InsertDriveFile sx={{ color: '#1976d2' }} />}
-                    severity="info"
-                    sx={{ mb: 3, bgcolor: '#ffffff', borderRadius: '12px' }}
-                  >
-                    {selectedFile.name}
-                  </Alert>
+            {/* Content Section */}
+            {activeTab === 0 ? (
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                    Input Text
+                  </Typography>
                   <StyledTextField
-                    fullWidth
                     multiline
-                    rows={6}
-                    label="Translation"
+                    rows={8}
+                    fullWidth
+                    value={inputText}
+                    onChange={(e) => dispatch(setInputText(e.target.value))}
+                    placeholder="Enter text to translate..."
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                    Translated Text
+                  </Typography>
+                  <StyledTextField
+                    multiline
+                    rows={8}
+                    fullWidth
                     value={translatedText}
+                    placeholder="Translation will appear here..."
+                    variant="outlined"
                     InputProps={{ readOnly: true }}
                   />
-                  <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
-                    <StyledButton
+                  {translatedText && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<ContentCopy />}
+                        onClick={handleCopy}
+                        size="small"
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Download />}
+                        onClick={handleDownload}
+                        size="small"
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Download
+                      </Button>
+                    </Stack>
+                  )}
+                </Grid>
+              </Grid>
+            ) : (
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Upload Document
+                </Typography>
+                <Box
+                  sx={{
+                    border: '2px dashed',
+                    borderColor: 'primary.main',
+                    borderRadius: '12px',
+                    p: 4,
+                    textAlign: 'center',
+                    backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                    },
+                  }}
+                  onClick={() => document.getElementById('file-input')?.click()}
+                >
+                  <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    Click to upload or drag and drop
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Supports PDF, DOC, DOCX, TXT (Max 10MB)
+                  </Typography>
+                  <input
+                    id="file-input"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </Box>
+                {selectedFile && (
+                  <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
+                    <Typography variant="body2">
+                      Selected: {selectedFile.name}
+                    </Typography>
+                  </Box>
+                )}
+                {translatedText && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                      Translation Result
+                    </Typography>
+                    <StyledTextField
+                      multiline
+                      rows={8}
+                      fullWidth
+                      value={translatedText}
                       variant="outlined"
-                      startIcon={<ContentCopy />}
-                      onClick={handleCopy}
-                    >
-                      Copy
-                    </StyledButton>
-                    <StyledButton
-                      variant="outlined"
-                      startIcon={<Download />}
-                      onClick={handleDownload}
-                    >
-                      Download TXT
-                    </StyledButton>
-                    <StyledButton
-                      variant="outlined"
-                      startIcon={<Download />}
-                      onClick={handleDownloadDocx}
-                    >
-                      Download DOCX
-                    </StyledButton>
-                  </Stack>
-                </>
-              )}
+                      InputProps={{ readOnly: true }}
+                    />
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<ContentCopy />}
+                        onClick={handleCopy}
+                        size="small"
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Download />}
+                        onClick={handleDownloadDocx}
+                        size="small"
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Download DOCX
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Error Display */}
+            {error && (
+              <Alert severity="error" sx={{ mt: 3, borderRadius: '8px' }}>
+                {error}
+              </Alert>
+            )}
+
+            {/* Submit Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <StyledButton
+                onClick={handleTranslate}
+                disabled={loading || (!inputText && !selectedFile)}
+                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Translate />}
+                size="large"
+              >
+                {loading ? 'Translating...' : 'Translate'}
+              </StyledButton>
             </Box>
-          )}
 
-          {/* Loading Indicator */}
-          {loading && (
-            <Box sx={{ width: '100%', mt: 4 }}>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(25, 118, 210, 0.1)', // Light blue background
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#1976d2', // Blue progress bar
-                  },
-                }}
-              />
-              <Typography align="center" variant="body2" sx={{ mt: 1, color: '#000000' }}>
-                Translating... {progress}%
-              </Typography>
-            </Box>
-          )}
+            {/* Progress */}
+            {loading && (
+              <Box sx={{ mt: 3 }}>
+                <LinearProgress sx={{ height: 8, borderRadius: 4 }} />
+              </Box>
+            )}
+          </CardContent>
+        </Card>
 
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-            <StyledButton
-              variant="contained"
-              onClick={handleTranslate}
-              disabled={loading || (!inputText && !selectedFile)}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Translate />}
-            >
-              {loading ? 'Translating...' : 'Translate'}
-            </StyledButton>
-          </Box>
-        </StyledPaper>
-      </Box>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          severity={snackbar.severity}
-          sx={{
-            bgcolor: snackbar.severity === 'success' ? '#1976d2' : '#d32f2f',
-            color: '#ffffff',
-            borderRadius: '12px',
-          }}
+        {/* Snackbar */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Container>
   );
 };

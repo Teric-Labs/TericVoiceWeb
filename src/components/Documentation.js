@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -30,6 +30,7 @@ import {
   Stack,
   alpha
 } from '@mui/material';
+import { styled, keyframes } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -37,6 +38,62 @@ import InfoIcon from '@mui/icons-material/Info';
 import HttpIcon from '@mui/icons-material/Http';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// Enhanced animations
+const float = keyframes`
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
+`;
+
+const pulse = keyframes`
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+`;
+
+const shimmer = keyframes`
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+`;
+
+const slideUp = keyframes`
+  from { 
+    opacity: 0; 
+    transform: translateY(30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0px); 
+  }
+`;
+
+const borderGlow = keyframes`
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+`;
+
+const rotate = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+// Floating background elements
+const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
+  <Box
+    sx={{
+      position: 'absolute',
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      background: `radial-gradient(circle, ${color}20, ${color}05)`,
+      border: `1px solid ${color}15`,
+      ...position,
+      animation: `${float} ${3 + Math.random() * 2}s ease-in-out infinite`,
+      animationDelay: delay,
+      zIndex: 0,
+    }}
+  />
+);
 
 // Categorized endpoints with updated structure
 const categorizedEndpoints = {
@@ -111,457 +168,73 @@ const categorizedEndpoints = {
       }
     }
   },
-  {
-    method: "POST",
-    path: "/get_document",
-    description: "Retrieve a specific translated document.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        doc_id: {
-          type: "string",
-          required: true,
-          description: "Document identifier for the translation"
+  ],
+  'Voice Recognition': [
+    {
+      method: "POST",
+      path: "/upload",
+      description: "Upload audio/video files for transcription.",
+      parameters: {
+        type: "multipart/form-data",
+        fields: {
+          user_id: {
+            type: "string",
+            required: true,
+            description: "Unique identifier for the user"
+          },
+          source_lang: {
+            type: "string",
+            required: true,
+            description: "Source language of the audio/video"
+          },
+          target_langs: {
+            type: "array",
+            required: true,
+            description: "Target languages for translation"
+          },
+          audio_file: {
+            type: "file",
+            required: true,
+            description: "Audio or video file to transcribe"
+          }
+        }
+      }
+    },
+    {
+      method: "POST",
+      path: "/upload_recorded_audio",
+      description: "Upload recorded audio for transcription.",
+      parameters: {
+        type: "multipart/form-data",
+        fields: {
+          user_id: {
+            type: "string",
+            required: true,
+            description: "Unique identifier for the user"
+          },
+          source_lang: {
+            type: "string",
+            required: true,
+            description: "Source language of the recorded audio"
+          },
+          target_langs: {
+            type: "array",
+            required: true,
+            description: "Target languages for translation"
+          },
+          recorded_audio: {
+            type: "file",
+            required: true,
+            description: "Recorded audio file"
+          }
         }
       }
     }
-  },
-  {
-    method: "POST",
-    path: "/get_doucument_translations",
-    description: "Retrieve all document translations for a user.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user to fetch their translations"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_translation",
-    description: "Retrieve a specific translation.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        doc_id: {
-          type: "string",
-          required: true,
-          description: "Document identifier for the translation"
-        }
-      }
-    }
-  }
-],
-  'Voice to Text': [
-  {
-    method: "POST",
-    path: "/upload",
-    description: "Upload and transcribe audio file to text with multilingual support.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        audio_file: {
-          type: "file",
-          required: true,
-          description: "Audio file to be transcribed"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code of the audio"
-        },
-        target_langs: {
-          type: "array",
-          required: true,
-          description: "Array of target language codes for transcription"
-        },
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the transcription"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/upload_recorded_audio",
-    description: "Upload and transcribe recorded audio to text with multilingual support.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        recorded_audio: {
-          type: "file",
-          required: true,
-          description: "Recorded audio file to be transcribed"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code of the recorded audio"
-        },
-        target_langs: {
-          type: "array",
-          required: true,
-          description: "Array of target language codes for transcription"
-        },
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the transcription"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/save_audio",
-    description: "Save audio file with existing transcription text.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        audio_file: {
-          type: "file",
-          required: true,
-          description: "Audio file to be saved"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        target_langs: {
-          type: "array",
-          required: true,
-          description: "Array of target language codes"
-        },
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_text: {
-          type: "string",
-          required: true,
-          description: "Existing transcription text for the audio"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_audios",
-    description: "Retrieve all transcribed audios for a user.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user to fetch their transcriptions"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_audio",
-    description: "Retrieve a specific transcribed audio.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        doc_id: {
-          type: "string",
-          required: true,
-          description: "Document identifier for the transcription"
-        }
-      }
-    }
-  }
-],
-  'Video Transcription': [
-  {
-    method: "POST",
-    path: "/videoUpload",
-    description: "Upload and transcribe video content with multilingual support.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        youtube_link: {
-          type: "file",
-          required: true,
-          description: "Video file to be transcribed"
-        },
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        target_langs: {
-          type: "array",
-          required: true,
-          description: "Array of target language codes for transcription"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the video transcription"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/extract_audio_from_video",
-    description: "Extract audio from video for transcription processing.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        target_langs: {
-          type: "array",
-          required: true,
-          description: "Array of target language codes"
-        },
-        video_type: {
-          type: "string",
-          required: true,
-          description: "Type of video source (e.g., upload, youtube)"
-        },
-        video_link: {
-          type: "string",
-          required: true,
-          description: "URL or path to the video"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the extracted audio"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_video",
-    description: "Retrieve transcribed video data.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user to fetch their video transcriptions"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_audio_data",
-    description: "Retrieve extracted audio data from video.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        doc_id: {
-          type: "string",
-          required: true,
-          description: "Document identifier for the audio data"
-        }
-      }
-    }
-  }
-],
-  'Summarization': [
-  {
-    method: "POST",
-    path: "/surmarize",
-    description: "Summarize text content with language support.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        doc: {
-          type: "string",
-          required: true,
-          description: "Text content to be summarized"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the summarization"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/surmarize_audio_from_video",
-    description: "Extract and summarize audio content from a video.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        video_type: {
-          type: "string",
-          required: true,
-          description: "Type of video source"
-        },
-        video_link: {
-          type: "string",
-          required: true,
-          description: "URL or link to the video"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the summarization"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/summarize_document",
-    description: "Summarize content from an uploaded document.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the summarization"
-        },
-        file: {
-          type: "file",
-          required: true,
-          description: "Document file to be summarized"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/summarize_upload",
-    description: "Summarize content from an uploaded audio file.",
-    parameters: {
-      type: "multipart/form-data",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        },
-        source_lang: {
-          type: "string",
-          required: true,
-          description: "Source language code"
-        },
-        title: {
-          type: "string",
-          required: true,
-          description: "Title for the summarization"
-        },
-        audio_file: {
-          type: "file",
-          required: true,
-          description: "Audio file to be summarized"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_summaries",
-    description: "Retrieve all summaries for a user.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        user_id: {
-          type: "string",
-          required: true,
-          description: "Unique identifier for the user"
-        }
-      }
-    }
-  },
-  {
-    method: "POST",
-    path: "/get_summary",
-    description: "Retrieve a specific summary.",
-    parameters: {
-      type: "application/json",
-      fields: {
-        doc_id: {
-          type: "string",
-          required: true,
-          description: "Document identifier for the summary"
-        }
-      }
-    }
-  }
-],
+  ],
   'Text to Speech': [
     {
       method: "POST",
-      path: "/vocify",
+      path: "/synthesize",
       description: "Convert text to speech with multilingual support.",
       parameters: {
         type: "multipart/form-data",
@@ -574,30 +247,30 @@ const categorizedEndpoints = {
           source_lang: {
             type: "string",
             required: true,
-            description: "Source language code"
+            description: "Source language of the text"
           },
           target_langs: {
             type: "array",
             required: true,
-            description: "Array of target language codes"
-          },
-          title: {
-            type: "string",
-            required: true,
-            description: "Title for the TTS conversion"
+            description: "Target languages for speech synthesis"
           },
           doc: {
             type: "string",
             required: true,
-            description: "Text content to be converted to speech"
+            description: "Text content to convert to speech"
+          },
+          title: {
+            type: "string",
+            required: true,
+            description: "Title for the synthesis"
           }
         }
       }
     },
     {
       method: "POST",
-      path: "/translate_document_with_tts",
-      description: "Convert document content to speech with multilingual support.",
+      path: "/synthesize_document",
+      description: "Convert document content to speech.",
       parameters: {
         type: "multipart/form-data",
         fields: {
@@ -609,100 +282,35 @@ const categorizedEndpoints = {
           source_lang: {
             type: "string",
             required: true,
-            description: "Source language code"
+            description: "Source language of the document"
           },
           target_langs: {
             type: "array",
             required: true,
-            description: "Array of target language codes"
-          },
-          title: {
-            type: "string",
-            required: true,
-            description: "Title for the document TTS conversion"
+            description: "Target languages for speech synthesis"
           },
           file: {
             type: "file",
             required: true,
-            description: "Document file to be converted to speech"
-          }
-        }
-      }
-    },
-    {
-      method: "POST",
-      path: "/get_vocify_voices",
-      description: "Retrieve all TTS conversions for a user.",
-      parameters: {
-        type: "application/json",
-        fields: {
-          user_id: {
+            description: "Document file to convert to speech"
+          },
+          title: {
             type: "string",
             required: true,
-            description: "Unique identifier for the user"
-          }
-        }
-      }
-    },
-    {
-      method: "POST",
-      path: "/get_vocify_voice",
-      description: "Retrieve a specific TTS conversion.",
-      parameters: {
-        type: "application/json",
-        fields: {
-          doc_id: {
-            type: "string",
-            required: true,
-            description: "Document identifier for the TTS conversion"
-          }
-        }
-      }
-    },
-    {
-      method: "POST",
-      path: "/get_document_voices",
-      description: "Retrieve all document TTS conversions for a user.",
-      parameters: {
-        type: "application/json",
-        fields: {
-          user_id: {
-            type: "string",
-            required: true,
-            description: "Unique identifier for the user"
-          }
-        }
-      }
-    },
-    {
-      method: "POST",
-      path: "/get_document_voice",
-      description: "Retrieve a specific document TTS conversion.",
-      parameters: {
-        type: "application/json",
-        fields: {
-          doc_id: {
-            type: "string",
-            required: true,
-            description: "Document identifier for the TTS conversion"
+            description: "Title for the document synthesis"
           }
         }
       }
     }
   ],
-  'Voice to Voice Translation': [
-    { 
-      method: "POST", 
-      path: "/voicox", 
-      description: "Translate voice recording to multiple languages.", 
+  'Voice to Voice': [
+    {
+      method: "POST",
+      path: "/voice_translation",
+      description: "Translate voice content to another language.",
       parameters: {
         type: "multipart/form-data",
         fields: {
-          audio_file: {
-            type: "file",
-            required: true,
-            description: "Audio file to be translated"
-          },
           user_id: {
             type: "string",
             required: true,
@@ -711,54 +319,89 @@ const categorizedEndpoints = {
           source_lang: {
             type: "string",
             required: true,
-            description: "Source language code"
+            description: "Source language of the voice"
           },
           target_langs: {
             type: "array",
             required: true,
-            description: "Array of target language codes"
+            description: "Target languages for voice translation"
           },
-          title: {
+          audio_file: {
+            type: "file",
+            required: true,
+            description: "Audio file for voice translation"
+          }
+        }
+      }
+    }
+  ],
+  'Summarization': [
+    {
+      method: "POST",
+      path: "/surmarize",
+      description: "Summarize text content.",
+      parameters: {
+        type: "multipart/form-data",
+        fields: {
+          user_id: {
             type: "string",
             required: true,
-            description: "Title for the translation"
+            description: "Unique identifier for the user"
+          },
+          source_lang: {
+            type: "string",
+            required: true,
+            description: "Source language of the text"
+          },
+          doc: {
+            type: "string",
+            required: true,
+            description: "Text content to summarize"
           }
         }
       }
     },
     {
       method: "POST",
-      path: "/recorded_audio_vv",
-      description: "Upload and translate recorded audio to multiple languages.",
+      path: "/summarize_document",
+      description: "Summarize document content.",
       parameters: {
         type: "multipart/form-data",
         fields: {
-          recorded_audio: {
-            type: "file",
-            required: true,
-            description: "Recorded audio file"
-          },
-          source_lang: {
-            type: "string",
-            required: true,
-            description: "Source language code"
-          },
-          target_langs: {
-            type: "array",
-            required: true,
-            description: "Array of target language codes"
-          },
           user_id: {
             type: "string",
             required: true,
             description: "Unique identifier for the user"
           },
-          title: {
+          source_lang: {
             type: "string",
             required: true,
-            description: "Title for the recording"
+            description: "Source language of the document"
+          },
+          file: {
+            type: "file",
+            required: true,
+            description: "Document file to summarize"
           }
         }
+      }
+    }
+  ],
+  'History & Analytics': [
+    {
+      method: "POST",
+      path: "/get_translations",
+      description: "Retrieve all translations for a user.",
+      parameters: {
+        user_id: "string"
+      }
+    },
+    {
+      method: "POST",
+      path: "/get_translation",
+      description: "Retrieve a specific translation.",
+      parameters: {
+        doc_id: "string"
       }
     },
     {
@@ -784,32 +427,51 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#1976d2',
+      light: '#64b5f6',
+      dark: '#1565c0',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#64b5f6',
+      light: '#90caf9',
+      dark: '#42a5f5',
+      contrastText: '#000000',
     },
     background: {
-      default: '#f5f5f7',
+      default: '#f8fafc',
       paper: '#ffffff',
+    },
+    text: {
+      primary: '#000000',
+      secondary: '#666666',
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
       fontWeight: 700,
+      color: '#1976d2',
     },
     h5: {
       fontWeight: 600,
+      color: '#1976d2',
     },
     h6: {
       fontWeight: 600,
+      color: '#1976d2',
     },
+  },
+  shape: {
+    borderRadius: 12,
   },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(25, 118, 210, 0.1)',
         },
       },
     },
@@ -818,6 +480,8 @@ const theme = createTheme({
         paper: {
           width: 320,
           padding: '24px',
+          backgroundColor: '#ffffff',
+          borderLeft: '1px solid rgba(25, 118, 210, 0.1)',
         },
       },
     },
@@ -828,15 +492,42 @@ const theme = createTheme({
             display: 'none',
           },
           boxShadow: 'none',
-          border: '1px solid',
-          borderColor: 'divider',
+          border: '1px solid rgba(25, 118, 210, 0.1)',
+          borderRadius: '12px',
+          marginBottom: '8px',
+          '&:hover': {
+            borderColor: '#1976d2',
+            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.1)',
+          },
         },
       },
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: '6px',
+          borderRadius: '8px',
+          backgroundColor: 'rgba(25, 118, 210, 0.1)',
+          color: '#1976d2',
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.25)',
+          },
+        },
+        contained: {
+          background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+          '&:hover': {
+            background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+          },
         },
       },
     },
@@ -850,15 +541,17 @@ const ParameterCard = ({ name, details, theme }) => (
       mb: 2,
       position: 'relative',
       '&:hover': {
-        borderColor: theme.palette.primary.main,
-        backgroundColor: alpha(theme.palette.primary.main, 0.02),
+        borderColor: '#1976d2',
+        backgroundColor: alpha('#1976d2', 0.02),
       },
       transition: 'all 0.2s ease-in-out',
+      borderRadius: '12px',
+      border: '1px solid rgba(25, 118, 210, 0.1)',
     }}
   >
     <CardContent>
       <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold">
+        <Typography variant="subtitle1" fontWeight="bold" color="#1976d2">
           {name}
         </Typography>
         <Chip
@@ -867,7 +560,8 @@ const ParameterCard = ({ name, details, theme }) => (
           size="small"
           sx={{ 
             fontWeight: 500,
-            backgroundColor: details.required ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.grey[500], 0.1),
+            backgroundColor: details.required ? alpha('#1976d2', 0.1) : alpha('#666666', 0.1),
+            color: details.required ? '#1976d2' : '#666666',
           }}
         />
         <Chip
@@ -875,8 +569,8 @@ const ParameterCard = ({ name, details, theme }) => (
           variant="outlined"
           size="small"
           sx={{ 
-            borderColor: theme.palette.grey[300],
-            color: theme.palette.text.secondary,
+            borderColor: '#1976d2',
+            color: '#1976d2',
           }}
         />
       </Stack>
@@ -894,41 +588,82 @@ const ParameterCard = ({ name, details, theme }) => (
   </Card>
 );
 
-const EndpointHeader = ({ endpoint, theme }) => (
-  <Box sx={{ mb: 3 }}>
-    <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-      <Chip
-        icon={<HttpIcon />}
-        label={endpoint.method}
-        color="primary"
-        sx={{
-          px: 2,
-          height: 32,
-          fontWeight: 600,
-          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-          color: theme.palette.primary.main,
-        }}
-      />
-      <Typography variant="h6" component="span" sx={{ fontFamily: 'monospace', color: theme.palette.text.primary }}>
-        {endpoint.path}
-      </Typography>
-    </Stack>
-    <Alert 
-      severity="info" 
-      icon={<InfoIcon />}
-      sx={{
-        backgroundColor: alpha(theme.palette.info.main, 0.05),
-        border: '1px solid',
-        borderColor: alpha(theme.palette.info.main, 0.1),
-        '& .MuiAlert-message': {
-          color: theme.palette.text.primary,
-        },
-      }}
-    >
-      {endpoint.description}
-    </Alert>
-  </Box>
-);
+const ParametersSection = ({ parameters }) => {
+  if (!parameters) return null;
+
+  if (parameters.type === "multipart/form-data" && parameters.fields) {
+    return (
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Content-Type: {parameters.type}
+        </Typography>
+        {Object.entries(parameters.fields).map(([fieldName, fieldDetails]) => (
+          <ParameterCard
+            key={fieldName}
+            name={fieldName}
+            details={fieldDetails}
+          />
+        ))}
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {Object.entries(parameters).map(([paramName, paramType]) => (
+        <ParameterCard
+          key={paramName}
+          name={paramName}
+          details={{ type: paramType, required: true, description: `${paramName} parameter` }}
+        />
+      ))}
+    </Box>
+  );
+};
+
+const generateCodeSnippets = (endpoint) => {
+  const baseUrl = 'https://phosai-main-api.onrender.com';
+  
+  const curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
+  -H "Content-Type: multipart/form-data" \\
+  -F "user_id=your_user_id" \\
+  -F "source_lang=en" \\
+  -F "target_langs=lg" \\
+  -F "doc=Hello World"`;
+
+  const pythonExample = `import requests
+
+url = "${baseUrl}${endpoint.path}"
+files = {
+    'user_id': (None, 'your_user_id'),
+    'source_lang': (None, 'en'),
+    'target_langs': (None, 'lg'),
+    'doc': (None, 'Hello World')
+}
+
+response = requests.post(url, files=files)
+print(response.json())`;
+
+  const javascriptExample = `const formData = new FormData();
+formData.append('user_id', 'your_user_id');
+formData.append('source_lang', 'en');
+formData.append('target_langs', 'lg');
+formData.append('doc', 'Hello World');
+
+fetch('${baseUrl}${endpoint.path}', {
+  method: 'POST',
+  body: formData
+})
+.then(response => response.json())
+.then(data => console.log(data));`;
+
+  return {
+    curl: curlExample,
+    python: pythonExample,
+    javascript: javascriptExample
+  };
+};
+
 const TabPanel = ({ children, value, index, ...other }) => (
   <div
     role="tabpanel"
@@ -956,7 +691,7 @@ const CodeBlock = ({ code, language }) => {
         style={atomDark}
         customStyle={{
           margin: 0,
-          borderRadius: '8px',
+          borderRadius: '12px',
           padding: '16px',
         }}
       >
@@ -970,8 +705,9 @@ const CodeBlock = ({ code, language }) => {
             right: 8,
             top: 8,
             color: 'white',
+            backgroundColor: 'rgba(25, 118, 210, 0.8)',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: '#1976d2',
             },
           }}
         >
@@ -982,161 +718,17 @@ const CodeBlock = ({ code, language }) => {
   );
 };
 
-const ParametersSection = ({ parameters }) => {
-  const theme = useTheme();
-  
-  if (parameters.type === 'multipart/form-data') {
-    return (
-      <Box>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-          Content-Type: {parameters.type}
-        </Typography>
-        <Grid container spacing={2}>
-          {Object.entries(parameters.fields).map(([name, details]) => (
-            <Grid item xs={12} key={name}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  backgroundColor: theme.palette.grey[50],
-                  borderRadius: 1
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1 }}>
-                    {name}
-                  </Typography>
-                  <Chip
-                    label={details.required ? 'Required' : 'Optional'}
-                    size="small"
-                    color={details.required ? 'primary' : 'default'}
-                    sx={{ mr: 1 }}
-                  />
-                  <Chip
-                    label={details.type}
-                    size="small"
-                    variant="outlined"
-                  />
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  {details.description}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-    );
-  }
-
-  return (
-    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-      <pre style={{ margin: 0, overflow: 'auto' }}>
-        {JSON.stringify(parameters, null, 2)}
-      </pre>
-    </Paper>
-  );
-};
-
-const generateCodeSnippets = (endpoint) => {
-  const apiUrl = `https://avoices-13747549899.us-central1.run.app${endpoint.path}`;
-  const isMultipart = endpoint.parameters?.type === 'multipart/form-data';
-
-  if (isMultipart) {
-    const fields = endpoint.parameters.fields;
-    
-    return {
-      curl: `curl -X POST "${apiUrl}" \\
-${Object.entries(fields).map(([key, value]) => {
-  if (value.type === 'file') {
-    return `  -F "${key}=@file.${key === 'audio_file' ? 'mp3' : 'wav'}" \\`;
-  }
-  return `  -F "${key}=${value.type === 'array' ? '["en","es"]' : 'example_value'}" \\`;
-}).join('\n')}`,
-
-      python: `import requests
-
-def ${endpoint.path.replace(/\//g, '_').slice(1)}(${Object.keys(fields).join(', ')}):
-    url = "${apiUrl}"
-    files = {
-        ${Object.entries(fields).map(([key, value]) => {
-          if (value.type === 'file') {
-            return `'${key}': open(${key}, 'rb')`;
-          }
-          return `'${key}': ('', ${key})`;
-        }).join(',\n        ')}
-    }
-    
-    response = requests.post(url, files=files)
-    return response.json()`,
-
-      javascript: `async function ${endpoint.path.replace(/\//g, '_').slice(1)}(${Object.keys(fields).join(', ')}) {
-  const url = "${apiUrl}";
-  const formData = new FormData();
-  
-  ${Object.entries(fields).map(([key, value]) => {
-    if (value.type === 'array') {
-      return `formData.append('${key}', JSON.stringify(${key}));`;
-    }
-    return `formData.append('${key}', ${key});`;
-  }).join('\n  ')}
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
-  }
-}`
-    };
-  }
-
-  // Regular JSON request handling
-  return {
-    curl: `curl -X POST "${apiUrl}" \\
-     -H "Content-Type: application/json" \\
-     -d '${JSON.stringify(endpoint.parameters, null, 2)}'`,
-
-    python: `import requests
-
-def ${endpoint.path.replace(/\//g, '_').slice(1)}(${Object.keys(endpoint.parameters).join(', ')}):
-    url = "${apiUrl}"
-    payload = ${JSON.stringify(endpoint.parameters, null, 2)}
-    
-    response = requests.post(url, json=payload)
-    return response.json()`,
-
-    javascript: `async function ${endpoint.path.replace(/\//g, '_').slice(1)}(${Object.keys(endpoint.parameters).join(', ')}) {
-  const url = "${apiUrl}";
-  const payload = ${JSON.stringify(endpoint.parameters, null, 2)};
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
-  }
-}`
-  };
-};
-
 const Documentation = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeEndpoint, setActiveEndpoint] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
@@ -1157,7 +749,7 @@ const Documentation = () => {
 
   const NavigationContent = () => (
     <Box sx={{ height: '100%', overflowY: 'auto' }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
         API Services
       </Typography>
       <List sx={{ py: 0 }}>
@@ -1165,9 +757,11 @@ const Documentation = () => {
           <React.Fragment key={category}>
             <ListSubheader
               sx={{
-                bgcolor: 'background.paper',
+                bgcolor: 'rgba(25, 118, 210, 0.05)',
                 fontWeight: 'bold',
-                color: theme.palette.text.primary,
+                color: '#1976d2',
+                borderRadius: '8px',
+                mb: 1,
               }}
             >
               {category}
@@ -1182,8 +776,11 @@ const Documentation = () => {
                   borderRadius: 1,
                   mb: 0.5,
                   '&.Mui-selected': {
-                    backgroundColor: theme.palette.primary.light,
-                    color: theme.palette.primary.contrastText,
+                    backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                    color: '#1976d2',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.05)',
                   },
                 }}
               >
@@ -1201,7 +798,7 @@ const Documentation = () => {
                 />
               </ListItem>
             ))}
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: 2, borderColor: 'rgba(25, 118, 210, 0.1)' }} />
           </React.Fragment>
         ))}
       </List>
@@ -1210,60 +807,98 @@ const Documentation = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, position: 'relative' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Floating background elements */}
+        <FloatingElement size="120px" position={{ top: '10%', left: '5%' }} delay="0s" />
+        <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#64b5f6" />
+        <FloatingElement size="100px" position={{ top: '20%', right: '15%' }} delay="0.5s" />
+        <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#42a5f5" />
+        <FloatingElement size="140px" position={{ bottom: '10%', left: '20%' }} delay="2s" />
+        
+        {/* Main gradient overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.1) 0%, transparent 70%)',
+            zIndex: 1,
+          }}
+        />
+
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, position: 'relative', zIndex: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} lg={9}>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
-                    <Box sx={{mb:5, p:4}}>
-                    <Box  sx={{mb:4}}>
-                      <Typography variant="h4" className="font-bold mb-4" >
-                        Avoices API Documentation
+              <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
+                <Box sx={{mb:5, p:4}}>
+                  <Box sx={{mb:4}}>
+                    <Typography 
+                      variant="h4" 
+                      sx={{ 
+                        fontWeight: 700, 
+                        color: '#1976d2', 
+                        mb: 2,
+                        background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
+                        backgroundSize: '200% 200%',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        color: 'transparent',
+                        animation: isVisible ? `${shimmer} 3s ease-in-out infinite` : 'none',
+                        transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
+                        opacity: isVisible ? 1 : 0,
+                        transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      A-Voices API Documentation
+                    </Typography>
+                    <Typography 
+                      sx={{ 
+                        color: '#666666', 
+                        mb: 6, 
+                        fontSize: '1.1rem', 
+                        lineHeight: 1.6,
+                        opacity: isVisible ? 1 : 0,
+                        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+                        transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
+                      }}
+                    >
+                      Welcome to our comprehensive API suite for multilingual content processing. This documentation provides detailed information about our REST APIs that enable powerful translation, transcription, and content transformation capabilities.
+                    </Typography>
+                    
+                    <Stack sx={{ mb: 6 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 2 }}>
+                        Core Features
                       </Typography>
-                      <Typography className="text-gray-600 mb-6 text-lg">
-                        Welcome to our comprehensive API suite for multilingual content processing. This documentation provides detailed information about our REST APIs that enable powerful translation, transcription, and content transformation capabilities.
-                      </Typography>
-                      
-                      <Stack className="space-y-4 mb-6">
-                        <Typography variant="h6" className="font-semibold">
-                          Core Features
-                        </Typography>
-                        <Box className="flex flex-wrap gap-2">
-                          <Chip className="bg-blue-100 text-blue-800" label="Text Translation" />
-                          <Chip className="bg-blue-100 text-blue-800" label="Voice to Text" />
-                          <Chip className="bg-blue-100 text-blue-800" label="Video Transcription" />
-                          <Chip className="bg-blue-100 text-blue-800" label="Text Summarization" />
-                          <Chip className="bg-blue-100 text-blue-800" label="Text to Speech" />
-                          <Chip className="bg-blue-100 text-blue-800" label="Voice Translation" />
-                        </Box>
-                      </Stack>
-              
-                      <Box className="space-y-4">
-                        <Typography variant="h6" className="font-semibold">
-                          Getting Started
-                        </Typography>
-                        <Typography className="text-gray-600">
-                          Our APIs use REST architecture and support both JSON and multipart/form-data requests. All endpoints require authentication via user_id and accept multiple language specifications using standard language codes.
-                        </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {['Text Translation', 'Voice to Text', 'Video Transcription', 'Text Summarization', 'Text to Speech', 'Voice Translation'].map((feature, index) => (
+                          <Chip 
+                            key={feature}
+                            label={feature} 
+                            sx={{ 
+                              backgroundColor: 'rgba(25, 118, 210, 0.1)', 
+                              color: '#1976d2',
+                              animation: `${slideUp} 0.6s ease-out forwards`,
+                              animationDelay: `${index * 0.1}s`,
+                              opacity: 0,
+                            }} 
+                          />
+                        ))}
                       </Box>
-              
-                      <Box className="mt-6">
-                        <Alert className="bg-blue-50 border-blue-100">
-                          <InfoIcon className="h-5 w-5" />
-                          <Box>
-                            <Typography className="font-medium">Base URL</Typography>
-                            <code className="bg-blue-100 px-2 py-1 rounded text-sm">
-                            https://avoices-13747549899.us-central1.run.app
-                            </code>
-                          </Box>
-                        </Alert>
-                      </Box>
-                    </Box>
+                    </Stack>
                   </Box>
+                </Box>
                 
                 {Object.entries(categorizedEndpoints).map(([category, endpoints]) => (
                   <Box key={category} sx={{ mb: 4 }}>
-                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
+                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
                       {category}
                     </Typography>
                     <List sx={{ py: 0 }}>
@@ -1271,15 +906,15 @@ const Documentation = () => {
                         <Accordion
                           key={index}
                           id={endpoint.path.replace(/\//g, '_')}
-                          sx={{ mb: 2, borderRadius: '8px !important' }}
+                          sx={{ mb: 2, borderRadius: '12px !important' }}
                         >
                           <AccordionSummary 
-                            expandIcon={<ExpandMoreIcon />}
+                            expandIcon={<ExpandMoreIcon sx={{ color: '#1976d2' }} />}
                             sx={{
-                              backgroundColor: theme.palette.grey[50],
-                              borderRadius: '8px',
+                              backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                              borderRadius: '12px',
                               '&:hover': {
-                                backgroundColor: theme.palette.grey[100],
+                                backgroundColor: 'rgba(25, 118, 210, 0.05)',
                               },
                             }}
                           >
@@ -1288,32 +923,44 @@ const Documentation = () => {
                                 label={endpoint.method}
                                 color="primary"
                                 size="small"
-                                sx={{ mr: 2, fontWeight: 'bold' }}
+                                sx={{ mr: 2, fontWeight: 'bold', backgroundColor: '#1976d2' }}
                               />
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#1976d2' }}>
                                 {endpoint.path}
                               </Typography>
                             </Box>
                           </AccordionSummary>
                           <AccordionDetails>
-                            <Typography variant="body1" paragraph>
+                            <Typography variant="body1" paragraph sx={{ color: '#666666' }}>
                               {endpoint.description}
                             </Typography>
                             
-                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold', color: '#1976d2' }}>
                               Parameters
                             </Typography>
                             <ParametersSection parameters={endpoint.parameters} />
 
-                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold', color: '#1976d2' }}>
                               Code Examples
                             </Typography>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'rgba(25, 118, 210, 0.1)', mb: 2 }}>
                               <Tabs 
                                 value={selectedTab}
                                 onChange={handleTabChange}
                                 variant="scrollable"
                                 scrollButtons="auto"
+                                sx={{
+                                  '& .MuiTab-root': {
+                                    color: '#666666',
+                                    fontWeight: 600,
+                                    '&.Mui-selected': {
+                                      color: '#1976d2',
+                                    },
+                                  },
+                                  '& .MuiTabs-indicator': {
+                                    backgroundColor: '#1976d2',
+                                  },
+                                }}
                               >
                                 {languages.map((lang, i) => (
                                   <Tab 
@@ -1351,9 +998,12 @@ const Documentation = () => {
                     position: 'sticky',
                     top: 16,
                     p: 2,
-                    borderRadius: 2,
+                    borderRadius: '16px',
                     maxHeight: 'calc(100vh - 32px)',
                     overflowY: 'auto',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(25, 118, 210, 0.1)',
                   }}
                 >
                   <NavigationContent />
@@ -1373,6 +1023,10 @@ const Documentation = () => {
                   position: 'fixed',
                   bottom: 16,
                   right: 16,
+                  backgroundColor: '#1976d2',
+                  '&:hover': {
+                    backgroundColor: '#1565c0',
+                  },
                 }}
               >
                 <MenuIcon />
