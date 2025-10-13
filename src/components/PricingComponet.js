@@ -392,8 +392,116 @@ const PricingComponent = () => {
       setPricingTiers(response.pricing_tiers || []);
     } catch (error) {
       console.error('Error loading pricing tiers:', error);
-      // Fallback to empty array if API fails
-      setPricingTiers([]);
+      // Fallback pricing data when API fails
+      const fallbackTiers = [
+        {
+          id: "free_trial",
+          name: "Starter Free",
+          title: "Starter Free",
+          price: 0,
+          monthly: "Free",
+          currency: "USD",
+          duration_days: 30,
+          features: {
+            uploads: 20,
+            upload: 20,
+            upload_recorded_audio: 20,
+            videoUpload: 20,
+            translate: 50,
+            translate_document: 25,
+            summarize: 30,
+            summarize_document: 15,
+            vocify: 20,
+            synthesize_document: 10
+          },
+          feature_descriptions: [
+            "20 Audio/Video Transcriptions per month",
+            "50 Text Translations per month", 
+            "25 Document Translations per month",
+            "30 Text Summarizations per month",
+            "15 Document Summarizations per month",
+            "20 Text-to-Speech Conversions per month",
+            "10 Document-to-Speech Conversions per month",
+            "30-day trial period",
+            "Basic email support"
+          ],
+          description: "Perfect for individuals and small projects",
+          popular: true,
+          stripe_price_id: null
+        },
+        {
+          id: "classic",
+          name: "Professional",
+          title: "Professional",
+          price: 29,
+          monthly: "$29/month",
+          currency: "USD",
+          duration_days: 30,
+          features: {
+            uploads: 100,
+            upload: 100,
+            upload_recorded_audio: 100,
+            videoUpload: 100,
+            translate: 200,
+            translate_document: 100,
+            summarize: 150,
+            summarize_document: 75,
+            vocify: 100,
+            synthesize_document: 50
+          },
+          feature_descriptions: [
+            "100 Audio/Video Transcriptions per month",
+            "200 Text Translations per month",
+            "100 Document Translations per month",
+            "150 Text Summarizations per month",
+            "75 Document Summarizations per month",
+            "100 Text-to-Speech Conversions per month",
+            "50 Document-to-Speech Conversions per month",
+            "Priority email support",
+            "Advanced analytics"
+          ],
+          description: "Ideal for growing businesses and professionals",
+          popular: false,
+          stripe_price_id: null
+        },
+        {
+          id: "premium",
+          name: "Enterprise",
+          title: "Enterprise",
+          price: 99,
+          monthly: "$99/month",
+          currency: "USD",
+          duration_days: 30,
+          features: {
+            uploads: 500,
+            upload: 500,
+            upload_recorded_audio: 500,
+            videoUpload: 500,
+            translate: 1000,
+            translate_document: 500,
+            summarize: 750,
+            summarize_document: 375,
+            vocify: 500,
+            synthesize_document: 250
+          },
+          feature_descriptions: [
+            "500 Audio/Video Transcriptions per month",
+            "1000 Text Translations per month",
+            "500 Document Translations per month",
+            "750 Text Summarizations per month",
+            "375 Document Summarizations per month",
+            "500 Text-to-Speech Conversions per month",
+            "250 Document-to-Speech Conversions per month",
+            "24/7 Priority support",
+            "Custom integrations",
+            "Advanced analytics & reporting"
+          ],
+          description: "Perfect for large organizations and enterprises",
+          popular: false,
+          stripe_price_id: null
+        }
+      ];
+      setPricingTiers(fallbackTiers);
     } finally {
       setIsLoading(false);
     }
