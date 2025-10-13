@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
-import axios from "axios";
+import { dataAPI } from '../services/api';
 
 const ViewVoxComponent = ({ voiceId }) => {
   const [translationData, setTranslationData] = useState(null);
@@ -39,25 +39,23 @@ const ViewVoxComponent = ({ voiceId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://phosai-main-api.onrender.com/get_ttsvoice";
-
     const fetchData = async () => {
       try {
         setLoading(true);
         
         // Try the real API first
         try {
-          const response = await axios.post(apiEndpoint, { doc_id: voiceId });
+          const response = await dataAPI.getTTSVoice(voiceId);
           console.log("=== API RESPONSE DEBUG ===");
           console.log("Full API response:", response);
           console.log("Response data:", response.data);
           
-          if (!response.data.entries || response.data.entries.length === 0) {
+          if (!response.entries || response.entries.length === 0) {
             console.log("ERROR: No entries found in response");
             throw new Error("No entries found");
           }
           
-          const data = response.data.entries[0];
+          const data = response.entries[0];
           console.log("=== EXTRACTED DATA DEBUG ===");
           console.log("Extracted data:", data);
           console.log("audio_urls property:", data.audio_urls);
@@ -288,13 +286,6 @@ const ViewVoxComponent = ({ voiceId }) => {
     );
   }
 
-  // Debug: Log the current state
-  console.log("=== RENDER DEBUG ===");
-  console.log("Current translationData:", translationData);
-  console.log("Current audio_urls:", translationData?.audio_urls);
-  console.log("Audio URLs keys length:", Object.keys(translationData?.audio_urls || {}).length);
-  console.log("voiceId:", voiceId);
-
   return (
     <Container maxWidth="lg">
       <Paper elevation={0} sx={styles.mainPaper}>
@@ -302,18 +293,6 @@ const ViewVoxComponent = ({ voiceId }) => {
           {/* Header Section */}
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={8}>
-              <Typography
-                variant="h4"
-                gutterBottom
-                sx={{
-                  fontWeight: 700,
-                  background: "linear-gradient(45deg, #1976d2, #64b5f6)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {translationData.title || "Audio Translation"}
-              </Typography>
               <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                 Created on: {new Date(translationData.Date).toLocaleString("en-US", {
                   year: "numeric",
@@ -433,17 +412,6 @@ const ViewVoxComponent = ({ voiceId }) => {
             Translated Audio
           </Typography>
           
-          {/* Debug information - remove this in production */}
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Debug: Audio URLs object: {JSON.stringify(translationData.audio_urls || {})}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Debug: Audio URLs keys: {JSON.stringify(Object.keys(translationData.audio_urls || {}))}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Debug: Audio URLs length: {Object.keys(translationData.audio_urls || {}).length}
-          </Typography>
-          
           {translationData.audio_urls && Object.keys(translationData.audio_urls).length > 0 ? (
             <Box>
               {Object.entries(translationData.audio_urls).map(([languageCode, audioUrl]) => {
@@ -493,16 +461,39 @@ const ViewVoxComponent = ({ voiceId }) => {
                               <Typography variant="subtitle2" gutterBottom>
                                 {languageCode.toUpperCase()} Transcript:
                               </Typography>
-                              {translationData.Translations[languageCode].map((segment, segIndex) => (
-                                <Box key={segIndex} display="flex" alignItems="flex-start" mb={1}>
-                                  <Typography sx={styles.timestamp}>
-                                    {formatTime(segment.start_time)}
+                              {(() => {
+                                const translation = translationData.Translations[languageCode];
+                                
+                                // Handle string format (from voice-to-voice API)
+                                if (typeof translation === 'string') {
+                                  return (
+                                    <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                      {translation}
+                                    </Typography>
+                                  );
+                                }
+                                
+                                // Handle array format (from audio API)
+                                if (Array.isArray(translation)) {
+                                  return translation.map((segment, segIndex) => (
+                                    <Box key={segIndex} display="flex" alignItems="flex-start" mb={1}>
+                                      <Typography sx={styles.timestamp}>
+                                        {formatTime(segment.start_time)}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                        {segment.text}
+                                      </Typography>
+                                    </Box>
+                                  ));
+                                }
+                                
+                                // Fallback for unexpected format
+                                return (
+                                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                                    Translation format not supported
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                    {segment.text}
-                                  </Typography>
-                                </Box>
-                              ))}
+                                );
+                              })()}
                             </Box>
                             <Button
                               startIcon={<DownloadIcon />}
@@ -525,9 +516,6 @@ const ViewVoxComponent = ({ voiceId }) => {
             <Box>
               <Typography color="text.secondary" sx={{ mt: 2 }}>
                 No translated audio available
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Debug: translationData.audio_urls = {JSON.stringify(translationData.audio_urls)}
               </Typography>
             </Box>
           )}

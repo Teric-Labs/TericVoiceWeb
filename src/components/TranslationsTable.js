@@ -36,7 +36,7 @@ import {
   TranslateRounded as TranslateIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { dataAPI } from '../services/api';
 import ReactPaginate from 'react-paginate';
 import './Pagination.css';
 
@@ -120,11 +120,10 @@ export default function TranslationsTable() {
       return;
     }
     
-    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_translations';
     try {
-      const response = await axios.post(apiEndpoint, { user_id: user.userId });
-      setEntries(response.data.entries);
-      console.log(response.data.entries)
+      const response = await dataAPI.getTranslations(user.userId);
+      setEntries(response.entries);
+      console.log(response.entries)
     } catch (error) {
       console.error('Failed to fetch entries', error);
       setSnackbar({ open: true, message: 'Failed to fetch entries', severity: 'error' });

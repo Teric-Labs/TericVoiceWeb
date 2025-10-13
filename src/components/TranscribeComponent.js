@@ -16,12 +16,9 @@ import {
   Tabs,
   Tab,
   Chip,
-  TextField,
-  Drawer,
-  Stack,
-  Divider,
   Card,
   CardContent,
+  Drawer,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -34,23 +31,9 @@ import {
   Language as LanguageIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import {
-  setSourceLanguage,
-  setTargetLanguages,
-  setAudioBlob,
-  setAudioURL,
-  setSelectedFile,
-  setIsRecording,
-  setIsPlaying,
-  setProgress,
-  clearAudio,
-  clearError,
-  uploadAudio,
-  uploadRecordedAudio,
-} from '../store/slices/transcriptionSlice';
-import { addNotification } from '../store/slices/uiSlice';
+import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 import ViewAudioComponent from './ViewAudioComponent';
+import UpgradePromptModal from './UpgradePromptModal';
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -64,37 +47,72 @@ const languageOptions = [
 ];
 
 const TranscribeComponent = () => {
-  const dispatch = useAppDispatch();
-  const {
-    sourceLanguage,
-    targetLanguages,
-    audioBlob,
-    audioURL,
-    selectedFile,
-    isRecording,
-    isPlaying,
-    isLoading,
-    progress,
-    response,
-    docId,
-    error,
-  } = useAppSelector((state) => state.transcription);
-  const { user } = useAppSelector((state) => state.auth);
-
+  // State management
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [targetLanguages, setTargetLanguages] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioURL, setAudioURL] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [selectedTab, setSelectedTab] = useState(0);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [docId, setDocId] = useState(null);
+  const [error, setError] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeData, setUpgradeData] = useState(null);
 
   // Refs
   const mediaRecorder = useRef(null);
+  const mediaStream = useRef(null);
   const audioPlayerRef = useRef(null);
   const uploadInputRef = useRef(null);
 
+  // User state management
+  const [user, setUser] = useState({ username: '', userId: '' });
+
+  // Load user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    console.log('🔍 TranscribeComponent: Loading user from localStorage:', storedUser);
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      console.log('🔍 TranscribeComponent: Parsed user data:', userData);
+      console.log('🔍 TranscribeComponent: User ID field:', userData.userId);
+      console.log('🔍 TranscribeComponent: All user fields:', Object.keys(userData));
+      setUser(userData);
+    } else {
+      console.log('🔍 TranscribeComponent: No user found in localStorage');
+    }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup media stream and recorder
+      if (mediaStream.current) {
+        mediaStream.current.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+        mediaRecorder.current.stop();
+      }
+      // Cleanup audio URL
+      if (audioURL) {
+        URL.revokeObjectURL(audioURL);
+      }
+    };
+  }, [audioURL]);
+
   // Notification helper
   const showNotification = (message, severity = 'success') => {
-    dispatch(addNotification({ message, severity }));
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setShowSnackbar(true);
@@ -115,28 +133,78 @@ const TranscribeComponent = () => {
 
   // Recording functionality
   const toggleRecording = async () => {
+    // Prevent multiple operations
+    if (isLoading) {
+      showNotification('Please wait for current operation to complete', 'warning');
+      return;
+    }
+    
     if (isRecording) {
-      mediaRecorder.current?.stop();
-      dispatch(setIsRecording(false));
+      try {
+        // Stop the recording
+        if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+          mediaRecorder.current.stop();
+        }
+        
+        // Stop all tracks in the stream
+        if (mediaStream.current) {
+          mediaStream.current.getTracks().forEach(track => {
+            track.stop();
+          });
+          mediaStream.current = null;
+        }
+        
+        setIsRecording(false);
+        showNotification('Recording stopped', 'success');
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        showNotification('Error stopping recording', 'error');
+        setIsRecording(false);
+      }
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStream.current = stream; // Store stream reference
         const recorder = new MediaRecorder(stream);
         const chunks = [];
 
-        recorder.ondataavailable = (e) => chunks.push(e.data);
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+        
         recorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          dispatch(setAudioBlob(blob));
-          dispatch(setAudioURL(URL.createObjectURL(blob)));
+          try {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            if (blob.size > 0) {
+              setAudioBlob(blob);
+              setAudioURL(URL.createObjectURL(blob));
+              setIsAudioReady(false); // Reset ready state for new audio
+              showNotification('Recording completed', 'success');
+            } else {
+              showNotification('No audio data recorded', 'warning');
+            }
+          } catch (error) {
+            console.error('Error processing recording:', error);
+            showNotification('Error processing recording', 'error');
+          }
+        };
+        
+        recorder.onerror = (event) => {
+          console.error('MediaRecorder error:', event.error);
+          showNotification('Recording error occurred', 'error');
+          setIsRecording(false);
         };
 
-        recorder.start();
+        recorder.start(1000); // Record in 1-second chunks
         mediaRecorder.current = recorder;
-        dispatch(setIsRecording(true));
+        setIsRecording(true);
+        showNotification('Recording started', 'success');
       } catch (error) {
         console.error('Recording error:', error);
         showNotification('Error accessing microphone', 'error');
+        setIsRecording(false);
       }
     }
   };
@@ -145,54 +213,157 @@ const TranscribeComponent = () => {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      dispatch(setSelectedFile(file));
+      setSelectedFile(file);
       showNotification('File selected successfully');
     }
   };
 
   // Audio playback controls
-  const handlePlayPause = () => {
-    if (!audioPlayerRef.current) return;
+  const handlePlayPause = async () => {
+    if (!audioPlayerRef.current || !audioURL) return;
     
+    try {
     if (isPlaying) {
       audioPlayerRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        // Ensure audio is loaded before playing
+        if (audioPlayerRef.current.readyState < 2) {
+          // Audio not loaded yet, wait for it
+          audioPlayerRef.current.addEventListener('canplay', () => {
+            audioPlayerRef.current.play().catch(console.error);
+          }, { once: true });
     } else {
-      audioPlayerRef.current.play();
+          await audioPlayerRef.current.play();
+          setIsPlaying(true);
+        }
+      }
+    } catch (error) {
+      console.error('Audio playback error:', error);
+      showNotification('Error playing audio', 'error');
+      setIsPlaying(false);
     }
-    dispatch(setIsPlaying(!isPlaying));
   };
 
   const handleDiscardRecording = () => {
-    dispatch(clearAudio());
+    // Cleanup media stream
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach(track => track.stop());
+      mediaStream.current = null;
+    }
+    
+    // Cleanup recorder
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
+    }
+    
+    // Cleanup audio URL
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+    }
+    
+    setAudioBlob(null);
+    setAudioURL(null);
+    setIsAudioReady(false);
+    setIsPlaying(false);
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
     }
+    showNotification('Recording discarded', 'info');
   };
 
   // Submit functionality
   const handleSubmit = async () => {
+    console.log('🚀 Starting handleSubmit...');
+    console.log('👤 User in handleSubmit:', user);
+    console.log('🆔 User ID in handleSubmit:', user.userId);
+    
     if (!validateInput()) return;
 
-    let formData = new FormData();
-    formData.append('user_id', user?.userId || '');
-    formData.append('source_lang', sourceLanguage);
-    targetLanguages.forEach(lang => formData.append('target_langs', lang));
+    // Close any existing drawer and reset form
+    setIsDrawerOpen(false);
+    setDocId(null);
+    setError(null);
 
-    // Add the appropriate audio file
+    setIsLoading(true);
+    setProgress(0);
+
+    try {
+      console.log('🔍 Checking usage limits...');
+      // Check usage limits before making request
+      const usageResult = await checkUsageBeforeRequest('upload');
+      console.log('✅ Usage check result:', usageResult);
+      
+      // If usage limit exceeded, show upgrade modal
+      if (!usageResult.allowed) {
+        console.log('🚫 Usage limit exceeded, showing upgrade modal');
+        setUpgradeData({
+          currentUsage: usageResult.current_usage || 0,
+          limit: usageResult.limit || 0,
+          endpoint: 'upload',
+          tier: usageResult.tier || 'free_trial'
+        });
+        setShowUpgradeModal(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get user from localStorage
+      console.log('🔍 User object:', user);
+      console.log('🔍 User.userId:', user.userId);
+      console.log('🔍 User keys:', Object.keys(user));
+      console.log('🔍 Raw localStorage:', localStorage.getItem('user'));
+      
+      if (!user.userId) {
+        console.error('❌ User not authenticated - userId is missing');
+        throw new Error('User not authenticated');
+      }
+      console.log('✅ User authenticated:', user.userId);
+
+      let response;
     if (selectedTab === 0) {
+        // File upload
       if (!selectedFile) {
-        showNotification('Please select a file to upload', 'error');
-        return;
+          throw new Error('Please select a file to upload');
+        }
+        response = await transcriptionAPI.uploadAudio(
+          selectedFile,
+          sourceLanguage,
+          targetLanguages,
+          user.userId
+        );
+      } else {
+        // Recorded audio
+        if (!audioBlob) {
+          throw new Error('Please record audio first');
+        }
+        response = await transcriptionAPI.uploadRecordedAudio(
+          audioBlob,
+          sourceLanguage,
+          targetLanguages,
+          user.userId
+        );
       }
-      formData.append('audio_file', selectedFile);
-      await dispatch(uploadAudio(formData));
+
+      setDocId(response.doc_id);
+      setIsDrawerOpen(true);
+      showNotification('Audio uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      const errorInfo = handleAPIError(error, 'upload');
+      
+      if (errorInfo.shouldUpgrade) {
+        setError('Please upgrade your subscription to continue');
+        // Trigger upgrade modal
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
+          detail: { message: errorInfo.message }
+        }));
     } else {
-      if (!audioBlob) {
-        showNotification('Please record audio first', 'error');
-        return;
+        setError(errorInfo.message || 'Upload failed. Please try again.');
       }
-      formData.append('recorded_audio', audioBlob, 'recording.webm');
-      await dispatch(uploadRecordedAudio(formData));
+    } finally {
+      setIsLoading(false);
+      setProgress(100);
     }
   };
 
@@ -232,7 +403,7 @@ const TranscribeComponent = () => {
                 <FormControl fullWidth>
                   <Select
                     value={sourceLanguage}
-                    onChange={(e) => dispatch(setSourceLanguage(e.target.value))}
+                    onChange={(e) => setSourceLanguage(e.target.value)}
                     sx={{ borderRadius: '12px' }}
                   >
                     {languageOptions.map((option) => (
@@ -254,7 +425,7 @@ const TranscribeComponent = () => {
                   <Select
                     multiple
                     value={targetLanguages}
-                    onChange={(e) => dispatch(setTargetLanguages(e.target.value))}
+                    onChange={(e) => setTargetLanguages(e.target.value)}
                     renderValue={(selected) => (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {selected.map((value) => {
@@ -350,9 +521,10 @@ const TranscribeComponent = () => {
                         variant="outlined"
                         startIcon={isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                         onClick={handlePlayPause}
+                        disabled={!isAudioReady}
                         sx={{ borderRadius: '24px' }}
                       >
-                        {isPlaying ? 'Pause' : 'Play'}
+                        {!isAudioReady ? 'Loading...' : (isPlaying ? 'Pause' : 'Play')}
                       </Button>
                       <IconButton
                         onClick={handleDiscardRecording}
@@ -368,7 +540,21 @@ const TranscribeComponent = () => {
                     ref={audioPlayerRef}
                     src={audioURL}
                     style={{ display: 'none' }}
-                    onEnded={() => dispatch(setIsPlaying(false))}
+                    onEnded={() => setIsPlaying(false)}
+                    onError={(e) => {
+                      console.error('Audio error:', e);
+                      showNotification('Error loading audio', 'error');
+                      setIsPlaying(false);
+                    }}
+                    onLoadStart={() => {
+                      console.log('Audio loading started');
+                      setIsAudioReady(false);
+                    }}
+                    onCanPlay={() => {
+                      console.log('Audio can play');
+                      setIsAudioReady(true);
+                    }}
+                    preload="metadata"
                   />
                 )}
               </Box>
@@ -411,24 +597,31 @@ const TranscribeComponent = () => {
             {/* Error Display */}
             {error && (
               <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
-                {error}
+                {typeof error === 'string' ? error : error.message || 'An error occurred'}
               </Alert>
             )}
 
-            {/* Results Drawer */}
-            <Drawer
-              anchor="right"
-              open={isDrawerOpen}
-              onClose={() => setIsDrawerOpen(false)}
-              sx={{
-                '& .MuiDrawer-paper': {
-                  width: { xs: '100%', sm: 400 },
-                  p: 3,
-                },
-              }}
-            >
-              {docId && <ViewAudioComponent docId={docId} />}
-            </Drawer>
+            {/* Results */}
+            {docId && (
+              <Box sx={{ mt: 4, p: 3, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '12px' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                  Transcription Complete!
+                </Typography>
+                <Typography variant="body1">
+                  Document ID: {docId}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Your transcription has been processed successfully. View the results in the drawer.
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  sx={{ mt: 2 }}
+                  onClick={() => setIsDrawerOpen(true)}
+                >
+                  View Results
+                </Button>
+              </Box>
+            )}
           </CardContent>
         </Card>
 
@@ -443,6 +636,41 @@ const TranscribeComponent = () => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
+
+        {/* Results Drawer */}
+        <Drawer
+          anchor="right"
+          open={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: { xs: '100%', sm: '600px' },
+              borderTopLeftRadius: 16,
+              borderBottomLeftRadius: 16,
+            },
+          }}
+          aria-label="Transcription results drawer"
+        >
+          {docId && (
+            <ViewAudioComponent 
+              audioId={docId}
+              onError={(error) => {
+                showNotification(error.message, 'error');
+                setIsDrawerOpen(false);
+              }}
+            />
+          )}
+        </Drawer>
+        
+        {/* Upgrade Prompt Modal */}
+        <UpgradePromptModal
+          open={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          currentUsage={upgradeData?.currentUsage || 0}
+          limit={upgradeData?.limit || 0}
+          endpoint={upgradeData?.endpoint || 'upload'}
+          tier={upgradeData?.tier || 'free_trial'}
+        />
       </Box>
     </Container>
   );

@@ -38,11 +38,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
-import axios from 'axios';
+import { dataAPI } from '../services/api';
 import './Pagination.css';
 
 const ENTRIES_PER_PAGE = 10;
-const API_ENDPOINT = 'https://phosai-main-api.onrender.com/get_summaries';
 
 export default function SummaryTable() {
   // State management
@@ -160,14 +159,14 @@ export default function SummaryTable() {
     }
 
     try {
-      const response = await axios.post(API_ENDPOINT, { user_id: user.userId });
+      const response = await dataAPI.getSummaries(user.userId);
       
-      const processedEntries = response.data.entries.map(entry => ({
+      const processedEntries = response.entries.map(entry => ({
         ...entry,
         status: Math.random() > 0.5 ? 'completed' : 'processing', // Simulated status
-        Translation: entry.Original_transcript.length > 100
+        Translation: entry.Original_transcript && entry.Original_transcript.length > 100
           ? `${entry.Original_transcript.substring(0, 100)}...`
-          : entry.Original_transcript
+          : entry.Original_transcript || 'No content available'
       }));
 
       setEntries(processedEntries);
@@ -193,7 +192,8 @@ export default function SummaryTable() {
 
   // Filtered and sorted entries
   const filteredEntries = entries.filter(entry =>
-    entry.Original_transcript.toLowerCase().includes(filter.toLowerCase())
+    (entry.Original_transcript || '').toLowerCase().includes(filter.toLowerCase()) ||
+    (entry.title || '').toLowerCase().includes(filter.toLowerCase())
   );
 
   const sortedEntries = filteredEntries.sort((a, b) => {

@@ -13,13 +13,14 @@ import {
   ListItemText,
   Divider,
   Chip,
-  Paper
+  Paper,
+  LinearProgress,
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import CheckIcon from '@mui/icons-material/Check';
 import { AttachMoney, Rocket, Diamond, Star, TrendingUp, Security } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { PRICING_TIERS } from '../constants/PricingConstants';
+import { subscriptionAPI } from '../services/api';
 
 // Enhanced animations
 const float = keyframes`
@@ -376,10 +377,27 @@ const PricingCard = ({ title, monthly, features, isPopular, isSelected }) => (
 const PricingComponent = () => {
   const [activePlanIndex, setActivePlanIndex] = useState(1);
   const [isVisible, setIsVisible] = useState(false);
+  const [pricingTiers, setPricingTiers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
+    loadPricingTiers();
   }, []);
+
+  const loadPricingTiers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await subscriptionAPI.getPricingTiers();
+      setPricingTiers(response.pricing_tiers || []);
+    } catch (error) {
+      console.error('Error loading pricing tiers:', error);
+      // Fallback to empty array if API fails
+      setPricingTiers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -387,7 +405,7 @@ const PricingComponent = () => {
         <Box sx={{ 
           minHeight: '100vh', 
           py: 8, 
-          background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)',
+          background: '#ffffff',
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -406,7 +424,7 @@ const PricingComponent = () => {
               left: 0,
               right: 0,
               height: '100%',
-              background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.1) 0%, transparent 70%)',
+              background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.02) 0%, transparent 70%)',
               zIndex: 1,
             }}
           />
@@ -420,15 +438,10 @@ const PricingComponent = () => {
                 sx={{
                   fontWeight: 900,
                   fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
-                  background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
-                  backgroundSize: '200% 200%',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
+                  color: '#1976d2',
                   mb: 3,
                   letterSpacing: '-0.03em',
                   lineHeight: 0.9,
-                  animation: isVisible ? `${shimmer} 3s ease-in-out infinite` : 'none',
                   transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
                   opacity: isVisible ? 1 : 0,
                   transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -441,7 +454,7 @@ const PricingComponent = () => {
               <Typography
                 variant="h5"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: '#666666',
                   mb: 6,
                   maxWidth: '800px',
                   mx: 'auto',
@@ -470,7 +483,7 @@ const PricingComponent = () => {
                 transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s',
               }}
             >
-              {PRICING_TIERS.map((tier, index) => (
+              {pricingTiers.map((tier, index) => (
                 <PlanChip
                   key={index}
                   plan={tier}
@@ -481,6 +494,12 @@ const PricingComponent = () => {
             </Box>
 
             {/* Pricing Cards */}
+            {isLoading ? (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <LinearProgress sx={{ mb: 2, maxWidth: 400, mx: 'auto' }} />
+                <Typography color="text.secondary">Loading pricing options...</Typography>
+              </Box>
+            ) : (
             <Grid 
               container 
               spacing={4} 
@@ -493,18 +512,19 @@ const PricingComponent = () => {
                 transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s',
               }}
             >
-              {PRICING_TIERS.map((tier, index) => (
+              {pricingTiers.map((tier, index) => (
                 <Grid item xs={12} md={4} key={index}>
                   <PricingCard
                     title={tier.title}
                     monthly={tier.monthly}
-                    features={tier.features}
-                    isPopular={tier.title === 'Classic Pro'}
+                    features={tier.feature_descriptions || []}
+                    isPopular={tier.popular}
                     isSelected={activePlanIndex === index}
                   />
                 </Grid>
               ))}
             </Grid>
+            )}
           </Box>
         </Box>
       </Container>

@@ -18,6 +18,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
+  LinearProgress
 } from "@mui/material";
 import {
   ContentCopy as CopyIcon,
@@ -25,16 +27,18 @@ import {
   ExpandMore as ExpandMoreIcon,
   Description as DescriptionIcon,
 } from "@mui/icons-material";
-import axios from "axios";
+import { dataAPI, translationAPI } from '../services/api';
+import ProfessionalProgressBar from './ProfessionalProgressBar';
 
 const languageOptions = [
   { name: "English", code: "en" },
   { name: "Luganda", code: "lg" },
-  { name: "Acholi", code: "ach" },
-  { name: "Ateso", code: "teo" },
+  { name: "Acholi", code: "ac" },
+  { name: "Ateso", code: "at" },
   { name: "Swahili", code: "sw" },
   { name: "French", code: "fr" },
   { name: "Kinyarwanda", code: "rw" },
+  { name: "Runyankole", code: "nyn" },
 ];
 
 const ViewSummaryComponent = ({ translationId }) => {
@@ -49,24 +53,35 @@ const ViewSummaryComponent = ({ translationId }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
+  const [user, setUser] = useState({ username: '', userId: '', uid: '' });
 
   const theme = useTheme();
 
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const response = await axios.post("https://phosai-main-api.onrender.com/get_summary", {
-          doc_id: translationId,
-        });
+        const response = await dataAPI.getSummary(translationId);
+        console.log('📋 ViewSummaryComponent - API Response:', response);
 
-        if (response.data.entries && response.data.entries.length > 0) {
-          const entry = response.data.entries[0];
-          setEntries(response.data.entries);
-          setScriptDate(entry.Date || new Date().toISOString());
+        if (response.entries && response.entries.length > 0) {
+          const entry = response.entries[0];
+          console.log('📋 ViewSummaryComponent - Entry data:', entry);
+          setEntries(response.entries);
+          setScriptDate(entry.Date || entry.date || new Date().toISOString());
           setScriptTitle(entry.title || "Untitled Summary");
-          setDocument(entry.Original_transcript || "No original content available.");
-          setSummary(entry.Summary || "No summary available.");
+          setDocument(entry.Original_transcript || entry.original_transcript || "No original content available.");
+          setSummary(entry.Summary || entry.summary || "No summary available.");
           setLanguage(entry.source_lang || "unknown");
+          
+          console.log('📋 ViewSummaryComponent - Set data:', {
+            scriptDate: entry.Date || entry.date,
+            scriptTitle: entry.title,
+            document: entry.Original_transcript || entry.original_transcript,
+            summary: entry.Summary || entry.summary,
+            language: entry.source_lang
+          });
+        } else {
+          console.log('📋 ViewSummaryComponent - No entries found in response');
         }
       } catch (error) {
         console.error("Failed to fetch entries", error);
@@ -78,6 +93,13 @@ const ViewSummaryComponent = ({ translationId }) => {
       fetchEntries();
     }
   }, [translationId]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const showNotification = (message) => {
     setSnackbarMessage(message);
@@ -99,22 +121,39 @@ const ViewSummaryComponent = ({ translationId }) => {
       return;
     }
 
+    if (!user.uid && !user.userId) {
+      showNotification("User not authenticated");
+      return;
+    }
+
     setIsTranslating(true);
     try {
-      const response = await axios.post("https://phosai-main-api.onrender.com/translate_text", {
-        text: summary,
-        source_lang: language,
-        target_lang: targetLanguage,
+      const userId = user.uid || user.userId;
+      console.log('🔄 Translating summary:', { 
+        summary: summary.substring(0, 100) + '...', 
+        sourceLang: language, 
+        targetLang: targetLanguage, 
+        userId 
       });
 
-      if (response.data && response.data.translated_text) {
-        setTranslatedSummary(response.data.translated_text);
+      const response = await translationAPI.translateText(summary, language, [targetLanguage], userId);
+      console.log('🔄 Translation response:', response);
+
+      // The backend returns translations directly as an object: { "lg": "translated text" }
+      if (response && typeof response === 'object') {
+        const translatedText = response[targetLanguage];
+        if (translatedText) {
+          setTranslatedSummary(translatedText);
+          showNotification(`Successfully translated to ${targetLanguage.toUpperCase()}`);
+        } else {
+          throw new Error(`Translation not available for ${targetLanguage}`);
+        }
       } else {
-        throw new Error("Translation failed");
+        throw new Error("Invalid translation response format");
       }
     } catch (error) {
       console.error("Translation error:", error);
-      showNotification("Failed to translate text");
+      showNotification(`Failed to translate text: ${error.message || 'Unknown error'}`);
     } finally {
       setIsTranslating(false);
     }
@@ -173,18 +212,6 @@ const ViewSummaryComponent = ({ translationId }) => {
         <Box p={4}>
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={8}>
-              <Typography
-                variant="h4"
-                gutterBottom
-                sx={{
-                  fontWeight: 600,
-                  background: "linear-gradient(45deg, #1976d2, #64b5f6)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {scriptTitle}
-              </Typography>
               <Typography variant="subtitle1" color="text.secondary">
                 Created on: {new Date(scriptDate).toLocaleString()}
               </Typography>
@@ -211,35 +238,79 @@ const ViewSummaryComponent = ({ translationId }) => {
             <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
               Summary
             </Typography>
-            <Box sx={styles.contentBox}>{formatText(summary)}</Box>
-            <Grid container spacing={2} alignItems="center" sx={{ mt: 2 }}>
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                  <InputLabel>Translate to</InputLabel>
-                  <Select
-                    value={targetLanguage}
-                    onChange={(e) => setTargetLanguage(e.target.value)}
-                    label="Translate to"
+            <Box sx={styles.contentBox}>
+              {formatText(summary)}
+              <IconButton
+                sx={styles.copyButton}
+                onClick={() => handleCopyText(summary)}
+                title="Copy summary"
+              >
+                <CopyIcon />
+              </IconButton>
+            </Box>
+            
+            {/* Translation Section */}
+            <Box sx={{ mt: 3, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.02)', borderRadius: 2 }}>
+              <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+                Translate Summary
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Translate this summary from {language.toUpperCase()} to another language
+              </Typography>
+              
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Translate to</InputLabel>
+                    <Select
+                      value={targetLanguage}
+                      onChange={(e) => setTargetLanguage(e.target.value)}
+                      label="Translate to"
+                      disabled={isTranslating}
+                    >
+                      {languageOptions
+                        .filter(lang => lang.code !== language) // Don't show source language
+                        .map((lang) => (
+                          <MenuItem key={lang.code} value={lang.code}>
+                            {lang.name} ({lang.code.toUpperCase()})
+                          </MenuItem>
+                        ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Button
+                    variant="contained"
+                    startIcon={isTranslating ? <CircularProgress size={20} color="inherit" /> : <TranslateIcon />}
+                    onClick={handleTranslate}
+                    disabled={isTranslating || !targetLanguage || targetLanguage === language}
+                    sx={{ 
+                      minWidth: 140,
+                      background: isTranslating 
+                        ? 'linear-gradient(45deg, #1976d2, #42a5f5)' 
+                        : 'linear-gradient(45deg, #1976d2, #1565c0)',
+                      '&:hover': {
+                        background: isTranslating 
+                          ? 'linear-gradient(45deg, #1976d2, #42a5f5)' 
+                          : 'linear-gradient(45deg, #1565c0, #1976d2)',
+                      }
+                    }}
                   >
-                    {languageOptions.map((lang) => (
-                      <MenuItem key={lang.code} value={lang.code}>
-                        {lang.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                    {isTranslating ? "Translating..." : "Translate"}
+                  </Button>
+                </Grid>
               </Grid>
-              <Grid item xs={12} md={4}>
-                <Button
-                  variant="contained"
-                  startIcon={<TranslateIcon />}
-                  onClick={handleTranslate}
-                  disabled={isTranslating || !targetLanguage}
-                >
-                  {isTranslating ? "Translating..." : "Translate"}
-                </Button>
-              </Grid>
-            </Grid>
+            </Box>
+            
+            {/* Professional Progress Bar for Translation */}
+            <ProfessionalProgressBar
+              isVisible={isTranslating}
+              message="Translating Summary..."
+              subMessage={`Converting to ${targetLanguage?.toUpperCase()}...`}
+              type="translation"
+              size="small"
+              showSpinner={true}
+            />
             {translatedSummary && (
               <Box sx={{ mt: 3 }}>
                 <Typography
@@ -247,9 +318,18 @@ const ViewSummaryComponent = ({ translationId }) => {
                   gutterBottom
                   sx={{ color: theme.palette.secondary.main }}
                 >
-                  Translated Summary
+                  Translated Summary ({targetLanguage.toUpperCase()})
                 </Typography>
-                <Box sx={styles.contentBox}>{formatText(translatedSummary)}</Box>
+                <Box sx={styles.contentBox}>
+                  {formatText(translatedSummary)}
+                  <IconButton
+                    sx={styles.copyButton}
+                    onClick={() => handleCopyText(translatedSummary)}
+                    title="Copy translated summary"
+                  >
+                    <CopyIcon />
+                  </IconButton>
+                </Box>
               </Box>
             )}
           </Box>
@@ -261,7 +341,16 @@ const ViewSummaryComponent = ({ translationId }) => {
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Box sx={styles.contentBox}>{formatText(document)}</Box>
+              <Box sx={styles.contentBox}>
+                {formatText(document)}
+                <IconButton
+                  sx={styles.copyButton}
+                  onClick={() => handleCopyText(document)}
+                  title="Copy original content"
+                >
+                  <CopyIcon />
+                </IconButton>
+              </Box>
             </AccordionDetails>
           </Accordion>
         </Box>

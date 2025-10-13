@@ -21,7 +21,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LanguageIcon from '@mui/icons-material/Language';
 import WaveSurfer from 'wavesurfer.js';
-import axios from "axios";
+import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+  const apiEndpoint = 'https://phosai-main-api.onrender.com/upload_recorded_audio/';
+
+import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 
 const RecordingAudioComponent = () => {
   const theme = useTheme();
@@ -35,10 +38,22 @@ const RecordingAudioComponent = () => {
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerMessage, setBannerMessage] = useState('');
-  const apiEndpoint = 'https://phosai-main-api.onrender.com/upload_recorded_audio/';
+import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+
+const RecordingAudioComponent = () => {
+  const theme = useTheme();
+  const [language, setLanguage] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [waveSurfer, setWaveSurfer] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const waveformRef = useRef(null);
+  const mediaRecorder = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState('');
 
   const languageOptions = [
-    { label: 'Luganda', value: 'lg' },
     { label: 'English', value: 'en' },
     { label: 'Ateso', value: 'at' },
     { label: 'Acholi', value: 'ac' },
@@ -121,18 +136,40 @@ const RecordingAudioComponent = () => {
     if (!audioBlob) return;
 
     setLoading(true);
-    const formData = new FormData();
-    formData.append('source_lang', language);
-    formData.append('recorded_audio', audioBlob);
-
+    
     try {
-      await axios.post(apiEndpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Check usage limits before making request
+      await checkUsageBeforeRequest('upload_recorded_audio');
+      
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      // Use centralized API
+      const response = await transcriptionAPI.uploadRecordedAudio(
+        audioBlob, 
+        language, 
+        ['en', 'lg'], // Default target languages
+        user.uid
+      );
+      
       setBannerMessage('Recording uploaded successfully!');
       handleDiscardRecording();
     } catch (error) {
-      setBannerMessage('Failed to upload the recording.');
+      console.error('Upload error:', error);
+      const errorInfo = handleAPIError(error, 'upload_recorded_audio');
+      
+      if (errorInfo.shouldUpgrade) {
+        setBannerMessage('Please upgrade your subscription to continue');
+        // Trigger upgrade modal
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
+          detail: { message: errorInfo.message }
+        }));
+      } else {
+        setBannerMessage(errorInfo.message || 'Upload failed. Please try again.');
+      }
     } finally {
       setShowBanner(true);
       setLoading(false);

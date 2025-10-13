@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { PRICING_TIERS } from '../constants/PricingConstants';
+import { subscriptionAPI } from '../services/api';
 import StripeCheckoutForm from './StripeCheckoutForm';
 import { LocalAtm, Diamond, Rocket } from '@mui/icons-material';
 
@@ -180,21 +180,37 @@ const SubscriptionComponent = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePlanIndex, setActivePlanIndex] = useState(0);
+  const [pricingTiers, setPricingTiers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    loadPricingTiers();
   }, []);
+
+  const loadPricingTiers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await subscriptionAPI.getPricingTiers();
+      setPricingTiers(response.pricing_tiers || []);
+    } catch (error) {
+      console.error('Error loading pricing tiers:', error);
+      setPricingTiers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubscribe = (title, monthly) => {
     if (monthly.toLowerCase() === 'custom pricing') {
       alert('Contact support at support@example.com');
       return;
     }
-    const selectedTier = PRICING_TIERS.find(tier => tier.title === title);
-    setSelectedPlan({ title, monthly, tierId: selectedTier.id });
+    const selectedTier = pricingTiers.find(tier => tier.title === title);
+    setSelectedPlan({ title, monthly, tierId: selectedTier?.id });
     setIsModalOpen(true);
   };
 
@@ -244,7 +260,7 @@ const SubscriptionComponent = () => {
               mb: 6,
             }}
           >
-            {PRICING_TIERS.map((tier, index) => (
+            {pricingTiers.map((tier, index) => (
               <PlanChip
                 key={index}
                 plan={tier}
@@ -256,12 +272,12 @@ const SubscriptionComponent = () => {
 
           {/* Pricing Cards */}
           <Grid container spacing={4} sx={{ mb: 8 }}>
-            {PRICING_TIERS.map((tier, index) => (
+            {pricingTiers.map((tier, index) => (
               <Grid item xs={12} md={4} key={index}>
                 <PricingCard
                   title={tier.title}
                   monthly={tier.monthly}
-                  features={tier.features}
+                  features={tier.feature_descriptions || []}
                   onSubscribe={handleSubscribe}
                   isSelected={activePlanIndex === index}
                 />

@@ -19,7 +19,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import axios from "axios";
+import { dataAPI } from '../services/api';
 
 const ViewTranslationsComponent = ({ translationId }) => {
   const [entries, setEntries] = useState([]);
@@ -29,14 +29,13 @@ const ViewTranslationsComponent = ({ translationId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_translation';
     const fetchEntries = async () => {
       try {
-        const response = await axios.post(apiEndpoint, { doc_id: translationId });
-        setEntries(response.data.entries);
-        if (response.data.entries.length > 0) {
-          setScriptDate(response.data.entries[0].Date);
-          setScriptTitle(response.data.entries[0].title);
+        const response = await dataAPI.getTranslation(translationId);
+        setEntries(response.entries);
+        if (response.entries.length > 0) {
+          setScriptDate(response.entries[0].Date);
+          setScriptTitle(response.entries[0].title);
         }
       } catch (error) {
         console.error('Failed to fetch entries', error);

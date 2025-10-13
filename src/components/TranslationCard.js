@@ -16,7 +16,6 @@ import {
   Alert,
   Tab,
   Tabs,
-  Snackbar,
   Stack,
   Card,
   CardContent,
@@ -48,12 +47,11 @@ import {
   translateText,
   translateDocument,
 } from '../store/slices/translationSlice';
-import { addNotification } from '../store/slices/uiSlice';
+import ProfessionalProgressBar from './ProfessionalProgressBar';
+import DocumentTranslationDrawer from './DocumentTranslationDrawer';
 
-const API_CONFIG = {
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  MAX_TEXT_LENGTH: 5000,
-};
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_TEXT_LENGTH = 5000;
 
 const SUPPORTED_LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -134,35 +132,58 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 const TranslationCard = () => {
   const dispatch = useAppDispatch();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerData, setDrawerData] = useState(null);
+  const [userClosedDrawer, setUserClosedDrawer] = useState(false);
+  
   const {
     sourceLanguage,
     targetLanguage,
     inputText,
     translatedText,
     selectedFile,
-    loading,
+    isLoading: loading,
     error,
     activeTab,
   } = useAppSelector((state) => state.translation);
   const { user } = useAppSelector((state) => state.auth);
 
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
-  const showNotification = (message, severity = 'success') => {
-    dispatch(addNotification({ message, severity }));
-    setSnackbar({ open: true, message, severity });
-  };
+  // Automatically open drawer when translation is complete
+  useEffect(() => {
+    if (translatedText && !loading && !error && !drawerOpen && !userClosedDrawer) {
+      // Small delay to ensure state is properly updated
+      setTimeout(() => {
+        const drawerData = {
+          translations: { [targetLanguage]: translatedText },
+          original: activeTab === 0 ? inputText : selectedFile?.name || 'Document',
+          metadata: {
+            file_name: activeTab === 0 ? 'Text Translation' : selectedFile?.name || 'Document',
+            file_size: activeTab === 0 ? inputText.length : selectedFile?.size || 0,
+            languages_translated: 1,
+            processing_status: 'completed'
+          }
+        };
+        setDrawerData(drawerData);
+        setDrawerOpen(true);
+      }, 200);
+    }
+  }, [translatedText, loading, error, targetLanguage, activeTab, inputText, selectedFile]);
 
   const handleTranslate = async () => {
     if (!user?.userId) {
-      showNotification('Please log in to use translation services', 'error');
+      console.error('Please log in to use translation services');
       return;
     }
 
+    // Close any existing drawer when starting new translation
+    setDrawerOpen(false);
+    setDrawerData(null);
+    setUserClosedDrawer(false); // Reset the flag for new translation
+
     try {
       if (activeTab === 0) {
-        if (inputText.length > API_CONFIG.MAX_TEXT_LENGTH) {
-          throw new Error(`Text exceeds maximum length of ${API_CONFIG.MAX_TEXT_LENGTH} characters`);
+        if (inputText.length > MAX_TEXT_LENGTH) {
+          throw new Error(`Text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`);
         }
         await dispatch(translateText({
           userId: user.userId,
@@ -174,7 +195,7 @@ const TranslationCard = () => {
         if (!selectedFile) {
           throw new Error('No file selected');
         }
-        if (selectedFile.size > API_CONFIG.MAX_FILE_SIZE) {
+        if (selectedFile.size > MAX_FILE_SIZE) {
           throw new Error('File size exceeds 10MB limit');
         }
         await dispatch(translateDocument({
@@ -184,9 +205,8 @@ const TranslationCard = () => {
           file: selectedFile,
         })).unwrap();
       }
-      showNotification('Translation completed successfully!', 'success');
     } catch (err) {
-      showNotification(err.message || 'Translation failed. Please try again.', 'error');
+      console.error('Translation failed:', err.message || 'Translation failed. Please try again.');
     }
   };
 
@@ -202,7 +222,7 @@ const TranslationCard = () => {
         dispatch(setSelectedFile(file));
         dispatch(clearError());
       } else {
-        showNotification('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.', 'error');
+        console.error('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.');
         event.target.value = null;
       }
     }
@@ -211,9 +231,9 @@ const TranslationCard = () => {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(translatedText);
-      showNotification('Text copied to clipboard!', 'success');
+      console.log('Text copied to clipboard!');
     } catch (err) {
-      showNotification('Failed to copy text', 'error');
+      console.error('Failed to copy text');
     }
   };
 
@@ -229,7 +249,7 @@ const TranslationCard = () => {
 
   const handleDownloadDocx = () => {
     // Implementation for DOCX download would go here
-    showNotification('DOCX download feature coming soon!', 'info');
+    console.log('DOCX download feature coming soon!');
   };
 
   const handleSwapLanguages = () => {
@@ -418,37 +438,12 @@ const TranslationCard = () => {
                 )}
                 {translatedText && (
                   <Box sx={{ mt: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                      Translation Result
+                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: '#16a34a' }}>
+                      ✅ Translation Completed Successfully
                     </Typography>
-                    <StyledTextField
-                      multiline
-                      rows={8}
-                      fullWidth
-                      value={translatedText}
-                      variant="outlined"
-                      InputProps={{ readOnly: true }}
-                    />
-                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<ContentCopy />}
-                        onClick={handleCopy}
-                        size="small"
-                        sx={{ borderRadius: '8px' }}
-                      >
-                        Copy
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={handleDownloadDocx}
-                        size="small"
-                        sx={{ borderRadius: '8px' }}
-                      >
-                        Download DOCX
-                      </Button>
-                    </Stack>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      Results are displayed in the drawer on the right
+                    </Typography>
                   </Box>
                 )}
               </Box>
@@ -473,31 +468,33 @@ const TranslationCard = () => {
               </StyledButton>
             </Box>
 
-            {/* Progress */}
-            {loading && (
-              <Box sx={{ mt: 3 }}>
-                <LinearProgress sx={{ height: 8, borderRadius: 4 }} />
-              </Box>
-            )}
+            {/* Professional Progress Bar */}
+            <Box sx={{ mt: 3 }}>
+              <ProfessionalProgressBar
+                isVisible={loading}
+                message="Processing Translation..."
+                subMessage="Please wait"
+                type="translation"
+                size="medium"
+                showSpinner={true}
+              />
+            </Box>
           </CardContent>
         </Card>
-
-        {/* Snackbar */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
       </Box>
+      
+      {/* Document Translation Drawer */}
+      <DocumentTranslationDrawer
+        isOpen={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setUserClosedDrawer(true); // Mark that user manually closed
+        }}
+        translationData={drawerData}
+        isLoading={loading}
+        error={error}
+        fileName={selectedFile?.name || 'Text Translation'}
+      />
     </Container>
   );
 };

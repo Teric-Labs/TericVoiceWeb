@@ -28,10 +28,12 @@ import Subscription from "./views/Subscription";
 import APIReference from "./views/APIReference";
 import APis from "./views/APis";
 import LanguageView from "./views/LangaugeView";
+import ErrorBoundary from "./components/ErrorBoundary";
 import LanguageSupport from "./views/LanguageSupport";
 import ChatbotGuideView from "./views/ChatbotGuideView";
 import ProfileView from "./views/ProfileView";
 import Chatbot from "./components/Chatbot";
+import UpgradePromptModal from "./components/UpgradePromptModal";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -45,8 +47,9 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
         <Routes>
           <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />
@@ -82,8 +85,10 @@ function App() {
           </Route>
         </Routes>
         <Chatbot/>
+        <UpgradePromptModal />
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -37,7 +37,7 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { dataAPI } from '../services/api';
 import ReactPaginate from 'react-paginate';
 import './Pagination.css';
 
@@ -120,11 +120,10 @@ export default function VideoTable() {
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_video';
+    
     try {
-      
-      const response = await axios.post(apiEndpoint, { user_id: user.userId });
-      setEntries(response.data.entries.map(entry => ({
+      const response = await dataAPI.getVideos(user.userId);
+      setEntries(response.entries.map(entry => ({
         ...entry,
         status: Math.random() > 0.5 ? 'completed' : 'processing' // Simulated status
       })));

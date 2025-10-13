@@ -33,7 +33,7 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import ReactPaginate from 'react-paginate';
-import axios from 'axios';
+import { dataAPI } from '../services/api';
 import './Pagination.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -74,6 +74,13 @@ const VoiceTransTable = () => {
     setActiveRow(null);
   };
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   const fetchTranslations = useCallback(async () => {
     setLoading(true);
     if (!user.userId) {
@@ -83,18 +90,20 @@ const VoiceTransTable = () => {
     }
     
     try {
-      const response = await axios.post('https://phosai-main-api.onrender.com/get_voices', {
-        user_id: user.userId
-      });
+      const response = await dataAPI.getVoices(user.userId);
       
-      const processedData = response.data.entries.map(entry => ({
+      const processedData = response.entries.map(entry => ({
         id: entry.doc_id,
         date: new Date(entry.Date),
-        originalText: entry.Original_transcript.map(t => t.text).join(' '),
+        originalText: Array.isArray(entry.Original_transcript) 
+          ? entry.Original_transcript.map(t => t.text).join(' ')
+          : entry.Original_transcript || 'No transcript available',
         sourceLang: entry.source_lang,
-        translations: Object.entries(entry.Translations).map(([lang, texts]) => ({
+        translations: Object.entries(entry.Translations || {}).map(([lang, texts]) => ({
           language: lang,
-          text: texts.map(t => t.text).join(' ')
+          text: Array.isArray(texts) 
+            ? texts.map(t => t.text).join(' ')
+            : texts || 'No translation available'
         }))
       }));
       
@@ -110,7 +119,7 @@ const VoiceTransTable = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user.userId]);
 
   useEffect(() => {
     fetchTranslations();

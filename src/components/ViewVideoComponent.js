@@ -12,11 +12,21 @@ import {
   Divider,
   IconButton,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  Stack,
+  Card,
+  CardContent
 } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import LanguageIcon from '@mui/icons-material/Language';
-import axios from "axios";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import VideoFileIcon from '@mui/icons-material/VideoFile';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import { dataAPI } from '../services/api';
 import YouTubeVideoComponent from "./YouTubeVideoComponent";
 
 const ViewVideoComponent = ({ audioId }) => {
@@ -24,11 +34,76 @@ const ViewVideoComponent = ({ audioId }) => {
   const translationsRef = useRef(null);
   const playerRef = useRef(null);
   
+  // Function to check if URL is remote (YouTube, Vimeo, etc.)
+  const isRemoteVideo = (url) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || 
+           url.includes('youtu.be') || 
+           url.includes('vimeo.com') || 
+           url.includes('dailymotion.com') ||
+           url.startsWith('http://') || 
+           url.startsWith('https://');
+  };
+
+  // Video placeholder component for local files
+  const VideoPlaceholder = ({ filename }) => (
+    <Card 
+      sx={{ 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.secondary.light}20)`,
+        border: `2px dashed ${theme.palette.primary.main}`,
+        borderRadius: '12px'
+      }}
+    >
+      <CardContent sx={{ textAlign: 'center', p: 4 }}>
+        <Box sx={{ mb: 3 }}>
+          <VideoFileIcon 
+            sx={{ 
+              fontSize: 80, 
+              color: theme.palette.primary.main,
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+            }} 
+          />
+        </Box>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            fontWeight: 600, 
+            color: theme.palette.text.primary,
+            mb: 2
+          }}
+        >
+          Video File Processed
+        </Typography>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: theme.palette.text.secondary,
+            mb: 3
+          }}
+        >
+          {filename || 'Video file'}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PlayCircleOutlineIcon sx={{ color: theme.palette.primary.main }} />
+          <Typography variant="body2" sx={{ color: theme.palette.primary.main }}>
+            Audio extracted and transcribed successfully
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+  
   // Basic state
   const [videoData, setVideoData] = useState({
     url: "",
     date: "",
-    title: ""
+    title: "",
+    source_lang: "en"
   });
   
   // Language and transcript state
@@ -46,35 +121,77 @@ const ViewVideoComponent = ({ audioId }) => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
 
+  // Language display names mapping
+  const getLanguageDisplayName = (code) => {
+    const languageNames = {
+      'en': 'English',
+      'lg': 'Luganda',
+      'at': 'Ateso',
+      'ac': 'Acholi',
+      'nyn': 'Runyankore',
+      'fr': 'French',
+      'es': 'Spanish',
+      'de': 'German',
+      'it': 'Italian',
+      'pt': 'Portuguese',
+      'ru': 'Russian',
+      'ar': 'Arabic',
+      'zh': 'Chinese',
+      'ja': 'Japanese',
+      'ko': 'Korean',
+      'hi': 'Hindi',
+      'sw': 'Swahili',
+      'rw': 'Kinyarwanda'
+    };
+    return languageNames[code] || code.toUpperCase();
+  };
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.post('https://phosai-main-api.onrender.com/get_audio_data', { 
-          doc_id: audioId 
-        });
+        console.log('🔍 ViewVideoComponent - Fetching video data for ID:', audioId);
+        const response = await dataAPI.getVideo(audioId);
+        console.log('🔍 ViewVideoComponent - Raw API response:', response);
 
-        const entry = response.data.entries[0];
-        if (!entry) throw new Error("No data available");
+        const entries = response.entries;
+        if (!entries || entries.length === 0) {
+          throw new Error("No video data available");
+        }
+
+        const entry = entries[0];
+        console.log('🔍 ViewVideoComponent - First entry:', entry);
 
         // Store translations in ref for access during video playback
-        translationsRef.current = entry.translations;
+        translationsRef.current = entry.translations || entry.Translations;
 
         setVideoData({
-          url: entry.url,
-          date: entry.Date,
-          title: entry.title
+          url: entry.url || entry.Url,
+          date: entry.Date || entry.date,
+          title: entry.title || "Video Translation",
+          source_lang: entry.source_lang || 'en'
         });
 
-        const availableLanguages = Object.keys(entry.translations || {});
+        const availableLanguages = Object.keys(entry.translations || entry.Translations || {});
+        console.log('🔍 ViewVideoComponent - Available languages:', availableLanguages);
         setLanguages(availableLanguages);
 
         // Set initial language and transcript
         if (availableLanguages.length > 0) {
           const initialLanguage = availableLanguages[0];
           setSelectedLanguage(initialLanguage);
-          initializeTranscript(initialLanguage, entry.translations[initialLanguage]);
+          const translations = entry.translations || entry.Translations;
+          initializeTranscript(initialLanguage, translations[initialLanguage]);
+        }
+
+        // Set original transcript from the API response
+        if (entry.original_transcript) {
+          setTranscripts(prev => ({
+            ...prev,
+            full: entry.original_transcript,
+            current: entry.original_transcript
+          }));
         }
       } catch (err) {
         console.error('Data fetch error:', err);
@@ -89,7 +206,7 @@ const ViewVideoComponent = ({ audioId }) => {
 
   // Initialize transcript for a given language
   const initializeTranscript = useCallback((language, translations) => {
-    if (!translations || !Array.isArray(translations)) {
+    if (!translations) {
       setTranscripts({
         full: "",
         current: "No transcript available",
@@ -98,14 +215,36 @@ const ViewVideoComponent = ({ audioId }) => {
       return;
     }
 
-    const fullText = translations
-      .map(segment => segment.text)
-      .join('\n\n');
+    // Handle string format (from video API)
+    if (typeof translations === 'string') {
+      const cleanText = translations.replace(/^"|"$/g, ''); // Remove surrounding quotes
+      setTranscripts({
+        full: cleanText,
+        current: cleanText,
+        segments: [{ text: cleanText, start_time: 0, end_time: 0 }]
+      });
+      return;
+    }
 
+    // Handle array format (from audio API)
+    if (Array.isArray(translations)) {
+      const fullText = translations
+        .map(segment => segment.text)
+        .join('\n\n');
+
+      setTranscripts({
+        full: fullText,
+        current: translations[0]?.text || "No transcript available",
+        segments: translations
+      });
+      return;
+    }
+
+    // Fallback for unexpected format
     setTranscripts({
-      full: fullText,
-      current: translations[0]?.text || "No transcript available",
-      segments: translations
+      full: "",
+      current: "No transcript available",
+      segments: []
     });
   }, []);
 
@@ -202,7 +341,7 @@ const ViewVideoComponent = ({ audioId }) => {
         backgroundColor: theme.palette.background.paper
       }}
     >
-      {/* Header */}
+      {/* Header - Hidden title as requested */}
       <Grid container spacing={2} alignItems="center" mb={3}>
         <Grid item xs={12} md={8}>
           <Typography 
@@ -217,12 +356,7 @@ const ViewVideoComponent = ({ audioId }) => {
             day: 'numeric'
           })}
           </Typography>
-          <Typography 
-            variant="h4" 
-            sx={{ fontWeight: 600 }}
-          >
-            {videoData.title}
-          </Typography>
+          {/* Title hidden as requested */}
         </Grid>
         
         {/* Controls */}
@@ -312,80 +446,188 @@ const ViewVideoComponent = ({ audioId }) => {
             height: '100%'
           }}
         >
-          <YouTubeVideoComponent 
-            videoUrl={videoData.url} 
-            onTimeUpdate={handleTimeUpdate}
-            ref={playerRef}
-          />
+          {isRemoteVideo(videoData.url) ? (
+            <YouTubeVideoComponent 
+              videoUrl={videoData.url} 
+              onTimeUpdate={handleTimeUpdate}
+              ref={playerRef}
+            />
+          ) : (
+            <VideoPlaceholder filename={videoData.url} />
+          )}
         </Box>
       </Box>
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Current Segment */}
-      <Box mb={4}>
+      {/* Original Transcript */}
+      <Box sx={{ mb: 4 }}>
         <Typography 
           variant="h6" 
           gutterBottom 
-          sx={{ fontWeight: 500 }}
-        >
-          Current Segment ({formatTime(currentTime)})
-        </Typography>
-        <Paper 
-          elevation={0}
           sx={{ 
-            p: 2,
-            backgroundColor: theme.palette.primary.light,
-            borderRadius: '8px',
-            border: `1px solid ${theme.palette.primary.main}`,
-            minHeight: '100px',
+            fontWeight: 500,
+            color: theme.palette.text.primary,
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            gap: 1,
+            mb: 2
           }}
         >
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: theme.palette.primary.dark,
-              fontWeight: 500
-            }}
-          >
-            {transcripts.current}
-          </Typography>
-        </Paper>
-      </Box>
-
-      {/* Full Transcript */}
-      <Box>
-        <Typography 
-          variant="h6" 
-          gutterBottom 
-          sx={{ fontWeight: 500 }}
-        >
-          Full Transcript
+          <LanguageIcon color="primary" />
+          Original Transcript ({videoData.source_lang || 'en'})
         </Typography>
         <Paper 
-          elevation={0}
+          variant="outlined" 
           sx={{ 
-            p: 2,
-            backgroundColor: theme.palette.grey[50],
-            borderRadius: '8px',
-            border: `1px solid ${theme.palette.grey[200]}`,
-            maxHeight: '300px',
-            overflow: 'auto'
+            p: 3,
+            backgroundColor: theme.palette.background.default,
+            borderRadius: '12px',
+            border: `2px solid ${theme.palette.primary.light}`,
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              borderRadius: '12px 12px 0 0'
+            }
           }}
         >
           <Typography 
             variant="body1" 
-            component="pre"
             sx={{ 
+              lineHeight: 1.6,
+              fontSize: '1.1rem',
+              fontWeight: 400,
+              color: theme.palette.text.primary,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word'
             }}
           >
-            {transcripts.full}
+            {transcripts.full || "No original transcript available"}
           </Typography>
         </Paper>
+      </Box>
+
+      {/* All Translations */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 500,
+              color: theme.palette.text.primary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <LanguageIcon color="primary" />
+            All Translations ({languages.length})
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            {languages.map((lang) => (
+              <Chip
+                key={lang}
+                label={getLanguageDisplayName(lang)}
+                size="small"
+                color={selectedLanguage === lang ? "primary" : "default"}
+                onClick={() => handleLanguageChange(lang)}
+                sx={{ cursor: 'pointer' }}
+              />
+            ))}
+          </Stack>
+        </Box>
+
+        {languages.map((language, index) => {
+          const translations = translationsRef.current?.[language];
+          const isExpanded = selectedLanguage === language;
+          
+          return (
+            <Accordion 
+              key={language}
+              expanded={isExpanded}
+              onChange={() => handleLanguageChange(language)}
+              sx={{
+                mb: 2,
+                borderRadius: '12px !important',
+                '&:before': { display: 'none' },
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: 'none',
+                '&.Mui-expanded': {
+                  border: `2px solid ${theme.palette.primary.main}`,
+                  boxShadow: `0 4px 12px ${theme.palette.primary.main}20`
+                }
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  backgroundColor: isExpanded ? theme.palette.primary.light : 'transparent',
+                  borderRadius: '12px',
+                  '&.Mui-expanded': {
+                    borderRadius: '12px 12px 0 0'
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                  <LanguageIcon color="primary" />
+                  <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                    {getLanguageDisplayName(language)}
+                  </Typography>
+                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {Array.isArray(translations) ? translations.length : 0} segments
+                    </Typography>
+                    <Tooltip title="Download Translation">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (Array.isArray(translations)) {
+                            const transcriptText = translations
+                              .map(segment => segment.text)
+                              .join('\n\n');
+                            const blob = new Blob([transcriptText], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `translation_${language}_${videoData.title}.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          }
+                        }}
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 3 }}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {Array.isArray(translations) 
+                    ? translations.map(segment => segment.text).join(' ')
+                    : (typeof translations === 'string' ? translations : "No translation available")
+                  }
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
       </Box>
     </Paper>
   );

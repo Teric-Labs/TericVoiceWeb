@@ -5,7 +5,7 @@ import AppBarComponent from "../components/AppBarComponent.js";
 import FooterComponent from '../components/FooterComponent.js'
 const Pricing =()=>{
     return(
-        <Box sx={{display: 'flex', flexDirection: 'column'}}>
+        <Box sx={{display: 'flex', flexDirection: 'column', background: '#ffffff', minHeight: '100vh'}}>
         <AppBarComponent/>
         <Box sx={{ flexGrow: 1 }}>
         <PricingComponet/> 

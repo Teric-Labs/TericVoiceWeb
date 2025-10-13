@@ -1,21 +1,37 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://phosai-main-api.onrender.com';
+import { translationAPI } from '../../services/api';
 
 export const translateText = createAsyncThunk(
   'translation/translateText',
   async (translationData, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append('user_id', translationData.userId);
-      formData.append('source_lang', translationData.sourceLang);
-      formData.append('target_langs', translationData.targetLang);
-      formData.append('doc', translationData.text);
-      formData.append('title', 'Text Translation');
-
-      const response = await axios.post(`${BASE_URL}/translate`, formData);
-      return Object.values(response.data)[0];
+      const response = await translationAPI.translateText(
+        translationData.text,
+        translationData.sourceLang,
+        [translationData.targetLang],
+        translationData.userId
+      );
+      
+      // Extract the translated text from the response
+      // Response structure: {"lg": {"en": "original", "lg": "translated"}}
+      const targetLangData = Object.values(response)[0];
+      if (targetLangData && typeof targetLangData === 'object') {
+        // Get the translation in the target language
+        const translatedText = targetLangData[translationData.targetLang];
+        return {
+          originalText: translationData.text,
+          translatedText: translatedText || 'Translation not available',
+          sourceLang: translationData.sourceLang,
+          targetLang: translationData.targetLang
+        };
+      }
+      
+      return {
+        originalText: translationData.text,
+        translatedText: 'Translation failed',
+        sourceLang: translationData.sourceLang,
+        targetLang: translationData.targetLang
+      };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Translation failed');
     }
@@ -26,15 +42,30 @@ export const translateDocument = createAsyncThunk(
   'translation/translateDocument',
   async (translationData, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append('user_id', translationData.userId);
-      formData.append('source_lang', translationData.sourceLang);
-      formData.append('target_langs', translationData.targetLang);
-      formData.append('file', translationData.file);
-      formData.append('title', 'Document Translation');
-
-      const response = await axios.post(`${BASE_URL}/translate_document`, formData);
-      return Object.values(response.data.msg)[0];
+      const response = await translationAPI.translateDocument(
+        translationData.file,
+        translationData.sourceLang,
+        [translationData.targetLang],
+        translationData.userId
+      );
+      
+      // Extract the translated text from the response
+      // Response structure: {"msg": {"lg": "translated"}, "orignal": "original"}
+      if (response.msg && response.msg[translationData.targetLang]) {
+        return {
+          originalText: response.orignal || 'Original text not available',
+          translatedText: response.msg[translationData.targetLang],
+          sourceLang: translationData.sourceLang,
+          targetLang: translationData.targetLang
+        };
+      }
+      
+      return {
+        originalText: response.orignal || 'Original text not available',
+        translatedText: 'Translation failed',
+        sourceLang: translationData.sourceLang,
+        targetLang: translationData.targetLang
+      };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Document translation failed');
     }
@@ -98,7 +129,16 @@ const translationSlice = createSlice({
       })
       .addCase(translateText.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.translatedText = action.payload;
+        state.translatedText = action.payload.translatedText;
+        // Add to history
+        state.history.unshift({
+          id: Date.now(),
+          originalText: action.payload.originalText,
+          translatedText: action.payload.translatedText,
+          sourceLang: action.payload.sourceLang,
+          targetLang: action.payload.targetLang,
+          timestamp: new Date().toISOString(),
+        });
       })
       .addCase(translateText.rejected, (state, action) => {
         state.isLoading = false;
@@ -110,7 +150,16 @@ const translationSlice = createSlice({
       })
       .addCase(translateDocument.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.translatedText = action.payload;
+        state.translatedText = action.payload.translatedText;
+        // Add to history
+        state.history.unshift({
+          id: Date.now(),
+          originalText: action.payload.originalText,
+          translatedText: action.payload.translatedText,
+          sourceLang: action.payload.sourceLang,
+          targetLang: action.payload.targetLang,
+          timestamp: new Date().toISOString(),
+        });
       })
       .addCase(translateDocument.rejected, (state, action) => {
         state.isLoading = false;

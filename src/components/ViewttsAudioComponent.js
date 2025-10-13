@@ -24,7 +24,7 @@ import {
 } from "@mui/icons-material";
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
-import axios from "axios";
+import { dataAPI } from '../services/api';
 
 const ViewttsAudioComponent = ({ audioId }) => {
   const [entries, setEntries] = useState([]);
@@ -35,12 +35,10 @@ const ViewttsAudioComponent = ({ audioId }) => {
   const theme = useTheme();
 
   useEffect(() => {
-    const apiEndpoint = "https://phosai-main-api.onrender.com/get_vocify_voice";
-
     const fetchEntries = async () => {
       try {
-        const response = await axios.post(apiEndpoint, { doc_id: audioId });
-        const fetchedEntries = response.data.entries;
+        const response = await dataAPI.getVocifyVoice(audioId);
+        const fetchedEntries = response.entries;
 
         if (fetchedEntries.length > 0) {
           setEntries(fetchedEntries);

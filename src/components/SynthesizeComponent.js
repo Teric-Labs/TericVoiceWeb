@@ -26,21 +26,8 @@ import {
   Language,
   InsertDriveFile,
 } from '@mui/icons-material';
-import axios from 'axios';
 import ViewttsAudioComponent from './ViewttsAudioComponent';
-
-const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://phosai-main-api.onrender.com',
-  TIMEOUT: 60000,
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  MAX_TEXT_LENGTH: 5000,
-  DOC_TYPES: {
-    'application/pdf': '.pdf',
-    'application/msword': '.doc',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-    'text/plain': '.txt'
-  }
-};
+import { ttsAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 
 const SUPPORTED_LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -218,9 +205,13 @@ const SynthesizeComponent = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    console.log('🔵 SynthesizeComponent: Loading user from localStorage:', storedUser);
     if (storedUser) {
       const userData = JSON.parse(storedUser);
+      console.log('🔵 SynthesizeComponent: Parsed user data:', userData);
       setUser(userData);
+    } else {
+      console.log('🔵 SynthesizeComponent: No user found in localStorage');
     }
   }, []);
 
@@ -243,39 +234,55 @@ const SynthesizeComponent = () => {
       setDocId(null);
       setIsDrawerOpen(false);
 
-      const formData = new FormData();
-      formData.append('user_id', user.userId);
-      formData.append('source_lang', sourceLanguage);
-      formData.append('target_langs', targetLanguages);
+      // Check if user is authenticated
+      console.log('🔵 SynthesizeComponent: Current user state:', user);
+      console.log('🔵 SynthesizeComponent: user.userId:', user?.userId);
+      if (!user?.userId) {
+        throw new Error('Please log in to use text-to-speech services');
+      }
+
+      // Check usage limits before making request
+      if (activeTab === 0) {
+        await checkUsageBeforeRequest('vocify'); // Text-to-speech uses vocify endpoint
+      } else {
+        await checkUsageBeforeRequest('synthesize_document'); // Document-to-speech uses synthesize_document endpoint
+      }
 
       let response;
       if (activeTab === 0) {
-        if (inputText.length > API_CONFIG.MAX_TEXT_LENGTH) {
-          throw new Error(`Text exceeds maximum length of ${API_CONFIG.MAX_TEXT_LENGTH} characters`);
+        if (inputText.length > 5000) {
+          throw new Error('Text exceeds maximum length of 5000 characters');
         }
-        formData.append('doc', inputText);
-        formData.append('title', 'Text Synthesis');
-        response = await axios.post(`${API_CONFIG.BASE_URL}/vocify`, formData);
+        response = await ttsAPI.synthesizeText(inputText, sourceLanguage, user.userId);
       } else {
         if (!selectedFile) {
           throw new Error('No file selected');
         }
-        if (selectedFile.size > API_CONFIG.MAX_FILE_SIZE) {
+        if (selectedFile.size > 10 * 1024 * 1024) {
           throw new Error('File size exceeds 10MB limit');
         }
-        formData.append('file', selectedFile);
-        formData.append('title', selectedFile.name);
-        response = await axios.post(`${API_CONFIG.BASE_URL}/translate_document_with_tts/`, formData);
+        response = await ttsAPI.translateDocumentWithTTS(selectedFile, sourceLanguage, targetLanguages, user.userId);
       }
 
-      if (response.data.doc_id) {
-        setDocId(response.data.doc_id);
+      if (response.doc_id) {
+        setDocId(response.doc_id);
         setIsDrawerOpen(true);
       } else {
         throw new Error('No document ID received from the server.');
       }
     } catch (err) {
-      setError(err.message || 'Generation failed. Please try again.');
+      console.error('Synthesis error:', err);
+      const errorInfo = handleAPIError(err, 'synthesize');
+      
+      if (errorInfo.shouldUpgrade) {
+        setError('Please upgrade your subscription to continue');
+        // Trigger upgrade modal
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
+          detail: { message: errorInfo.message }
+        }));
+      } else {
+        setError(errorInfo.message || 'Generation failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -342,8 +349,8 @@ const SynthesizeComponent = () => {
                   label="Enter text for speech synthesis"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  error={inputText.length > API_CONFIG.MAX_TEXT_LENGTH}
-                  helperText={`${inputText.length}/${API_CONFIG.MAX_TEXT_LENGTH} characters`}
+                  error={inputText.length > 5000}
+                  helperText={`${inputText.length}/5000 characters`}
                 />
               </Grid>
             </Grid>

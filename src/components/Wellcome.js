@@ -162,23 +162,6 @@ const Welcome = () => {
     setIsVisible(true);
   }, []);
 
-  const features = [
-    { 
-      icon: MicIcon, 
-      title: "Natural Voice", 
-      description: "Studio-quality African voice synthesis with authentic accents and natural intonation" 
-    },
-    { 
-      icon: TransformIcon, 
-      title: "Real-time Translation", 
-      description: "Support for 8+ African languages with instant translation capabilities" 
-    },
-    { 
-      icon: SpeedIcon, 
-      title: "Fast Processing", 
-      description: "Lightning-quick voice generation and processing for seamless user experience" 
-    },
-  ];
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -207,7 +190,7 @@ const Welcome = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)',
+      background: '#ffffff',
       position: 'relative',
       overflow: 'hidden',
     }}>
@@ -226,7 +209,7 @@ const Welcome = () => {
           left: 0,
           right: 0,
           height: '100%',
-          background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.02) 0%, transparent 70%)',
           zIndex: 1,
         }}
       />
@@ -279,24 +262,19 @@ const Welcome = () => {
                     width: 60,
                     height: 60,
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #1976d2, #64b5f6)',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                    background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(100, 181, 246, 0.05))',
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
                     animation: `${pulse} 2s ease-in-out infinite`,
                   }}
                 >
-                  <KeyboardVoiceIcon sx={{ fontSize: 32, color: 'white' }} />
+                  <KeyboardVoiceIcon sx={{ fontSize: 32, color: '#1976d2' }} />
                 </Box>
                 <Typography
                   variant="h3"
                   sx={{
                     fontWeight: 900,
-                    background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
-                    backgroundSize: '200% 200%',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    color: 'transparent',
+                    color: '#1976d2',
                     fontSize: { xs: '2rem', md: '2.8rem' },
-                    animation: isVisible ? `${shimmer} 3s ease-in-out infinite` : 'none',
                     transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
                     opacity: isVisible ? 1 : 0,
                     transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -309,7 +287,7 @@ const Welcome = () => {
               <Typography
                 variant="h6"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: '#666666',
                   mb: 4,
                   fontWeight: 500,
                   lineHeight: 1.6,
@@ -399,18 +377,6 @@ const Welcome = () => {
 
               <Divider sx={{ my: 4, borderColor: 'rgba(25, 118, 210, 0.1)' }} />
 
-              <Grid container spacing={3}>
-                {features.map((feature, index) => (
-                  <Grid item xs={12} sm={4} key={index}>
-                    <FeatureCard
-                      icon={feature.icon}
-                      title={feature.title}
-                      description={feature.description}
-                      index={index}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
 
               <Typography 
                 variant="body2" 

@@ -622,7 +622,7 @@ const ParametersSection = ({ parameters }) => {
 };
 
 const generateCodeSnippets = (endpoint) => {
-  const baseUrl = 'https://phosai-main-api.onrender.com';
+  const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
   
   const curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
   -H "Content-Type: multipart/form-data" \\

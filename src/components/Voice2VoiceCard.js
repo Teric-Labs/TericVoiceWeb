@@ -1,187 +1,379 @@
-import React, { useState } from "react";
-import { Box, Card, CardContent, TextField, Button, Typography, Grid, Select, MenuItem, Modal, Stack, InputLabel, FormControl, IconButton, Chip, OutlinedInput, Snackbar, LinearProgress } from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  Chip,
+  Snackbar,
+  LinearProgress,
+  Alert,
+  Container,
+  Drawer
+} from "@mui/material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import voice from "../assets/audio.png"
-import axios from "axios";
+import LanguageIcon from '@mui/icons-material/Language';
+import SendIcon from '@mui/icons-material/Send';
+import { voiceToVoiceAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+import ViewVoxComponent from './ViewVoxComponent';
 
 const languageOptions = [
-  { name: "English", code: "en" },
-  { name: "Luganda", code: "lg" },
-  { name: "Ateso", code: "at" },
-  { name: "Acholi", code: "ac" },
-  { name: "Lugbara", code: "lgg" },
-  { name: "Runyankore", code: "nyn" },
-  { name: "Swahili", code: "sw" }
+  { value: 'en', label: 'English' },
+  { value: 'lg', label: 'Luganda' },
+  { value: 'at', label: 'Ateso' },
+  { value: 'ac', label: 'Acholi' },
+  { value: 'sw', label: 'Swahili' },
+  { value: 'fr', label: 'French' },
+  { value: 'rw', label: 'Kinyarwanda' },
+  { value: 'nyn', label: 'Runyankore' },
 ];
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
-
 const Voice2VoiceCard = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('');
+  // User state management
+  const [user, setUser] = useState({ username: '', userId: '' });
+
+  // Language and file state
+  const [sourceLanguage, setSourceLanguage] = useState("en");
+  const [targetLanguages, setTargetLanguages] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [fileName, setFileName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
   const [textTitle, setTextTitle] = useState('');
 
-  const handleLanguageChange = (event) => {
-    setSelectedLanguage(event.target.value);
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [voiceId, setVoiceId] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Notification state
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+
+  const fileInputRef = useRef(null);
+
+  // Load user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+    }
+  }, []);
+
+  // Notification helper
+  const showNotification = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setShowSnackbar(true);
   };
 
-  const handleTargetLanguageChange = (event) => {
-    setTargetLanguage(event.target.value);
+  const handleFileSelection = (file) => {
+    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      setError("File size should not exceed 100MB");
+      return;
+    }
+    if (!file.type.startsWith("audio/")) {
+      setError("Please upload a valid audio file");
+      return;
+    }
+
+    setSelectedFile(file);
+    setError(null);
+    showNotification('Audio file selected successfully');
   };
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    setSelectedFile(file);
-    setFileName(file.name);
-    console.log('File Uploaded:', file);
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      handleFileSelection(selectedFile);
+    }
+  };
+
+  const validateForm = () => {
+    if (!sourceLanguage) {
+      setError("Please select a source language");
+      return false;
+    }
+    if (targetLanguages.length === 0) {
+      setError("Please select at least one target language");
+      return false;
+    }
+    if (!selectedFile) {
+      setError("Please select an audio file");
+      return false;
+    }
+    return true;
+  };
+
+  const handleFileSubmission = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setError(null);
+    setProgress(0);
+    setVoiceId(null);
+    setIsDrawerOpen(false);
+
+    try {
+      if (!user.userId && !user.uid) {
+        throw new Error('Please log in to use voice-to-voice services');
+      }
+
+      // Get the correct user ID (support both uid and userId)
+      const userId = user.uid || user.userId;
+
+      // Simulate progress during API call
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 10;
+        });
+      }, 500);
+
+      await checkUsageBeforeRequest('vocify');
+      setProgress(20);
+
+      const response = await voiceToVoiceAPI.voiceToVoice(
+        selectedFile,
+        sourceLanguage,
+        targetLanguages,
+        userId
+      );
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      setVoiceId(response.doc_id || response.voiceId);
+      setIsDrawerOpen(true);
+      showNotification('Voice translation completed successfully!');
+    } catch (error) {
+      console.error('Voice translation error:', error);
+      const errorMessage = handleAPIError(error);
+      setError(errorMessage);
+      
+      if (error.response?.status === 403) {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal'));
+      }
+    } finally {
+      setLoading(false);
+      setTimeout(() => setProgress(0), 1000);
+    }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('source_lang_code', selectedLanguage);
-    formData.append('target_lang_code', targetLanguage);
-    formData.append('user_id', "78");
-    formData.append('file', selectedFile);
-    formData.append('title', textTitle);
-
-    try {
-      const response = await axios.post('https://phosai-main-api.onrender.com/voice_translation', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setLoading(false);
-      setShowBanner(true);
-      setTimeout(() => setShowBanner(false), 5000);
-    } catch (error) {
-      setLoading(false);
-      console.error('Error during translation:', error);
-    }
-  };
-
-  const handleOpenModal = () => {
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
+    await handleFileSubmission();
   };
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
-      <Button variant="contained" onClick={handleOpenModal} sx={{fontFamily:'Poppins'}}>
-        <img src={voice} style={{width:20, height:20}}/>
-        Translate Audio</Button>
-      <Modal
-        open={openModal}
-        onClose={handleCloseModal}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '60%',
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: '12px',
-        }}>
-          <Card sx={{ width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <CardContent sx={{ width: '100%' }}>
-              {loading && <LinearProgress />}
-              <Snackbar
-                open={showBanner}
-                autoHideDuration={6000}
-                onClose={() => setShowBanner(false)}
-                message="Translation complete"
-                sx={{fontFamily:'Poppins'}}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    <Container maxWidth="xl">
+      <Box sx={{ py: 4 }}>
+        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+              Voice-to-Voice Translation
+            </Typography>
+
+            {/* Language Selection */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Source Language
+                </Typography>
+                <FormControl fullWidth>
+                  <Select
+                    value={sourceLanguage}
+                    onChange={(e) => setSourceLanguage(e.target.value)}
+                    sx={{ borderRadius: '12px' }}
+                  >
+                    {languageOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LanguageIcon sx={{ color: 'primary.main' }} />
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  Target Languages
+                </Typography>
+                <FormControl fullWidth>
+                  <Select
+                    multiple
+                    value={targetLanguages}
+                    onChange={(e) => setTargetLanguages(e.target.value)}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => {
+                          const option = languageOptions.find(opt => opt.value === value);
+                          return (
+                            <Chip
+                              key={value}
+                              label={option?.label || value}
+                              size="small"
+                              sx={{ backgroundColor: 'primary.main', color: 'white' }}
+                            />
+                          );
+                        })}
+                      </Box>
+                    )}
+                    sx={{ borderRadius: '12px' }}
+                  >
+                    {languageOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LanguageIcon sx={{ color: 'primary.main' }} />
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {/* Title Input */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                Title (Optional)
+              </Typography>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Enter a title for your voice translation"
+                value={textTitle}
+                onChange={(e) => setTextTitle(e.target.value)}
+                sx={{ borderRadius: '12px' }}
               />
-              <form onSubmit={handleSubmit}>
-                <Box>
-                  <Grid container justifyContent="space-between">
-                    <Grid item xs={12} md={5}>
-                      <FormControl fullWidth>
-                        <InputLabel>Source Language</InputLabel>
-                        <Select
-                          value={selectedLanguage}
-                          onChange={handleLanguageChange}
-                        >
-                          {languageOptions.map((language) => (
-                            <MenuItem key={language.code} value={language.code} sx={{fontFamily:'Poppins'}}>
-                              {language.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={5}>
-                      <FormControl fullWidth>
-                        <InputLabel>Target Languages</InputLabel>
-                        <Select
-                          value={targetLanguage}
-                          onChange={handleTargetLanguageChange}
-                          input={<OutlinedInput label="Target Languages" id="select-multiple-chip" />}
-                        >
-                          {languageOptions.map((language) => (
-                            <MenuItem key={language.code} value={language.code} sx={{fontFamily:'Poppins'}}>
-                              {language.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                  <Box>
-                  <TextField 
-                      fullWidth 
-                      label="Enter Title" 
-                      variant="outlined" 
-                      margin="dense"
-                      value={textTitle}
-                      onChange={(e) => setTextTitle(e.target.value)}
-                      placeholder="Text Title"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: 'grey' },
-                          '&:hover fieldset': { borderColor: '#fff' },
-                          '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                        },
-                      }}
-                    />
-                  </Box>
-                  <Box id="uploadfiles" sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', border: '2px dotted #ccc', borderRadius: '8px', padding: '16px', marginTop: '20px' }}>
-                    <label htmlFor="fileInput" style={{ cursor: 'pointer' }}>
-                      <CloudUploadIcon sx={{ fontSize: 64, color: '#666' }} />
-                      <Typography variant="body1" sx={{ color: '#666', marginTop: '10px', textAlign: 'center',fontFamily:'Poppins' }}>{fileName ? fileName : "Upload audio files (e.g., WAV, MP3)"}</Typography>
-                      <input type="file" id="fileInput" style={{ display: 'none' }} accept=".wav,.mp3" onChange={handleFileUpload} />
-                    </label>
-                  </Box>
+            </Box>
+
+            {/* File Upload Section */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                Upload Audio File
+              </Typography>
+              <Box
+                sx={{
+                  border: '2px dashed',
+                  borderColor: 'primary.main',
+                  borderRadius: '12px',
+                  p: 4,
+                  textAlign: 'center',
+                  backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                  },
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  Click to upload or drag and drop
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Supports WAV, MP3, M4A (Max 100MB)
+                </Typography>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+              </Box>
+              {selectedFile && (
+                <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
+                  <Typography variant="body2">
+                    Selected: {selectedFile.name}
+                  </Typography>
                 </Box>
-                <Button type="submit" variant="contained" sx={{ mt: 2, width:'100%',fontFamily:'Poppins' }}>Translate</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </Box>
-      </Modal>
-    </Box>
+              )}
+            </Box>
+
+            {/* Progress */}
+            {loading && (
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Processing... {progress}%
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={progress}
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+              </Box>
+            )}
+
+            {/* Submit Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleSubmit}
+                disabled={loading || (!selectedFile && targetLanguages.length === 0)}
+                startIcon={<SendIcon />}
+                sx={{
+                  borderRadius: '24px',
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? 'Processing...' : 'Translate Voice'}
+              </Button>
+            </Box>
+
+            {/* Error Display */}
+            {error && (
+              <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
+                {typeof error === 'string' ? error : error.message || 'An error occurred'}
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Snackbar */}
+        <Snackbar
+          open={showSnackbar}
+          autoHideDuration={6000}
+          onClose={() => setShowSnackbar(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setShowSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
+        {/* Results Drawer */}
+        <Drawer
+          anchor="right"
+          open={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: { xs: '100%', sm: '600px' },
+              borderTopLeftRadius: 16,
+              borderBottomLeftRadius: 16,
+            },
+          }}
+        >
+          {voiceId && <ViewVoxComponent voiceId={voiceId} />}
+        </Drawer>
+      </Box>
+    </Container>
   );
 };
 

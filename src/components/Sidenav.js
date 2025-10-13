@@ -215,42 +215,6 @@ export default function Sidenav() {
       category: 'AI Services',
       items: [
         { 
-          text: 'Text Translation', 
-          icon: <TranslateIcon />, 
-          path: '/dashboard/translate',
-          badge: null
-        },
-        { 
-          text: 'Voice Recognition', 
-          icon: <MicIcon />, 
-          path: '/dashboard/transcribe',
-          badge: null
-        },
-        { 
-          text: 'Text to Speech', 
-          icon: <VolumeUpIcon />, 
-          path: '/dashboard/synthesize',
-          badge: null
-        },
-        { 
-          text: 'Voice to Voice', 
-          icon: <RecordVoiceOverIcon />, 
-          path: '/dashboard/voice',
-          badge: null
-        },
-        { 
-          text: 'Video Transcription', 
-          icon: <VideoLibraryIcon />, 
-          path: '/dashboard/video-transcribe',
-          badge: null
-        },
-        { 
-          text: 'Summarization', 
-          icon: <SummarizeIcon />, 
-          path: '/dashboard/summarize',
-          badge: null
-        },
-        { 
           text: 'AI Agents', 
           icon: <SmartToyIcon />, 
           path: '/dashboard/agents',

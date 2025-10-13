@@ -36,7 +36,7 @@ import {
   TextFields as TextFieldsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { dataAPI } from '../services/api';
 import ReactPaginate from 'react-paginate';
 import './Pagination.css';
 
@@ -106,18 +106,23 @@ export default function TextTable() {
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
-  const fetchEntries = useCallback(async () => {
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
+  const fetchEntries = useCallback(async () => {
     if (!user.userId) {
       console.error('Invalid user ID format');
       setLoading(false);
       return;
     }
-    const apiEndpoint = 'https://phosai-main-api.onrender.com/get_vocify_voices';
+    
     try {
-      
-      const response = await axios.post(apiEndpoint, { user_id: user.userId });
-      const entriesData = response.data.entries || [];
+      const response = await dataAPI.getVocifyVoices(user.userId);
+      const entriesData = response.entries || [];
       setEntries(entriesData);
     } catch (error) {
       console.error('Failed to fetch entries', error);
@@ -126,7 +131,7 @@ export default function TextTable() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user.userId]);
 
   useEffect(() => { 
     fetchEntries();
