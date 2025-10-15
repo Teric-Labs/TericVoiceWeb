@@ -166,7 +166,6 @@ const Welcome = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError('');
-    const auth = getAuth();
     const provider = new GoogleAuthProvider();
     
     try {

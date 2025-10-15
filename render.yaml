@@ -1,3 +1,6 @@
+# Render configuration for Single Page Application
+# This ensures all routes are handled by React Router
+
 services:
   - type: web
     name: asrvoices-frontend
@@ -19,3 +22,12 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      # Important: Handle SPA routing
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    # Redirect all routes to index.html for SPA routing
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -161,3 +161,4 @@ This prevents build failures due to warnings, which is good for production.
 ---
 
 Your React app should now be successfully deployed on Render! 🚀
+
