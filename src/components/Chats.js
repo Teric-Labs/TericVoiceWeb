@@ -39,7 +39,9 @@ import {
   DeleteOutline as RemoveFileIcon
 } from '@mui/icons-material';
 
-const API_BASE_URL = 'https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io';
+import { agentsAPI } from '../services/api';
+import { getCurrentUser } from '../services/api';
+
 const SIDEBAR_WIDTH = 300;
 
 // Styled components
@@ -164,21 +166,16 @@ const Chats = ({ agentId }) => {
     }
 
     setIsUpdating(true);
-    const formData = new FormData();
-    formData.append('agent_id', agentId);
-    selectedFiles.forEach(file => {
-      formData.append('files', file);
-    });
-
     try {
-      const response = await fetch(`${API_BASE_URL}/agents/update_index`, {
-        method: 'POST',
-        body: formData
-      });
+      const user = getCurrentUser();
+      const userId = user.userId || user.uid;
+      
+      if (!userId) {
+        showSnackbar('User not authenticated', 'error');
+        return;
+      }
 
-      if (!response.ok) throw new Error('Failed to update agent');
-
-      const result = await response.json();
+      await agentsAPI.updateAgentIndex(agentId, selectedFiles, userId);
       showSnackbar('Agent updated successfully', 'success');
       setSelectedFiles([]);
     } catch (error) {
@@ -193,27 +190,28 @@ const Chats = ({ agentId }) => {
     if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
       setIsLoadingMore(true);
       try {
-        const formData = new FormData();
-        formData.append("agent_id", agentId);
-        formData.append("page", page + 1);
+        // TODO: Implement message history pagination endpoint in PhosConversation API
+        // For now, disable pagination as the endpoint doesn't exist yet
+        setHasMore(false);
+        setIsLoadingMore(false);
         
-        const response = await fetch(`${API_BASE_URL}/messages/history`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch messages');
-        
-        const data = await response.json();
-        if (data.messages.length === 0) {
-          setHasMore(false);
-        } else {
-          setMessages(prev => [...data.messages, ...prev]);
-          setPage(prev => prev + 1);
-        }
+        // Uncomment when endpoint is available:
+        // const user = getCurrentUser();
+        // const userId = user.userId || user.uid;
+        // const formData = new FormData();
+        // formData.append("agent_id", agentId);
+        // formData.append("page", page + 1);
+        // formData.append("user_id", userId);
+        // 
+        // const response = await agentsAPI.getMessagesHistory(agentId, page + 1, userId);
+        // if (response.messages && response.messages.length === 0) {
+        //   setHasMore(false);
+        // } else {
+        //   setMessages(prev => [...response.messages, ...prev]);
+        //   setPage(prev => prev + 1);
+        // }
       } catch (error) {
         showSnackbar('Failed to load more messages', 'error');
-      } finally {
         setIsLoadingMore(false);
       }
     }
@@ -232,17 +230,15 @@ const Chats = ({ agentId }) => {
   useEffect(() => {
     const fetchAgentInfo = async () => {
       try {
-        const formData = new FormData();
-        formData.append("agent_id", agentId);
+        const user = getCurrentUser();
+        const userId = user.userId || user.uid;
         
-        const response = await fetch(`${API_BASE_URL}/agent-info`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch agent info');
-        
-        const data = await response.json();
+        if (!userId) {
+          setIsLoadingInfo(false);
+          return;
+        }
+
+        const data = await agentsAPI.getAgentInfo(agentId, userId);
         setAgentInfo(data);
       } catch (error) {
         showSnackbar('Failed to load agent information', 'error');
@@ -353,19 +349,14 @@ const Chats = ({ agentId }) => {
     
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("agent_id", agentId);
-      formData.append("query", messageContent);
-      formData.append("target_lang", "en");
+      const user = getCurrentUser();
+      const userId = user.userId || user.uid;
       
-      const response = await fetch(`${API_BASE_URL}/agents/conversations`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) throw new Error('Network response was not ok');
-      
-      const data = await response.json();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await agentsAPI.startConversation(agentId, messageContent, 'en', userId);
       
       // Stream the response
       const streamedResponse = await streamResponse(data.answer);

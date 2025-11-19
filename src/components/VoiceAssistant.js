@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, Container, Typography, Paper, Fade, Alert, Snackbar, 
   CircularProgress, ButtonBase, Tooltip, IconButton, Menu, MenuItem } from '@mui/material';
 import { Mic, MicOff, Language as LanguageIcon, VolumeUp } from '@mui/icons-material';
+import { agentsAPI } from '../services/api';
+import { getCurrentUser } from '../services/api';
 
 // Keyframes animations
 const gradientShift = `
@@ -75,19 +77,15 @@ const VoiceAssistant = ({ agentId }) => {
   useEffect(() => {
     const fetchAgentInfo = async () => {
       try {
-        const formData = new FormData();
-        formData.append("agent_id", agentId);
+        const user = getCurrentUser();
+        const userId = user.userId || user.uid;
         
-        const response = await fetch('https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io/agent-info', {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch agent info');
+        if (!userId) {
+          setIsLoadingInfo(false);
+          return;
         }
-        
-        const data = await response.json();
+
+        const data = await agentsAPI.getAgentInfo(agentId, userId);
         if (!data) {
           throw new Error('Invalid response data');
         }
@@ -131,48 +129,15 @@ const VoiceAssistant = ({ agentId }) => {
     setIsProcessing(true);
     setStatus('processing');
     
-    const formData = new FormData();
-    formData.append('audio_file', audioBlob, 'recording.webm');
-    formData.append('agent_id', agentId);
-    formData.append('target_lang', targetLanguage);
-
     try {
-      const response = await fetch('https://jellyfish-app-aum6y.ondigitalocean.app/process_voice', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-          // Add these headers which might help with CORS
-          'Origin': window.location.origin,
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
-
-      // First check if the response is ok
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const user = getCurrentUser();
+      const userId = user.userId || user.uid;
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
       }
 
-      // Get the response as text first
-      const responseText = await response.text();
-      console.log('Raw server response:', responseText);
-
-      // Check if we have an empty response
-      if (!responseText.trim()) {
-        throw new Error('Server returned empty response');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse server response:', parseError);
-        // If the response contains an error message, throw that
-        if (responseText.includes('error')) {
-          throw new Error(responseText);
-        }
-        throw new Error('Server returned invalid JSON');
-      }
+      const data = await agentsAPI.processVoice(audioBlob, agentId, targetLanguage, userId);
 
       // Check if the response contains an error
       if (data.error) {
@@ -213,7 +178,7 @@ const VoiceAssistant = ({ agentId }) => {
         setError('No response received from server. Please try again.');
       } else if (err.message.includes('invalid JSON')) {
         setError('Server communication error. Please try again.');
-      } else if (err.message.includes('Server error')) {
+      } else if (err.message.includes('Server error') || err.message.includes('User not authenticated')) {
         setError(err.message);
       } else {
         setError('Failed to process audio. Please try again.');

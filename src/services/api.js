@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 // Base configuration
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://phosai-main-api.onrender.com';
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://phosai-backend-api.onrender.com';
 const REQUEST_TIMEOUT = 60000; // 60 seconds for long operations
 const LONG_REQUEST_TIMEOUT = 300000; // 5 minutes for document processing operations
 
@@ -845,6 +845,179 @@ export const systemAPI = {
 };
 
 /**
+ * AI AGENTS APIs (PhosConversation)
+ */
+const PHOSCONVERSATION_BASE_URL = 'https://phosconversation.onrender.com';
+
+// Create separate axios instance for PhosConversation API
+const phosConversationClient = axios.create({
+  baseURL: PHOSCONVERSATION_BASE_URL,
+  timeout: REQUEST_TIMEOUT,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor for PhosConversation API
+// Note: We don't auto-add user_id here because each API function handles it explicitly
+// This prevents duplicate user_id fields which could cause backend validation errors
+phosConversationClient.interceptors.request.use(
+  (config) => {
+    // Log request for debugging (can be removed in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PhosConversation API Request:', {
+        url: config.url,
+        method: config.method,
+        hasData: !!config.data
+      });
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export const agentsAPI = {
+  // Upload files and create agent
+  uploadFiles: async (files, title, description, sourceLang, userId) => {
+    if (!files || files.length === 0) {
+      throw new Error('At least one file is required');
+    }
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    if (!title || !description || !sourceLang) {
+      throw new Error('Title, description, and source language are required');
+    }
+
+    const formData = new FormData();
+    // Append each file with the key 'files' (backend expects List[UploadFile])
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('source_lang', sourceLang);
+    formData.append('user_id', userId);
+
+    try {
+      const response = await phosConversationClient.post('/upload', formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data' 
+        },
+        timeout: LONG_REQUEST_TIMEOUT
+      });
+      
+      if (response.data && response.data.status === 'success') {
+        return response.data;
+      } else {
+        throw new Error(response.data?.detail || 'Failed to create agent');
+      }
+    } catch (error) {
+      // Enhanced error handling
+      if (error.response) {
+        // Server responded with error status
+        const errorDetail = error.response.data?.detail || error.response.data?.message || 'Failed to create agent';
+        throw new Error(errorDetail);
+      } else if (error.request) {
+        // Request was made but no response received
+        throw new Error('Network error: No response from server. Please check your connection.');
+      } else {
+        // Something else happened
+        throw new Error(error.message || 'An unexpected error occurred');
+      }
+    }
+  },
+
+  // Start conversation with agent (text to text)
+  startConversation: async (agentId, query, targetLang = 'en', userId) => {
+    // Use URLSearchParams for form-urlencoded content type
+    const params = new URLSearchParams();
+    params.append('agent_id', agentId);
+    params.append('query', query);
+    params.append('target_lang', targetLang);
+    // Note: user_id is not required by the endpoint, but we can include it if needed
+
+    const response = await phosConversationClient.post('/agents/conversations', params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    return response.data;
+  },
+
+  // Process voice input and return voice response (voice to voice)
+  processVoice: async (audioFile, agentId, targetLang, userId) => {
+    const formData = new FormData();
+    formData.append('audio_file', audioFile);
+    formData.append('agent_id', agentId);
+    formData.append('target_lang', targetLang);
+    formData.append('user_id', userId);
+
+    const response = await phosConversationClient.post('/process_voice', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
+    return response.data;
+  },
+
+  // Process voice input and return text response (voice to text)
+  processVoiceText: async (audioFile, agentId, targetLang, userId) => {
+    const formData = new FormData();
+    formData.append('audio_file', audioFile);
+    formData.append('agent_id', agentId);
+    formData.append('target_lang', targetLang);
+    formData.append('user_id', userId);
+
+    const response = await phosConversationClient.post('/process_voice_text', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
+    return response.data;
+  },
+
+  // Update agent's knowledge base
+  updateAgentIndex: async (agentId, files, userId) => {
+    const formData = new FormData();
+    formData.append('agent_id', agentId);
+    formData.append('user_id', userId);
+    files.forEach(file => formData.append('files', file));
+
+    const response = await phosConversationClient.post('/agents/update_index', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
+    return response.data;
+  },
+
+  // Get user agents
+  getUserAgents: async (userId) => {
+    const formData = new FormData();
+    formData.append('user_id', userId);
+
+    const response = await phosConversationClient.post('/user-agents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Get agent info
+  getAgentInfo: async (agentId, userId) => {
+    const formData = new FormData();
+    formData.append('agent_id', agentId);
+    formData.append('user_id', userId);
+
+    const response = await phosConversationClient.post('/agent-info', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Health check
+  healthCheck: async () => {
+    const response = await phosConversationClient.get('/health');
+    return response.data;
+  }
+};
+
+/**
  * UTILITY FUNCTIONS
  */
 
@@ -910,6 +1083,7 @@ export default {
   voiceToVoice: voiceToVoiceAPI,
   blog: blogAPI,
   system: systemAPI,
+  agents: agentsAPI,
   utils: {
     checkUsageBeforeRequest,
     getCurrentUser,

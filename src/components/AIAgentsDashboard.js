@@ -1,10 +1,8 @@
 import React, { useState, useEffect,useCallback } from 'react';
-import { Box, Typography, Grid, Button, Container, Stack, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert, Chip, Card, CardContent, CardActions, CircularProgress, useTheme, useMediaQuery, Divider, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, Grid, Button, Container, Stack, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert, Chip, Card, CardContent, CardActions, CircularProgress, useTheme, useMediaQuery, Divider, Tooltip, IconButton, Snackbar } from '@mui/material';
 import { Add as AddIcon, Language as LanguageIcon, Chat as ChatIcon, Upload as UploadIcon, SentimentDissatisfied as EmptyStateIcon, InfoOutlined as InfoIcon, Article as DocumentIcon, Mic as MicIcon } from '@mui/icons-material';
-import axios from 'axios';
+import { agentsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom'
-
-const API_BASE_URL = 'https://phosaiv-98414212-8607-468b-9fc3.cranecloud.io';
   
 const AIAgentsDashboard = () => {
   const theme = useTheme();
@@ -16,8 +14,13 @@ const AIAgentsDashboard = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [newAgent, setNewAgent] = useState({ title: '', description: '', sourceLanguage: '', documents: [] });
   const [createLoading, setCreateLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const supportedLanguages = ['en', 'lg', 'sw', 'at', 'ac', 'nyn','rw','lgg','fr'];
   const navigate = useNavigate();
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
   useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -35,10 +38,8 @@ useEffect(() => {
           // Fetch agents immediately after setting user
           const fetchAgents = async () => {
             try {
-              const formData = new FormData();
-              formData.append('user_id', userData.userId);
-              const response = await axios.post(`${API_BASE_URL}/user-agents`, formData);
-              setAgents(response.data.agents || []);
+              const response = await agentsAPI.getUserAgents(userData.userId);
+              setAgents(response.agents || []);
             } catch (err) {
               setError('Failed to load AI agents. Please try again later.');
             } finally {
@@ -83,20 +84,44 @@ useEffect(() => {
       return;
     }
     setCreateLoading(true);
+    setError(''); // Clear previous errors
     try {
-      const formData = new FormData();
-      formData.append('user_id', user.userId);
-      formData.append('title', newAgent.title);
-      formData.append('description', newAgent.description);
-      formData.append('source_lang', newAgent.sourceLanguage);
-      newAgent.documents.forEach(doc => formData.append('files', doc));
-
-      await axios.post(`${API_BASE_URL}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // Get user ID (support both uid and userId)
+      const userId = user.userId || user.uid;
+      
+      console.log('Creating agent with:', {
+        files: newAgent.documents.map(f => f.name),
+        title: newAgent.title,
+        description: newAgent.description,
+        sourceLang: newAgent.sourceLanguage,
+        userId: userId,
+        userObject: user
       });
+
+      if (!userId) {
+        throw new Error('User ID is required. Please log in again.');
+      }
+
+      const result = await agentsAPI.uploadFiles(
+        newAgent.documents,
+        newAgent.title,
+        newAgent.description,
+        newAgent.sourceLanguage,
+        userId
+      );
+
+      console.log('Agent created successfully:', result);
+
+      // Refresh agents list
+      const response = await agentsAPI.getUserAgents(userId);
+      setAgents(response.agents || []);
       handleDialogClose();
+      showSnackbar('AI agent created successfully!', 'success');
     } catch (err) {
-      setError('Failed to create AI agent. Please try again.');
+      console.error('Error creating agent:', err);
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to create AI agent. Please try again.';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setCreateLoading(false);
     }
@@ -252,6 +277,22 @@ useEffect(() => {
         </Dialog>
          {/* Drawer for Chat */}
         
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );
