@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Button,
   Grid,
   Snackbar,
   Alert,
-  LinearProgress,
   FormControl,
   Select,
   MenuItem,
@@ -46,7 +44,6 @@ const SpeechToSpeechForm = () => {
 
   // UI state
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [voiceId, setVoiceId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -122,7 +119,6 @@ const SpeechToSpeechForm = () => {
 
     setLoading(true);
     setError(null);
-    setProgress(0);
     setVoiceId(null);
     setIsDrawerOpen(false);
 
@@ -138,16 +134,7 @@ const SpeechToSpeechForm = () => {
       console.log('🌍 Source language:', sourceLanguage);
       console.log('🎯 Target languages:', targetLanguages);
 
-      // Simulate progress during API call
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
-        });
-      }, 500);
-
       await checkUsageBeforeRequest('vocify');
-      setProgress(20);
 
       const response = await voiceToVoiceAPI.voiceToVoice(
         selectedFile,
@@ -155,9 +142,6 @@ const SpeechToSpeechForm = () => {
         targetLanguages,
         userId
       );
-
-      clearInterval(progressInterval);
-      setProgress(100);
 
       setVoiceId(response.doc_id || response.voiceId);
       setIsDrawerOpen(true);
@@ -172,7 +156,6 @@ const SpeechToSpeechForm = () => {
       }
     } finally {
       setLoading(false);
-      setTimeout(() => setProgress(0), 1000);
     }
   };
 
@@ -182,8 +165,7 @@ const SpeechToSpeechForm = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
+    <Box sx={{ width: '100%', py: 3, px: 2 }}>
         <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
           <CardContent sx={{ p: 4 }}>
             <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
@@ -296,20 +278,6 @@ const SpeechToSpeechForm = () => {
               )}
             </Box>
 
-            {/* Progress */}
-            {loading && (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Processing... {progress}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-            )}
-
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Button
@@ -366,8 +334,7 @@ const SpeechToSpeechForm = () => {
         >
           {voiceId && <ViewVoxComponent voiceId={voiceId} />}
         </Drawer>
-      </Box>
-    </Container>
+    </Box>
   );
 };
 

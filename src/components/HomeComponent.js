@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  Chip,
-  Typography,
-} from '@mui/material';
+import { Box, Chip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
   Mic, 
@@ -32,29 +26,19 @@ const FeatureChip = styled(Chip)(({ theme, isSelected }) => ({
   cursor: 'pointer',
   transition: 'all 0.3s ease',
   transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-  backgroundColor: isSelected ? '#1976d2' : '#ffffff', // Blue when selected, white otherwise
-  color: isSelected ? '#ffffff' : '#000000', // White text when selected, black otherwise
-  boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)', // Blue or black shadow
-  border: '1px solid rgba(25, 118, 210, 0.2)', // Light blue border
+  backgroundColor: isSelected ? '#1976d2' : '#ffffff',
+  color: isSelected ? '#ffffff' : '#000000',
+  boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(25, 118, 210, 0.2)',
   '&:hover': {
     transform: 'scale(1.05)',
-    backgroundColor: isSelected ? '#1565c0' : '#f5f5f5', // Darker blue or light gray on hover
+    backgroundColor: isSelected ? '#1565c0' : '#f5f5f5',
     boxShadow: '0 6px 24px rgba(25, 118, 210, 0.2)',
   },
   '& .MuiChip-icon': {
-    color: isSelected ? '#ffffff' : '#1976d2', // White or blue icon
+    color: isSelected ? '#ffffff' : '#1976d2',
     marginRight: theme.spacing(1),
   },
-}));
-
-// Custom styled container for the active component
-const ComponentContainer = styled(Box)(({ theme }) => ({
-  backgroundColor: '#ffffff', // White background
-  borderRadius: '16px',
-  padding: theme.spacing(4),
-  border: '1px solid rgba(0, 0, 0, 0.05)', // Subtle black border
-  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)', // Light black shadow
-  transition: 'all 0.3s ease',
 }));
 
 const HomeComponent = () => {
@@ -72,48 +56,34 @@ const HomeComponent = () => {
   const ActiveComponent = features[selectedTab].component;
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 6, bgcolor: '#f5f5f5' }}> {/* Light gray-white background */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: '24px',
-            margin: 'auto',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)', // Light black shadow
-          }}
-        >
-          {/* Features Navigation */}
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              mb: 6,
-            }}
-          >
-            {features.map((feature, index) => (
-              <FeatureChip
-                key={index}
-                icon={feature.icon}
-                label={feature.label}
-                isSelected={selectedTab === index}
-                onClick={() => setSelectedTab(index)}
-              />
-            ))}
-          </Box>
-
-          {/* Component Container */}
-          <ComponentContainer>
-            <ActiveComponent />
-          </ComponentContainer>
-        </Paper>
+    <Box sx={{ width: '100%', py: 4 }}>
+      {/* Features Navigation */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          mb: 4,
+          px: 2,
+        }}
+      >
+        {features.map((feature, index) => (
+          <FeatureChip
+            key={index}
+            icon={feature.icon}
+            label={feature.label}
+            isSelected={selectedTab === index}
+            onClick={() => setSelectedTab(index)}
+          />
+        ))}
       </Box>
-    </Container>
+
+      {/* Active Component - Takes full width */}
+      <Box sx={{ width: '100%' }}>
+        <ActiveComponent />
+      </Box>
+    </Box>
   );
 };
 

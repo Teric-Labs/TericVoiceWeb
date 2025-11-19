@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Chip, Container, Grid, Paper, IconButton } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { styled, keyframes } from '@mui/material/styles';
-import { PlayArrow, Translate, RecordVoiceOver, Mic } from '@mui/icons-material';
+import { PlayArrow, Translate, RecordVoiceOver, Mic, Chat, Summarize } from '@mui/icons-material';
 import { useAppSelector } from '../store/hooks';
 
 // Enhanced floating animation
@@ -109,79 +109,103 @@ const LanguageChip = ({ label, isPrimary = false, flag }) => (
 );
 
 // Enhanced animated word with staggered reveal
-const AnimatedWord = ({ word, delay, icon: Icon }) => (
-  <Paper
-    elevation={0}
-    sx={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      position: 'relative',
-      mx: 1,
-      my: 0.5,
-      px: 2,
-      py: 1,
-      borderRadius: '25px',
-      background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(100, 181, 246, 0.05))',
-      border: '1px solid rgba(25, 118, 210, 0.2)',
-      backdropFilter: 'blur(10px)',
-      opacity: 0,
-      transform: 'translateY(20px)',
-      animation: 'slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-      animationDelay: delay,
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        inset: 0,
-        borderRadius: 'inherit',
-        padding: '1px',
-        background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.3), rgba(100, 181, 246, 0.1))',
-        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-        maskComposite: 'exclude',
-        opacity: 0,
-        animation: 'borderGlow 2s ease-in-out infinite',
-        animationDelay: `calc(${delay} + 0.5s)`,
-      },
-      '@keyframes slideUp': {
-        to: { 
-          opacity: 1, 
-          transform: 'translateY(0px)',
-        },
-      },
-      '@keyframes borderGlow': {
-        '0%, 100%': { opacity: 0 },
-        '50%': { opacity: 1 },
-      },
-      '&:hover': {
-        transform: 'translateY(-5px) scale(1.05)',
-        boxShadow: '0 15px 35px rgba(25, 118, 210, 0.2)',
-      },
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    }}
-  >
-    {Icon && (
-      <Icon 
-        sx={{ 
-          mr: 1, 
-          fontSize: '1.2rem', 
-          color: '#1976d2',
-          animation: `${pulse} 2s ease-in-out infinite`,
-          animationDelay: `calc(${delay} + 1s)`,
-        }} 
-      />
-    )}
-    <Typography
-      component="span"
+const AnimatedWord = ({ word, delay, icon: Icon }) => {
+  const isChat = word === 'AI Chatbots';
+  
+  return (
+    <Paper
+      elevation={0}
       sx={{
-        fontSize: { xs: '1rem', md: '1.2rem' },
-        fontWeight: 600,
-        color: '#1976d2',
-        letterSpacing: '0.02em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        position: 'relative',
+        mx: 1,
+        my: 0.5,
+        px: isChat ? 2.5 : 2,
+        py: isChat ? 1.25 : 1,
+        borderRadius: '25px',
+        background: isChat 
+          ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.25), rgba(100, 181, 246, 0.15))' 
+          : 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(100, 181, 246, 0.05))',
+        border: isChat 
+          ? '2px solid rgba(100, 181, 246, 0.4)' 
+          : '1px solid rgba(25, 118, 210, 0.2)',
+        backdropFilter: 'blur(10px)',
+        opacity: 0,
+        transform: 'translateY(20px)',
+        animation: 'slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+        animationDelay: delay,
+        boxShadow: isChat 
+          ? '0 4px 20px rgba(100, 181, 246, 0.3), 0 0 20px rgba(100, 181, 246, 0.2)' 
+          : 'none',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          borderRadius: 'inherit',
+          padding: '1px',
+          background: isChat 
+            ? 'linear-gradient(135deg, rgba(100, 181, 246, 0.5), rgba(25, 118, 210, 0.3))' 
+            : 'linear-gradient(135deg, rgba(25, 118, 210, 0.3), rgba(100, 181, 246, 0.1))',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'exclude',
+          opacity: isChat ? 1 : 0,
+          animation: isChat 
+            ? 'borderGlow 2s ease-in-out infinite' 
+            : 'borderGlow 2s ease-in-out infinite',
+          animationDelay: `calc(${delay} + 0.5s)`,
+        },
+        '@keyframes slideUp': {
+          to: { 
+            opacity: 1, 
+            transform: 'translateY(0px)',
+          },
+        },
+        '@keyframes borderGlow': {
+          '0%, 100%': { opacity: isChat ? 0.7 : 0 },
+          '50%': { opacity: isChat ? 1 : (isChat ? 1 : 0) },
+        },
+        '&:hover': {
+          transform: 'translateY(-5px) scale(1.08)',
+          boxShadow: isChat 
+            ? '0 8px 30px rgba(100, 181, 246, 0.4), 0 0 30px rgba(100, 181, 246, 0.3)' 
+            : '0 15px 35px rgba(25, 118, 210, 0.2)',
+        },
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {word}
-    </Typography>
-  </Paper>
-);
+      {Icon && (
+        <Icon 
+          sx={{ 
+            mr: 1, 
+            fontSize: isChat ? '1.4rem' : '1.2rem', 
+            color: isChat ? '#64b5f6' : '#1976d2',
+            animation: `${pulse} 2s ease-in-out infinite`,
+            animationDelay: `calc(${delay} + 1s)`,
+            filter: isChat ? 'drop-shadow(0 0 4px rgba(100, 181, 246, 0.6))' : 'none',
+          }} 
+        />
+      )}
+      <Typography
+        component="span"
+        sx={{
+          fontSize: isChat ? { xs: '1.1rem', md: '1.3rem' } : { xs: '1rem', md: '1.2rem' },
+          fontWeight: isChat ? 700 : 600,
+          background: isChat 
+            ? 'linear-gradient(135deg, #64b5f6, #42a5f5)' 
+            : 'none',
+          backgroundClip: isChat ? 'text' : 'unset',
+          WebkitBackgroundClip: isChat ? 'text' : 'unset',
+          color: isChat ? 'transparent' : '#1976d2',
+          letterSpacing: '0.02em',
+          textShadow: isChat ? '0 0 10px rgba(100, 181, 246, 0.3)' : 'none',
+        }}
+      >
+        {word}
+      </Typography>
+    </Paper>
+  );
+};
 
 // Floating background elements
 const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
@@ -220,10 +244,11 @@ const EnhancedHeroSection = () => {
   ];
 
   const services = [
-    { text: 'Transcribe', delay: '0.2s', icon: Mic },
-    { text: 'Translate', delay: '0.4s', icon: Translate },
-    { text: 'Speak', delay: '0.6s', icon: RecordVoiceOver },
-    { text: 'Summarize', delay: '0.8s', icon: RecordVoiceOver },
+    { text: 'AI Chatbots', delay: '0.2s', icon: Chat },
+    { text: 'Live Translation', delay: '0.4s', icon: Translate },
+    { text: 'Voice Transcription', delay: '0.6s', icon: Mic },
+    { text: 'Text-to-Speech', delay: '0.7s', icon: RecordVoiceOver },
+    { text: 'Auto Summarize', delay: '0.8s', icon: Summarize },
   ];
 
   return (
@@ -263,51 +288,6 @@ const EnhancedHeroSection = () => {
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={6}>
-            {/* Main headline with enhanced animation */}
-            <Typography
-              variant="h1"
-              sx={{
-                fontWeight: 900,
-                fontSize: { xs: '2.8rem', md: '4rem', lg: '4.5rem' },
-                background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
-                backgroundSize: '200% 200%',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-                mb: 2,
-                letterSpacing: '-0.03em',
-                lineHeight: 0.9,
-                animation: isVisible ? `${shimmer} 3s ease-in-out infinite` : 'none',
-                transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
-                opacity: isVisible ? 1 : 0,
-                transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-            >
-              A-Voices
-              <br />
-              <Box component="span" sx={{ color: '#64b5f6' }}>AI Powered</Box>
-            </Typography>
-
-            {/* Subtitle with typewriter effect */}
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'rgba(255, 255, 255, 0.8)',
-                mb: 4,
-                maxWidth: '600px',
-                mx: 'auto',
-                fontSize: { xs: '1rem', md: '1.2rem' },
-                lineHeight: 1.6,
-                fontWeight: 400,
-                opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
-                transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
-              }}
-            >
-              Transform your content across African languages with our powerful AI-driven platform. 
-              From transcription to translation, we make communication seamless and accessible.
-            </Typography>
-
             {/* Service chips */}
             <Box sx={{ mb: 4, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(40px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s' }}>
               {services.map((service, index) => (
@@ -362,7 +342,7 @@ const EnhancedHeroSection = () => {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
               >
-                Get Started Free
+                Build Your Chatbot Free
               </Button>
               <Button
                 component={Link}
@@ -385,15 +365,78 @@ const EnhancedHeroSection = () => {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
               >
-                View Pricing
+                See Pricing Plans
               </Button>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={6}>
-            {/* African pattern and visual elements */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateX(0)' : 'translateX(50px)', transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s' }}>
-              <AfricanPattern size={400} color="#1976d2" />
+            {/* African pattern and visual elements with headline overlay */}
+            <Box sx={{ 
+              position: 'relative',
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              minHeight: { xs: '400px', md: '500px' },
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible ? 'translateX(0)' : 'translateX(50px)',
+              transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s'
+            }}>
+              {/* African Pattern Background */}
+              <Box sx={{ 
+                position: 'absolute',
+                zIndex: 1,
+                opacity: 0.4
+              }}>
+                <AfricanPattern size={400} color="#1976d2" />
+              </Box>
+              
+              {/* Headline Overlay */}
+              <Box sx={{
+                position: 'relative',
+                zIndex: 2,
+                textAlign: 'center',
+                px: 2
+              }}>
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontWeight: 900,
+                    fontSize: { xs: '2rem', md: '3.5rem', lg: '4rem' },
+                    background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
+                    backgroundSize: '200% 200%',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    mb: 2,
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.1,
+                    animation: isVisible ? `${shimmer} 3s ease-in-out infinite` : 'none',
+                    transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
+                    opacity: isVisible ? 1 : 0,
+                    transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                    textShadow: '0 0 30px rgba(100, 181, 246, 0.3)',
+                  }}
+                >
+                  Build AI Chatbots in African Languages
+                </Typography>
+                <Box
+                  component="span"
+                  sx={{
+                    color: '#64b5f6',
+                    fontSize: { xs: '1.5rem', md: '2.2rem', lg: '2.5rem' },
+                    fontWeight: 700,
+                    display: 'block',
+                    mt: 1,
+                    textShadow: '0 0 20px rgba(100, 181, 246, 0.4)',
+                    opacity: isVisible ? 1 : 0,
+                    transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+                    transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
+                  }}
+                >
+                  Translate, Transcribe & Speak Instantly
+                </Box>
+              </Box>
             </Box>
           </Grid>
         </Grid>

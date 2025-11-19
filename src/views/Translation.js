@@ -1,13 +1,8 @@
 import React from "react";
-import { Box} from "@mui/material";
-import TranslationComponent from "../components/TranslationComponent";
+import TranslationCard from "../components/TranslationCard";
 
-const Translation =()=>{
-    return(
-        <Box>
-            <TranslationComponent/>
-        </Box>
-    )
+const Translation = () => {
+    return <TranslationCard />;
 }
 
 export default Translation;

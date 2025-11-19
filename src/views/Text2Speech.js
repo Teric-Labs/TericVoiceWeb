@@ -1,13 +1,8 @@
 import React from "react";
-import { Box} from "@mui/material";
-import Text2SpeechComponent from "../components/Text2speechComponent";
+import SynthesizeComponent from "../components/SynthesizeComponent";
 
-const Text2Speech =()=>{
-    return(
-        <Box>
-            <Text2SpeechComponent/>
-        </Box>
-    )
+const Text2Speech = () => {
+    return <SynthesizeComponent />;
 }
 
 export default Text2Speech;

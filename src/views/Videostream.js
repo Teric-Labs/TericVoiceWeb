@@ -1,13 +1,8 @@
 import React from "react";
-import { Box} from "@mui/material";
-import VideoStreamComponent from '../components/VoiceAI'
+import VideoCard from '../components/VideoCard';
 
-const VideoStream =()=>{
-    return(
-        <Box>
-            <VideoStreamComponent/>
-        </Box>
-    )
+const VideoStream = () => {
+    return <VideoCard />;
 }
 
 export default VideoStream;

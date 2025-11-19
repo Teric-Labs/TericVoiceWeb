@@ -2,17 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Container,
   FormControl,
   Grid,
   IconButton,
   MenuItem,
-  Paper,
   Select,
   TextField,
   Typography,
   CircularProgress,
-  LinearProgress,
   Alert,
   Tab,
   Tabs,
@@ -47,7 +44,6 @@ import {
   translateText,
   translateDocument,
 } from '../store/slices/translationSlice';
-import ProfessionalProgressBar from './ProfessionalProgressBar';
 import DocumentTranslationDrawer from './DocumentTranslationDrawer';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -69,15 +65,6 @@ const SUPPORTED_FILE_TYPES = [
 ];
 
 // Custom styled components
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: '16px',
-  background: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(12px)',
-  border: '1px solid rgba(25, 118, 210, 0.1)',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
-}));
-
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTab-root': {
     textTransform: 'none',
@@ -258,8 +245,8 @@ const TranslationCard = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
+    <>
+    <Box sx={{ width: '100%', py: 3, px: 2 }}>
         <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
           <CardContent sx={{ p: 4 }}>
             <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
@@ -467,18 +454,6 @@ const TranslationCard = () => {
                 {loading ? 'Translating...' : 'Translate'}
               </StyledButton>
             </Box>
-
-            {/* Professional Progress Bar */}
-            <Box sx={{ mt: 3 }}>
-              <ProfessionalProgressBar
-                isVisible={loading}
-                message="Processing Translation..."
-                subMessage="Please wait"
-                type="translation"
-                size="medium"
-                showSpinner={true}
-              />
-            </Box>
           </CardContent>
         </Card>
       </Box>
@@ -495,7 +470,7 @@ const TranslationCard = () => {
         error={error}
         fileName={selectedFile?.name || 'Text Translation'}
       />
-    </Container>
+    </>
   );
 };
 

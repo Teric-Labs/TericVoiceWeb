@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Tabs,
   Tab,
@@ -12,12 +11,10 @@ import {
   Grid,
   TextField,
   Chip,
-  LinearProgress,
   Snackbar,
   Alert,
   Drawer,
   Card,
-  CardContent,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -66,7 +63,6 @@ const SummarizationCard = () => {
   const [textContent, setTextContent] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [translationId, setTranslationId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -161,23 +157,13 @@ const SummarizationCard = () => {
     setIsDrawerOpen(false);
     setIsProcessing(true);
     setError(null);
-    setProgress(0);
 
     try {
-      // Simulate progress during API call
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
-        });
-      }, 500);
-
       // Check usage limits before making request
       const usageResult = await checkUsageBeforeRequest('summarize');
       
       // If usage limit exceeded, show upgrade modal
       if (!usageResult.allowed) {
-        console.log('🚫 Usage limit exceeded, showing upgrade modal');
         setUpgradeData({
           currentUsage: usageResult.current_usage || 0,
           limit: usageResult.limit || 0,
@@ -186,10 +172,8 @@ const SummarizationCard = () => {
         });
         setShowUpgradeModal(true);
         setIsProcessing(false);
-        clearInterval(progressInterval);
         return;
       }
-      setProgress(20);
 
       let response;
       switch (activeTab) {
@@ -221,9 +205,6 @@ const SummarizationCard = () => {
           throw new Error('Invalid tab selection');
       }
 
-      clearInterval(progressInterval);
-      setProgress(100);
-
       console.log('📊 SummarizationCard - API response:', response);
 
       if (response?.doc_id) {
@@ -246,7 +227,6 @@ const SummarizationCard = () => {
       }
     } finally {
       setIsProcessing(false);
-      setTimeout(() => setProgress(0), 1000);
     }
   }, [sourceLanguage, user.userId, user.uid, activeTab, textContent, uploadedFile, showNotification]);
 
@@ -297,13 +277,18 @@ const SummarizationCard = () => {
   }, [activeTab, handleFileUpload, uploadedFile]);
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
-        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-              AI-Powered Summarization
-            </Typography>
+    <>
+    <Card sx={{ 
+      width: '100%',
+      my: 2, 
+      px: 2,
+      borderRadius: '16px', 
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+      p: 4
+    }}>
+      <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+        AI-Powered Summarization
+      </Typography>
 
             {/* Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
@@ -379,20 +364,6 @@ const SummarizationCard = () => {
               )}
       </Box>
 
-            {/* Progress */}
-            {isProcessing && (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Processing... {progress}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-            )}
-
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <Button
@@ -418,16 +389,15 @@ const SummarizationCard = () => {
         </Button>
       </Box>
 
-            {/* Error Display */}
-            {error && (
-              <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
-                {typeof error === 'string' ? error : error.message || 'An error occurred'}
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+      {/* Error Display */}
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
+          {typeof error === 'string' ? error : error.message || 'An error occurred'}
+        </Alert>
+      )}
+    </Card>
 
-        {/* Snackbar */}
+      {/* Snackbar */}
       <Snackbar
           open={showSnackbar}
         autoHideDuration={6000}
@@ -473,8 +443,7 @@ const SummarizationCard = () => {
         endpoint={upgradeData?.endpoint || 'summarize'}
         tier={upgradeData?.tier || 'free_trial'}
       />
-      </Box>
-    </Container>
+    </>
   );
 };
 

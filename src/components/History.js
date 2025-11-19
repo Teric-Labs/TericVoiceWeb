@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Box, 
   Container, 
@@ -8,6 +8,7 @@ import {
   CardContent,
   Grid,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
@@ -26,6 +27,7 @@ import TranslationsTable from './TranslationsTable';
 import SummaryTable from './SummaryTable';
 import VoxTransTable from './VoxTransTable.js';
 import TextTable from './TextTable.js';
+import { dataAPI, agentsAPI, getCurrentUser } from '../services/api';
 
 // Enhanced styled components
 const FeatureChip = styled('div')(({ theme, isSelected }) => ({
@@ -83,6 +85,13 @@ const StatsCard = styled(Card)(({ theme }) => ({
 
 const History = () => {
   const [selectedTab, setSelectedTab] = useState(0);
+  const [stats, setStats] = useState([
+    { label: 'Total Translations', value: '0', icon: <TextFields />, color: '#1976d2' },
+    { label: 'Voice Recordings', value: '0', icon: <Mic />, color: '#ff9800' },
+    { label: 'Video Transcriptions', value: '0', icon: <VideoCameraBack />, color: '#9c27b0' },
+    { label: 'AI Conversations', value: '0', icon: <RecordVoiceOver />, color: '#f44336' },
+  ]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const features = [
     { 
@@ -135,13 +144,66 @@ const History = () => {
 
   const ActiveComponent = features[selectedTab].component;
 
-  // Mock statistics data - in real app, this would come from Redux or API
-  const stats = [
-    { label: 'Total Translations', value: '1,234', icon: <TextFields />, color: '#1976d2' },
-    { label: 'Voice Recordings', value: '567', icon: <Mic />, color: '#ff9800' },
-    { label: 'Video Transcriptions', value: '89', icon: <VideoCameraBack />, color: '#9c27b0' },
-    { label: 'AI Conversations', value: '456', icon: <RecordVoiceOver />, color: '#f44336' },
-  ];
+  // Format number with commas
+  const formatNumber = (num) => {
+    return num.toLocaleString('en-US');
+  };
+
+  // Fetch user-specific statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const user = getCurrentUser();
+        const userId = user?.userId || user?.uid;
+
+        if (!userId) {
+          console.warn('User not authenticated, showing zero counts');
+          setStatsLoading(false);
+          return;
+        }
+
+        // Fetch all counts in parallel
+        const [translationsData, audiosData, videosData, agentsData] = await Promise.allSettled([
+          dataAPI.getTranslations(userId),
+          dataAPI.getAudios(userId),
+          dataAPI.getVideos(userId),
+          agentsAPI.getUserAgents(userId),
+        ]);
+
+        // Extract counts from responses
+        const translationsCount = translationsData.status === 'fulfilled' 
+          ? (translationsData.value?.entries?.length || translationsData.value?.length || 0)
+          : 0;
+        
+        const audiosCount = audiosData.status === 'fulfilled'
+          ? (audiosData.value?.entries?.length || audiosData.value?.length || 0)
+          : 0;
+        
+        const videosCount = videosData.status === 'fulfilled'
+          ? (videosData.value?.entries?.length || videosData.value?.length || 0)
+          : 0;
+        
+        const agentsCount = agentsData.status === 'fulfilled'
+          ? (agentsData.value?.agents?.length || agentsData.value?.length || 0)
+          : 0;
+
+        // Update stats with real counts
+        setStats([
+          { label: 'Total Translations', value: formatNumber(translationsCount), icon: <TextFields />, color: '#1976d2' },
+          { label: 'Voice Recordings', value: formatNumber(audiosCount), icon: <Mic />, color: '#ff9800' },
+          { label: 'Video Transcriptions', value: formatNumber(videosCount), icon: <VideoCameraBack />, color: '#9c27b0' },
+          { label: 'AI Conversations', value: formatNumber(agentsCount), icon: <RecordVoiceOver />, color: '#f44336' },
+        ]);
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+        // Keep default zero values on error
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <Container maxWidth="xl">
@@ -189,9 +251,15 @@ const History = () => {
                       {stat.icon}
                     </Box>
                   </Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2', mb: 0.5 }}>
-                    {stat.value}
-                  </Typography>
+                  {statsLoading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                      <CircularProgress size={24} sx={{ color: '#1976d2' }} />
+                    </Box>
+                  ) : (
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2', mb: 0.5 }}>
+                      {stat.value}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     {stat.label}
                   </Typography>

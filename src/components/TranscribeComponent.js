@@ -1,14 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
-  Container,
-  Paper,
   Typography,
   Button,
   Grid,
   Snackbar,
   Alert,
-  LinearProgress,
   FormControl,
   Select,
   MenuItem,
@@ -57,7 +54,6 @@ const TranscribeComponent = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [selectedTab, setSelectedTab] = useState(0);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -286,7 +282,6 @@ const TranscribeComponent = () => {
     setError(null);
 
     setIsLoading(true);
-    setProgress(0);
 
     try {
       console.log('🔍 Checking usage limits...');
@@ -363,13 +358,11 @@ const TranscribeComponent = () => {
       }
     } finally {
       setIsLoading(false);
-      setProgress(100);
     }
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
+    <Box sx={{ width: '100%', py: 3, px: 2 }}>
         <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
           <CardContent sx={{ p: 4 }}>
             <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
@@ -560,20 +553,6 @@ const TranscribeComponent = () => {
               </Box>
             )}
 
-            {/* Progress */}
-            {isLoading && (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Processing... {progress}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-            )}
-
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Button
@@ -671,8 +650,7 @@ const TranscribeComponent = () => {
           endpoint={upgradeData?.endpoint || 'upload'}
           tier={upgradeData?.tier || 'free_trial'}
         />
-      </Box>
-    </Container>
+    </Box>
   );
 };
 

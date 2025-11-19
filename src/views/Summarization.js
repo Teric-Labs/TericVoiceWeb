@@ -1,13 +1,8 @@
 import React from "react";
-import { Box} from "@mui/material";
-import SummarizeComponent from "../components/SummarizeComponent";
+import SummarizationCard from "../components/SummarizationCard";
 
-const Summarization =()=>{
-    return(
-        <Box>
-            <SummarizeComponent/>
-        </Box>
-    )
+const Summarization = () => {
+    return <SummarizationCard />;
 }
 
 export default Summarization;

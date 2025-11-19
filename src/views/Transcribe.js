@@ -1,13 +1,8 @@
 import React from "react";
-import { Box} from "@mui/material";
-import History from "../components/History";
+import TranscribeComponent from "../components/TranscribeComponent";
 
-const Transcribe =()=>{
-    return(
-        <Box>
-            <History/>
-        </Box>
-    )
+const Transcribe = () => {
+    return <TranscribeComponent />;
 }
 
 export default Transcribe;

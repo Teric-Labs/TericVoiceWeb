@@ -1,25 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Box,Card, CardContent } from '@mui/material';
+import React from "react";
 import TranslationCard from "./TranslationCard";
 
 const TranslationComponent = () => {
-  const [user, setUser] = useState({ username: '', userId: '' });
-
- 
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    }
-  }, []);
-
-  return (
-    <Box sx={{maxWidth: '100%', p: 2 }}>
-         <TranslationCard />
-    </Box>
-  );
+  return <TranslationCard />;
 }
 
 export default TranslationComponent;

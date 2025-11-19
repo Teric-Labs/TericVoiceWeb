@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Container,
   FormControl,
   Grid,
   IconButton,
@@ -12,7 +11,6 @@ import {
   TextField,
   Typography,
   CircularProgress,
-  LinearProgress,
   Alert,
   Tab,
   Tabs,
@@ -197,7 +195,6 @@ const SynthesizeComponent = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [progress, setProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState(null);
   const [taskId, setTaskId] = useState(null);
   const [docId, setDocId] = useState(null);
@@ -215,17 +212,6 @@ const SynthesizeComponent = () => {
     }
   }, []);
 
-  useEffect(() => {
-    let progressTimer;
-    if (loading) {
-      progressTimer = setInterval(() => {
-        setProgress((prev) => (prev >= 95 ? 95 : prev + 5));
-      }, 500);
-    } else {
-      setProgress(0);
-    }
-    return () => clearInterval(progressTimer);
-  }, [loading]);
 
   const handleGenerate = async () => {
     try {
@@ -297,8 +283,8 @@ const SynthesizeComponent = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 6 }}>
+    <>
+    <Box sx={{ width: '100%', py: 3, px: 2 }}>
         <StyledPaper elevation={0}>
           <StyledTabs
             value={activeTab}
@@ -389,25 +375,6 @@ const SynthesizeComponent = () => {
             </Box>
           )}
 
-          {loading && (
-            <Box sx={{ width: '100%', mt: 4 }}>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(25, 118, 210, 0.1)', // Light blue background
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#1976d2', // Blue progress bar
-                  },
-                }}
-              />
-              <Typography align="center" variant="body2" sx={{ mt: 1, color: '#000000' }}>
-                Processing... {progress}%
-              </Typography>
-            </Box>
-          )}
-
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
             <StyledButton
               variant="contained"
@@ -434,7 +401,7 @@ const SynthesizeComponent = () => {
       >
         {docId && <ViewttsAudioComponent audioId={docId} />}
       </Drawer>
-    </Container>
+    </>
   );
 };
 

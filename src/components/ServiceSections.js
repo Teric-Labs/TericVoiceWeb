@@ -9,7 +9,8 @@ import {
   Code,
   Support,
   ArrowForward,
-  PlayArrow
+  PlayArrow,
+  SmartToy
 } from '@mui/icons-material';
 import translate from "../assets/translation.jpg"
 import transcribe from "../assets/transcribe.jpg"
@@ -17,6 +18,8 @@ import textvoice from "../assets/textvoice.jpg"
 import voicev from "../assets/voicev.jpg"
 import documents from "../assets/documentSummary.jpg"
 import momo from "../assets/APIs.jpg"
+// Placeholder for chatbot image - replace with actual image when available
+import chatbot from "../assets/APIs.jpg"  // Using APIs.jpg as placeholder - TODO: replace with chatbot.jpg
 import { Link } from 'react-router-dom';
 const ServiceSection = ({ 
   title, 
@@ -224,6 +227,18 @@ const ServiceSections = () => {
         "Key points extraction"
       ],
       icon: <Summarize sx={{ fontSize: 40, color: 'primary.main' }} />
+    },
+    {
+      title: "AI Chatbots for African Languages",
+      imgr:chatbot,
+      description: "Build intelligent conversational AI chatbots powered by your own documents and knowledge base. Create chatbots that understand and communicate in multiple African languages (Luganda, Swahili, Acholi, and more) with context-aware responses tailored to your content.",
+      features: [
+        "Create chatbots from your documents in African languages",
+        "Multi-language support for Luganda, Swahili, Acholi, and more",
+        "Context-aware conversations powered by your knowledge base",
+        "Easy integration via API or embeddable chat widgets"
+      ],
+      icon: <SmartToy sx={{ fontSize: 40, color: 'primary.main' }} />
     },
     {
       title: "Developer APIs",

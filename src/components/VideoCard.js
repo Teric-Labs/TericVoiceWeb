@@ -9,7 +9,6 @@ import {
   Chip,
   Alert,
   Typography,
-  Container,
   Snackbar,
   Drawer,
   Card,
@@ -17,7 +16,6 @@ import {
   Tabs,
   Tab,
   Grid,
-  LinearProgress,
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -40,7 +38,6 @@ const VideoCard = () => {
   // UI state
   const [selectedTab, setSelectedTab] = useState(0); // 0: File Upload, 1: YouTube URL
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
   const [docId, setDocId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -59,13 +56,9 @@ const VideoCard = () => {
   // Load user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    console.log('🔍 VideoCard: Loading user from localStorage:', storedUser);
     if (storedUser) {
       const userData = JSON.parse(storedUser);
-      console.log('🔍 VideoCard: Parsed user data:', userData);
       setUser(userData);
-    } else {
-      console.log('🔍 VideoCard: No user found in localStorage');
     }
   }, []);
 
@@ -86,11 +79,6 @@ const VideoCard = () => {
     { value: "rw", label: "Kinyarwanda", flag: "🇷🇼" },
     { value: "nyn", label: "Runyankore", flag: "🇺🇬" },
   ];
-
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{"username":"","userId":""}');
-    setUser(storedUser);
-  }, []);
 
   const handleFileSelection = (file) => {
     if (file.size > 100 * 1024 * 1024) { // 100MB limit
@@ -144,7 +132,6 @@ const VideoCard = () => {
 
     setLoading(true);
     setError(null);
-    setUploadProgress(0);
     setDocId(null);
     setIsDrawerOpen(false);
 
@@ -153,19 +140,10 @@ const VideoCard = () => {
         throw new Error('Please log in to use video processing services');
       }
 
-      // Simulate progress during API call
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
-        });
-      }, 500);
-
       const usageResult = await checkUsageBeforeRequest('videoUpload');
       
       // If usage limit exceeded, show upgrade modal
       if (!usageResult.allowed) {
-        console.log('🚫 Usage limit exceeded, showing upgrade modal');
         setUpgradeData({
           currentUsage: usageResult.current_usage || 0,
           limit: usageResult.limit || 0,
@@ -174,15 +152,11 @@ const VideoCard = () => {
         });
         setShowUpgradeModal(true);
         setLoading(false);
-        clearInterval(progressInterval);
         return;
       }
-      
-      setUploadProgress(20);
 
       let response;
       if (selectedTab === 0) {
-        setUploadProgress(40);
         response = await videoAPI.extractAudioFromVideo(
           selectedFile,
           sourceLanguage,
@@ -190,7 +164,6 @@ const VideoCard = () => {
           user.userId
         );
       } else {
-        setUploadProgress(40);
         response = await videoAPI.uploadVideo(
           youtubeUrl,
           sourceLanguage,
@@ -198,9 +171,6 @@ const VideoCard = () => {
           user.userId
         );
       }
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
 
       setDocId(response.doc_id);
       setIsDrawerOpen(true);
@@ -215,7 +185,6 @@ const VideoCard = () => {
       }
     } finally {
       setLoading(false);
-      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -225,8 +194,7 @@ const VideoCard = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
+    <Box sx={{ width: '100%', py: 3, px: 2 }}>
         <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
           <CardContent sx={{ p: 4 }}>
             <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
@@ -381,20 +349,6 @@ const VideoCard = () => {
               </Box>
             )}
 
-            {/* Progress */}
-            {loading && (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Processing... {uploadProgress}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={uploadProgress}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-            )}
-
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Button
@@ -454,8 +408,7 @@ const VideoCard = () => {
           endpoint={upgradeData?.endpoint || 'videoUpload'}
           tier={upgradeData?.tier || 'free_trial'}
         />
-      </Box>
-    </Container>
+    </Box>
   );
 };
 

@@ -13,22 +13,50 @@ export const translateText = createAsyncThunk(
       );
       
       // Extract the translated text from the response
-      // Response structure: {"lg": {"en": "original", "lg": "translated"}}
-      const targetLangData = Object.values(response)[0];
-      if (targetLangData && typeof targetLangData === 'object') {
-        // Get the translation in the target language
-        const translatedText = targetLangData[translationData.targetLang];
+      // Response structure: {"lg": "translated text"} - simple key-value pair
+      // OR nested: {"lg": {"en": "original", "lg": "translated"}} - legacy format
+      const targetLang = translationData.targetLang;
+      
+      // Check if response has the target language key
+      if (response && response[targetLang]) {
+        const translatedText = response[targetLang];
+        
+        // If the value is a string, use it directly
+        if (typeof translatedText === 'string') {
+          return {
+            originalText: translationData.text,
+            translatedText: translatedText || 'Translation not available',
+            sourceLang: translationData.sourceLang,
+            targetLang: translationData.targetLang
+          };
+        }
+        
+        // If the value is an object (nested format), extract the translation
+        if (typeof translatedText === 'object' && translatedText[targetLang]) {
+          return {
+            originalText: translationData.text,
+            translatedText: translatedText[targetLang] || 'Translation not available',
+            sourceLang: translationData.sourceLang,
+            targetLang: translationData.targetLang
+          };
+        }
+      }
+      
+      // Fallback: try to get first value if structure is unexpected
+      const firstValue = Object.values(response)[0];
+      if (typeof firstValue === 'string') {
         return {
           originalText: translationData.text,
-          translatedText: translatedText || 'Translation not available',
+          translatedText: firstValue,
           sourceLang: translationData.sourceLang,
           targetLang: translationData.targetLang
         };
       }
       
+      console.error('Unexpected translation response format:', response);
       return {
         originalText: translationData.text,
-        translatedText: 'Translation failed',
+        translatedText: 'Translation failed - unexpected response format',
         sourceLang: translationData.sourceLang,
         targetLang: translationData.targetLang
       };
