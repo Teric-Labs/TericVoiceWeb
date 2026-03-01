@@ -33,7 +33,13 @@ import {
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
+import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { subscriptionAPI } from '../services/api';
+
+const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 const slideIn = keyframes`
   from {
@@ -46,23 +52,22 @@ const slideIn = keyframes`
   }
 `;
 
-const PaymentModal = ({
-  open, 
-  onClose, 
-  selectedTier, 
-  onPaymentSuccess 
+const PaymentModalContent = ({
+  open,
+  onClose,
+  selectedTier,
+  onPaymentSuccess
 }) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const [activeStep, setActiveStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  
-  // Form states
+
+  // Form states (no raw card data — handled by Stripe's CardElement)
   const [formData, setFormData] = useState({
     email: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
     cardholderName: '',
     country: '',
     address: '',
@@ -80,22 +85,11 @@ const PaymentModal = ({
 
   useEffect(() => {
     if (open) {
-      // Reset form when modal opens
       setActiveStep(0);
       setIsProcessing(false);
       setError(null);
       setSuccess(false);
-      setFormData({
-        email: '',
-        cardNumber: '',
-        expiryDate: '',
-        cvv: '',
-        cardholderName: '',
-        country: '',
-        address: '',
-        city: '',
-        zipCode: '',
-      });
+      setFormData({ email: '', cardholderName: '', country: '', address: '', city: '', zipCode: '' });
       setFormErrors({});
     }
   }, [open]);
@@ -117,81 +111,20 @@ const PaymentModal = ({
 
   const validateForm = () => {
     const errors = {};
-    
-    // Email validation
+
     if (!formData.email) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Invalid email format';
     }
-    
-    // Card number validation
-    if (!formData.cardNumber) {
-      errors.cardNumber = 'Card number is required';
-    } else {
-      const cardNumber = formData.cardNumber.replace(/\s/g, '');
-      if (cardNumber.length < 13 || cardNumber.length > 19) {
-        errors.cardNumber = 'Invalid card number length';
-      } else if (!/^\d+$/.test(cardNumber)) {
-        errors.cardNumber = 'Card number must contain only digits';
-      }
-    }
-    
-    // Expiry date validation
-    if (!formData.expiryDate) {
-      errors.expiryDate = 'Expiry date is required';
-    } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
-      errors.expiryDate = 'Invalid expiry format (MM/YY)';
-    } else {
-      const [month, year] = formData.expiryDate.split('/');
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear() % 100;
-      const currentMonth = currentDate.getMonth() + 1;
-      
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        errors.expiryDate = 'Invalid month';
-      } else if (parseInt(year) < currentYear || 
-                 (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
-        errors.expiryDate = 'Card has expired';
-      }
-    }
-    
-    // CVV validation
-    if (!formData.cvv) {
-      errors.cvv = 'CVV is required';
-    } else if (formData.cvv.length < 3 || formData.cvv.length > 4) {
-      errors.cvv = 'CVV must be 3-4 digits';
-    } else if (!/^\d+$/.test(formData.cvv)) {
-      errors.cvv = 'CVV must contain only digits';
-    }
-    
-    // Cardholder name validation
-    if (!formData.cardholderName) {
+    if (!formData.cardholderName || formData.cardholderName.length < 2) {
       errors.cardholderName = 'Cardholder name is required';
-    } else if (formData.cardholderName.length < 2) {
-      errors.cardholderName = 'Cardholder name must be at least 2 characters';
     }
-    
-    // Address validation
-    if (!formData.country) {
-      errors.country = 'Country is required';
-    }
-    if (!formData.address) {
-      errors.address = 'Address is required';
-    } else if (formData.address.length < 5) {
-      errors.address = 'Address must be at least 5 characters';
-    }
-    if (!formData.city) {
-      errors.city = 'City is required';
-    } else if (formData.city.length < 2) {
-      errors.city = 'City must be at least 2 characters';
-    }
-    if (!formData.zipCode) {
-      errors.zipCode = 'ZIP code is required';
-    } else if (formData.zipCode.length < 3) {
-      errors.zipCode = 'ZIP code must be at least 3 characters';
-    }
-    
+    if (!formData.country) errors.country = 'Country is required';
+    if (!formData.address || formData.address.length < 5) errors.address = 'Address is required';
+    if (!formData.city || formData.city.length < 2) errors.city = 'City is required';
+    if (!formData.zipCode || formData.zipCode.length < 3) errors.zipCode = 'ZIP code is required';
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -245,29 +178,41 @@ const PaymentModal = ({
   };
 
   const processStripePayment = async () => {
-    try {
-      // Prepare payment data
-      const paymentData = {
-        tierId: selectedTier?.id,
-        paymentMethod: 'card',
-        amount: (selectedTier?.price || 0) * 100, // Convert to cents
-        currency: 'USD',
-        email: formData.email,
-        ...formData
-      };
-
-      // Process payment through our API
-      const result = await subscriptionAPI.processPayment(paymentData);
-      
-      if (result.success) {
-        return { success: true, transactionId: result.transactionId };
-      } else {
-        return { success: false, error: result.error || 'Payment failed' };
-      }
-    } catch (error) {
-      console.error('Payment processing error:', error);
-      throw error;
+    if (!stripe || !elements) {
+      throw new Error('Stripe has not loaded. Please refresh and try again.');
     }
+
+    const cardElement = elements.getElement(CardElement);
+    const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: {
+        name: formData.cardholderName,
+        email: formData.email,
+        address: {
+          line1: formData.address,
+          city: formData.city,
+          country: formData.country,
+          postal_code: formData.zipCode,
+        },
+      },
+    });
+
+    if (pmError) throw new Error(pmError.message);
+
+    // Send only paymentMethodId — never raw card data
+    const result = await subscriptionAPI.processPayment({
+      tierId: selectedTier?.id,
+      paymentMethodId: paymentMethod.id,
+      amount: (selectedTier?.price || 0) * 100,
+      currency: 'USD',
+      email: formData.email,
+    });
+
+    if (result.success) {
+      return { success: true, transactionId: result.transactionId };
+    }
+    return { success: false, error: result.error || 'Payment failed' };
   };
 
   const formatCardNumber = (value) => {
@@ -331,54 +276,37 @@ const PaymentModal = ({
           />
         </Grid>
         
-        {/* Card Payment Details */}
+        {/* Card Payment Details — secured by Stripe */}
         <Grid item xs={12}>
           <Paper sx={{ p: 3, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: '16px', border: '1px solid rgba(25, 118, 210, 0.1)' }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
               <CreditCardIcon color="primary" />
               Card Payment Details
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Card Number"
-                  value={formData.cardNumber}
-                  onChange={(e) => setFormData({...formData, cardNumber: formatCardNumber(e.target.value)})}
-                  error={!!formErrors.cardNumber}
-                  helperText={formErrors.cardNumber}
-                  placeholder="1234 5678 9012 3456"
-                  sx={{ borderRadius: '12px' }}
-                />
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>Card details</Typography>
+                <Box sx={{
+                  p: 1.75, border: '1px solid rgba(0,0,0,0.23)', borderRadius: '12px',
+                  '&:hover': { borderColor: 'primary.main' },
+                }}>
+                  <CardElement options={{
+                    style: {
+                      base: { fontSize: '16px', color: '#424770', '::placeholder': { color: '#aab7c4' } },
+                      invalid: { color: '#f44336' },
+                    },
+                    hidePostalCode: true,
+                  }} />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75 }}>
+                  <LockIcon sx={{ fontSize: 13, color: 'success.main' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Secured by Stripe. Card data is never stored on our servers.
+                  </Typography>
+                </Box>
               </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Expiry Date"
-                  value={formData.expiryDate}
-                  onChange={(e) => setFormData({...formData, expiryDate: formatExpiryDate(e.target.value)})}
-                  error={!!formErrors.expiryDate}
-                  helperText={formErrors.expiryDate}
-                  placeholder="MM/YY"
-                  sx={{ borderRadius: '12px' }}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="CVV"
-                  value={formData.cvv}
-                  onChange={(e) => setFormData({...formData, cvv: e.target.value.replace(/\D/g, '').substring(0, 4)})}
-                  error={!!formErrors.cvv}
-                  helperText={formErrors.cvv}
-                  placeholder="123"
-                  sx={{ borderRadius: '12px' }}
-                />
-              </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -660,5 +588,12 @@ const PaymentModal = ({
     </Dialog>
   );
 };
+
+// Wrap with Stripe Elements so inner component can use useStripe/useElements
+const PaymentModal = (props) => (
+  <Elements stripe={stripePromise}>
+    <PaymentModalContent {...props} />
+  </Elements>
+);
 
 export default PaymentModal;

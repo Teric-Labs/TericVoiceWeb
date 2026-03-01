@@ -1,313 +1,157 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Avatar,
-  Typography,
-  Button,
-  Paper,
-  Container,
-  Divider,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  useTheme,
-  alpha,
-  IconButton,
-  Tooltip,
-  Fade
-} from '@mui/material';
-import {
-  Mail,
-  User,
-  Calendar,
-  Settings,
-  LogOut,
-  Star,
-  ChevronRight,
-  Edit
-} from 'lucide-react';
+import { Box, Avatar, Typography, Button, Container, Divider, Chip, IconButton, Tooltip } from '@mui/material';
+import { Mail, User, Calendar, Settings, LogOut, Star, Edit } from 'lucide-react';
+
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GOLD = '#f59e0b';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px' };
 
 const ProfileComponent = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const theme = useTheme();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    }
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
     setIsLoading(false);
   }, []);
 
-  const userDetails = [
-    {
-      icon: <Mail size={20} />,
-      label: 'Email',
-      value: user?.email || 'N/A',
-    },
-    {
-      icon: <User size={20} />,
-      label: 'User ID',
-      value: user?.userId || 'N/A',
-    },
-    {
-      icon: <Calendar size={20} />,
-      label: 'Member Since',
-      value: new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric'
-      }),
-    }
-  ];
+  if (isLoading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+      <Typography sx={{ color: '#64748b' }}>Loading profile…</Typography>
+    </Box>
+  );
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
-        <Typography variant="h6" color="textSecondary">Loading profile...</Typography>
+  if (!user) return (
+    <Container maxWidth="sm">
+      <Box sx={{ textAlign: 'center', py: 10 }}>
+        <Typography variant="h4" sx={{ color: '#f8fafc', fontWeight: 800, mb: 1 }}>Welcome</Typography>
+        <Typography sx={{ color: '#64748b', mb: 4 }}>Please sign in to access your profile</Typography>
+        <Button variant="contained" size="large" sx={{ background: G, borderRadius: '50px', px: 4, py: 1.5, fontWeight: 700 }}>
+          Sign In
+        </Button>
       </Box>
-    );
-  }
+    </Container>
+  );
 
-  if (!user) {
-    return (
-      <Container maxWidth="sm">
-        <Box display="flex" flexDirection="column" alignItems="center" py={8}>
-          <Typography variant="h4" gutterBottom>
-            Welcome
-          </Typography>
-          <Typography variant="body1" color="textSecondary" align="center" paragraph>
-            Please sign in to access your profile and preferences
-          </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              borderRadius: 8,
-              px: 6,
-              py: 1.5,
-              textTransform: 'none',
-              fontSize: '1.1rem',
-              background: theme.palette.primary.main,
-              '&:hover': {
-                background: theme.palette.primary.dark,
-              }
-            }}
-          >
-            Sign In
-          </Button>
-        </Box>
-      </Container>
-    );
-  }
+  const details = [
+    { icon: <Mail size={18} />, label: 'Email', value: user.email || user.username || 'N/A', color: '#0ea5e9' },
+    { icon: <User size={18} />, label: 'User ID', value: user.userId || user.uid || 'N/A', color: '#8b5cf6' },
+    { icon: <Calendar size={18} />, label: 'Member Since', value: new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), color: GOLD },
+  ];
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: 4,
-          overflow: 'hidden',
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-          background: '#ffffff'
-        }}
-      >
-        {/* Premium Header Section */}
-        <Box
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            py: 6,
-            px: 4,
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Decorative elements */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -100,
-              right: -100,
-              width: 400,
-              height: 400,
-              borderRadius: '50%',
-              background: alpha('#fff', 0.1),
-            }}
-          />
-          
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Box display="flex" alignItems="center" gap={3}>
-              <Box position="relative">
-                <Avatar
-                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`}
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    border: `4px solid ${alpha('#fff', 0.2)}`,
-                    boxShadow: theme.shadows[4]
-                  }}
-                />
-                <Tooltip title="Edit Profile Picture" placement="right">
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      background: '#fff',
-                      '&:hover': { background: alpha('#fff', 0.9) }
-                    }}
-                  >
-                    <Edit size={16} />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              
-              <Box>
-                <Typography variant="h4"  fontWeight="bold" gutterBottom>
-                  {user.email}
-                </Typography>
-                <Typography variant="body1" color={alpha('#fff', 0.9)}>
-                  {user.email}
-                </Typography>
-              </Box>
+      <Box sx={{ ...GLASS, overflow: 'hidden' }}>
+        {/* Header */}
+        <Box sx={{
+          background: 'linear-gradient(135deg, #07071a 0%, #0f0f2d 60%, #140a2e 100%)',
+          position: 'relative', overflow: 'hidden', px: { xs: 3, md: 6 }, py: 6,
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          {/* Kente pattern hint */}
+          <Box sx={{ position: 'absolute', inset: 0, opacity: 0.04, backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '24px 24px', pointerEvents: 'none' }} />
+          <Box sx={{ position: 'absolute', top: -80, right: -80, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <Box sx={{ position: 'absolute', bottom: -60, left: '30%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+          <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
+                src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email || user.username}`}
+                sx={{ width: 100, height: 100, border: '3px solid rgba(14,165,233,0.4)', boxShadow: '0 0 30px rgba(14,165,233,0.3)' }}
+              />
+              <Tooltip title="Edit Profile Picture" placement="right">
+                <IconButton size="small" sx={{
+                  position: 'absolute', bottom: 0, right: 0, width: 28, height: 28,
+                  background: 'rgba(14,165,233,0.9)', color: '#fff',
+                  '&:hover': { background: '#0ea5e9' },
+                }}>
+                  <Edit size={13} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <Box>
+              <Typography sx={{ color: '#f8fafc', fontWeight: 800, fontSize: { xs: '1.4rem', md: '1.8rem' }, letterSpacing: '-0.02em', mb: 0.5 }}>
+                {user.username || user.email || 'User'}
+              </Typography>
+              <Typography sx={{ color: '#64748b', fontSize: '0.9rem' }}>{user.email || ''}</Typography>
+              <Chip label="Free Plan" size="small" sx={{ mt: 1, background: 'rgba(245,158,11,0.12)', color: GOLD, border: `1px solid rgba(245,158,11,0.3)`, fontWeight: 700, fontSize: '0.72rem', borderRadius: '50px' }} />
             </Box>
           </Box>
         </Box>
 
-        <Box sx={{ p: 4 }}>
-          {/* User Details Section */}
-          <List sx={{ py: 2 }}>
-            {userDetails.map((detail, index) => (
-              <ListItem
-                key={index}
-                sx={{
-                  py: 2,
-                  px: 3,
-                  mb: 2,
-                  borderRadius: 2,
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                  }
-                }}
-              >
-                <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                  {detail.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={detail.label}
-                  secondary={detail.value}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    color: 'textSecondary'
-                  }}
-                  secondaryTypographyProps={{
-                    variant: 'body1',
-                    color: 'textPrimary',
-                    fontWeight: 500
-                  }}
-                />
-                <ChevronRight size={20} color={theme.palette.text.secondary} />
-              </ListItem>
+        {/* Details */}
+        <Box sx={{ px: { xs: 3, md: 6 }, pt: 4, pb: 2 }}>
+          <Typography sx={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 2 }}>Account Details</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {details.map(({ icon, label, value, color }) => (
+              <Box key={label} sx={{
+                display: 'flex', alignItems: 'center', gap: 2, px: 2.5, py: 2,
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px', transition: 'all 0.2s ease',
+                '&:hover': { background: 'rgba(255,255,255,0.05)', borderColor: `${color}30` },
+              }}>
+                <Box sx={{ width: 38, height: 38, borderRadius: '10px', background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+                  {icon}
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</Typography>
+                  <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</Typography>
+                </Box>
+              </Box>
             ))}
-          </List>
+          </Box>
+        </Box>
 
-          <Divider sx={{ my: 4 }} />
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mx: { xs: 3, md: 6 }, my: 1 }} />
 
-          {/* Premium Banner */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 4,
-              borderRadius: 3,
-              background: `linear-gradient(135deg, ${theme.palette.warning.light} 0%, ${theme.palette.warning.main} 100%)`,
-              color: '#ffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 2
-            }}
-          >
+        {/* Upgrade banner */}
+        <Box sx={{ px: { xs: 3, md: 6 }, py: 3 }}>
+          <Box sx={{
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(249,115,22,0.08) 100%)',
+            border: '1px solid rgba(245,158,11,0.25)', borderRadius: '16px',
+            px: 3, py: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2,
+          }}>
             <Box>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Upgrade to Premium
+              <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '1rem', mb: 0.5 }}>
+                ✨ Upgrade to Professional
               </Typography>
-              <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                Unlock advanced features and unlimited usage
+              <Typography sx={{ color: '#64748b', fontSize: '0.88rem' }}>
+                Unlock unlimited processing, priority support, and custom voice models.
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              startIcon={<Star size={18} />}
-              sx={{
-                backgroundColor: '#ffff',
-                color: theme.palette.warning.main,
-                px: 4,
-                py: 1.5,
-                borderRadius: 8,
-                '&:hover': {
-                  backgroundColor: alpha('#ffff', 0.9)
-                }
-              }}
-            >
+            <Button startIcon={<Star size={16} />} sx={{
+              background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#fff',
+              fontWeight: 700, borderRadius: '50px', px: 3, py: 1.1, fontSize: '0.88rem', flexShrink: 0,
+              boxShadow: '0 4px 16px rgba(245,158,11,0.35)',
+              '&:hover': { boxShadow: '0 6px 24px rgba(245,158,11,0.5)', transform: 'translateY(-1px)' },
+            }}>
               Upgrade Now
             </Button>
-          </Paper>
-
-          {/* Action Buttons */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 2,
-              mt: 4
-            }}
-          >
-            <Button
-              variant="outlined"
-              startIcon={<Settings size={18} />}
-              sx={{
-                borderRadius: 8,
-                px: 3,
-                py: 1,
-                borderColor: alpha(theme.palette.text.primary, 0.1),
-                '&:hover': {
-                  borderColor: alpha(theme.palette.text.primary, 0.2),
-                  backgroundColor: alpha(theme.palette.text.primary, 0.02)
-                }
-              }}
-            >
-              Settings
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<LogOut size={18} />}
-              color="error"
-              onClick={() => {
-                localStorage.removeItem('user');
-                window.location.reload();
-              }}
-              sx={{
-                borderRadius: 8,
-                px: 3,
-                py: 1,
-                borderColor: alpha(theme.palette.error.main, 0.3),
-                color: theme.palette.error.main,
-                '&:hover': {
-                  borderColor: theme.palette.error.main,
-                  backgroundColor: alpha(theme.palette.error.main, 0.04)
-                }
-              }}
-            >
-              Logout
-            </Button>
           </Box>
         </Box>
-      </Paper>
+
+        {/* Actions */}
+        <Box sx={{ px: { xs: 3, md: 6 }, pb: 4, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+          <Button startIcon={<Settings size={16} />} sx={{
+            borderRadius: '50px', px: 2.5, py: 1, fontWeight: 600, fontSize: '0.88rem',
+            borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            '&:hover': { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.2)', color: '#f8fafc' },
+          }}>
+            Settings
+          </Button>
+          <Button startIcon={<LogOut size={16} />}
+            onClick={() => { localStorage.removeItem('user'); localStorage.removeItem('loginAt'); window.location.reload(); }}
+            sx={{
+              borderRadius: '50px', px: 2.5, py: 1, fontWeight: 600, fontSize: '0.88rem',
+              border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444',
+              '&:hover': { background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.5)' },
+            }}>
+            Logout
+          </Button>
+        </Box>
+      </Box>
     </Container>
   );
 };

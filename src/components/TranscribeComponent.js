@@ -1,657 +1,273 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Snackbar,
-  Alert,
-  FormControl,
-  Select,
-  MenuItem,
-  IconButton,
-  Tabs,
-  Tab,
-  Chip,
-  Card,
-  CardContent,
-  Drawer,
+  Box, Typography, Button, Grid, Snackbar, Alert,
+  FormControl, Select, MenuItem, IconButton, Tab, Tabs,
+  Chip, Drawer, LinearProgress, InputLabel, Stack,
 } from '@mui/material';
 import {
-  CloudUpload as CloudUploadIcon,
-  Mic as MicIcon,
-  Stop as StopIcon,
-  PlayArrow as PlayArrowIcon,
-  Pause as PauseIcon,
-  DeleteOutline as DeleteOutlineIcon,
-  SwapHoriz,
-  Language as LanguageIcon,
-  Send as SendIcon,
+  CloudUpload, Mic, Stop, PlayArrow, Pause,
+  DeleteOutline, Send, CheckCircle,
 } from '@mui/icons-material';
 import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+import { LANGUAGES } from '../constants/languages';
 import ViewAudioComponent from './ViewAudioComponent';
 import UpgradePromptModal from './UpgradePromptModal';
 
-const languageOptions = [
-  { value: 'en', label: 'English' },
-  { value: 'lg', label: 'Luganda' },
-  { value: 'at', label: 'Ateso' },
-  { value: 'ac', label: 'Acholi' },
-  { value: 'sw', label: 'Swahili' },
-  { value: 'fr', label: 'French' },
-  { value: 'rw', label: 'Kinyarwanda' },
-  { value: 'nyn', label: 'Runyankore' },
-];
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const SELECT_SX = {
+  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+};
+const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
 
-const TranscribeComponent = () => {
-  // State management
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguages, setTargetLanguages] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [audioBlob, setAudioBlob] = useState(null);
+export default function TranscribeComponent() {
+  const [tab, setTab] = useState(0);
+  const [sourceLang, setSourceLang] = useState('en');
+  const [targetLangs, setTargetLangs] = useState([]);
+  const [file, setFile] = useState(null);
+  const [blob, setBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isAudioReady, setIsAudioReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [showSnackbar, setShowSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [loading, setLoading] = useState(false);
   const [docId, setDocId] = useState(null);
-  const [error, setError] = useState(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  
-  // Upgrade modal state
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeData, setUpgradeData] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [snack, setSnack] = useState({ open: false, msg: '', sev: 'success' });
+  const [upgradeModal, setUpgradeModal] = useState({ open: false, data: null });
 
-  // Refs
-  const mediaRecorder = useRef(null);
-  const mediaStream = useRef(null);
-  const audioPlayerRef = useRef(null);
-  const uploadInputRef = useRef(null);
+  const recorder = useRef(null);
+  const stream = useRef(null);
+  const player = useRef(null);
+  const fileInput = useRef(null);
 
-  // User state management
-  const [user, setUser] = useState({ username: '', userId: '' });
+  const getUser = () => JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Load user from localStorage
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    console.log('🔍 TranscribeComponent: Loading user from localStorage:', storedUser);
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      console.log('🔍 TranscribeComponent: Parsed user data:', userData);
-      console.log('🔍 TranscribeComponent: User ID field:', userData.userId);
-      console.log('🔍 TranscribeComponent: All user fields:', Object.keys(userData));
-      setUser(userData);
-    } else {
-      console.log('🔍 TranscribeComponent: No user found in localStorage');
-    }
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup media stream and recorder
-      if (mediaStream.current) {
-        mediaStream.current.getTracks().forEach(track => track.stop());
-      }
-      if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-        mediaRecorder.current.stop();
-      }
-      // Cleanup audio URL
-      if (audioURL) {
-        URL.revokeObjectURL(audioURL);
-      }
-    };
+  useEffect(() => () => {
+    stream.current?.getTracks().forEach(t => t.stop());
+    if (audioURL) URL.revokeObjectURL(audioURL);
   }, [audioURL]);
 
-  // Notification helper
-  const showNotification = (message, severity = 'success') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setShowSnackbar(true);
-  };
+  const notify = (msg, sev = 'success') => setSnack({ open: true, msg, sev });
 
-  const handleCloseSnackbar = () => {
-    setShowSnackbar(false);
-  };
-
-  // Input validation
-  const validateInput = () => {
-    if (targetLanguages.length === 0) {
-      showNotification('Please select at least one target language', 'error');
-      return false;
-    }
-    return true;
-  };
-
-  // Recording functionality
   const toggleRecording = async () => {
-    // Prevent multiple operations
-    if (isLoading) {
-      showNotification('Please wait for current operation to complete', 'warning');
-      return;
-    }
-    
     if (isRecording) {
-      try {
-        // Stop the recording
-        if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-          mediaRecorder.current.stop();
-        }
-        
-        // Stop all tracks in the stream
-        if (mediaStream.current) {
-          mediaStream.current.getTracks().forEach(track => {
-            track.stop();
-          });
-          mediaStream.current = null;
-        }
-        
-        setIsRecording(false);
-        showNotification('Recording stopped', 'success');
-      } catch (error) {
-        console.error('Error stopping recording:', error);
-        showNotification('Error stopping recording', 'error');
-        setIsRecording(false);
-      }
+      recorder.current?.stop();
+      stream.current?.getTracks().forEach(t => t.stop());
+      stream.current = null;
+      setIsRecording(false);
     } else {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaStream.current = stream; // Store stream reference
-        const recorder = new MediaRecorder(stream);
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.current = s;
         const chunks = [];
-
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunks.push(e.data);
-          }
+        const mr = new MediaRecorder(s);
+        mr.ondataavailable = e => e.data.size > 0 && chunks.push(e.data);
+        mr.onstop = () => {
+          const b = new Blob(chunks, { type: 'audio/webm' });
+          if (b.size > 0) { setBlob(b); setAudioURL(URL.createObjectURL(b)); }
+          else notify('No audio recorded', 'warning');
         };
-        
-        recorder.onstop = () => {
-          try {
-            const blob = new Blob(chunks, { type: 'audio/webm' });
-            if (blob.size > 0) {
-              setAudioBlob(blob);
-              setAudioURL(URL.createObjectURL(blob));
-              setIsAudioReady(false); // Reset ready state for new audio
-              showNotification('Recording completed', 'success');
-            } else {
-              showNotification('No audio data recorded', 'warning');
-            }
-          } catch (error) {
-            console.error('Error processing recording:', error);
-            showNotification('Error processing recording', 'error');
-          }
-        };
-        
-        recorder.onerror = (event) => {
-          console.error('MediaRecorder error:', event.error);
-          showNotification('Recording error occurred', 'error');
-          setIsRecording(false);
-        };
-
-        recorder.start(1000); // Record in 1-second chunks
-        mediaRecorder.current = recorder;
+        mr.start(1000);
+        recorder.current = mr;
         setIsRecording(true);
-        showNotification('Recording started', 'success');
-      } catch (error) {
-        console.error('Recording error:', error);
-        showNotification('Error accessing microphone', 'error');
-        setIsRecording(false);
-      }
+      } catch { notify('Microphone access denied', 'error'); }
     }
   };
 
-  // File handling
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      showNotification('File selected successfully');
-    }
+  const discardRecording = () => {
+    stream.current?.getTracks().forEach(t => t.stop());
+    if (audioURL) URL.revokeObjectURL(audioURL);
+    setBlob(null); setAudioURL(null); setIsPlaying(false);
+    if (player.current) player.current.pause();
   };
 
-  // Audio playback controls
-  const handlePlayPause = async () => {
-    if (!audioPlayerRef.current || !audioURL) return;
-    
-    try {
-    if (isPlaying) {
-      audioPlayerRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        // Ensure audio is loaded before playing
-        if (audioPlayerRef.current.readyState < 2) {
-          // Audio not loaded yet, wait for it
-          audioPlayerRef.current.addEventListener('canplay', () => {
-            audioPlayerRef.current.play().catch(console.error);
-          }, { once: true });
-    } else {
-          await audioPlayerRef.current.play();
-          setIsPlaying(true);
-        }
-      }
-    } catch (error) {
-      console.error('Audio playback error:', error);
-      showNotification('Error playing audio', 'error');
-      setIsPlaying(false);
-    }
+  const togglePlay = () => {
+    if (!player.current || !audioURL) return;
+    if (isPlaying) { player.current.pause(); setIsPlaying(false); }
+    else { player.current.play().then(() => setIsPlaying(true)).catch(() => {}); }
   };
 
-  const handleDiscardRecording = () => {
-    // Cleanup media stream
-    if (mediaStream.current) {
-      mediaStream.current.getTracks().forEach(track => track.stop());
-      mediaStream.current = null;
-    }
-    
-    // Cleanup recorder
-    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-      mediaRecorder.current.stop();
-    }
-    
-    // Cleanup audio URL
-    if (audioURL) {
-      URL.revokeObjectURL(audioURL);
-    }
-    
-    setAudioBlob(null);
-    setAudioURL(null);
-    setIsAudioReady(false);
-    setIsPlaying(false);
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-    }
-    showNotification('Recording discarded', 'info');
-  };
-
-  // Submit functionality
   const handleSubmit = async () => {
-    console.log('🚀 Starting handleSubmit...');
-    console.log('👤 User in handleSubmit:', user);
-    console.log('🆔 User ID in handleSubmit:', user.userId);
-    
-    if (!validateInput()) return;
-
-    // Close any existing drawer and reset form
-    setIsDrawerOpen(false);
-    setDocId(null);
-    setError(null);
-
-    setIsLoading(true);
-
+    if (!targetLangs.length) { notify('Select at least one target language', 'error'); return; }
+    if (tab === 0 && !file) { notify('Please select a file', 'error'); return; }
+    if (tab === 1 && !blob) { notify('Please record audio first', 'error'); return; }
+    setLoading(true); setDocId(null);
     try {
-      console.log('🔍 Checking usage limits...');
-      // Check usage limits before making request
-      const usageResult = await checkUsageBeforeRequest('upload');
-      console.log('✅ Usage check result:', usageResult);
-      
-      // If usage limit exceeded, show upgrade modal
-      if (!usageResult.allowed) {
-        console.log('🚫 Usage limit exceeded, showing upgrade modal');
-        setUpgradeData({
-          currentUsage: usageResult.current_usage || 0,
-          limit: usageResult.limit || 0,
-          endpoint: 'upload',
-          tier: usageResult.tier || 'free_trial'
-        });
-        setShowUpgradeModal(true);
-        setIsLoading(false);
+      const usage = await checkUsageBeforeRequest('upload');
+      if (!usage.allowed) {
+        setUpgradeModal({ open: true, data: { currentUsage: usage.current_usage, limit: usage.limit, tier: usage.tier } });
         return;
       }
-
-      // Get user from localStorage
-      console.log('🔍 User object:', user);
-      console.log('🔍 User.userId:', user.userId);
-      console.log('🔍 User keys:', Object.keys(user));
-      console.log('🔍 Raw localStorage:', localStorage.getItem('user'));
-      
-      if (!user.userId) {
-        console.error('❌ User not authenticated - userId is missing');
-        throw new Error('User not authenticated');
-      }
-      console.log('✅ User authenticated:', user.userId);
-
-      let response;
-    if (selectedTab === 0) {
-        // File upload
-      if (!selectedFile) {
-          throw new Error('Please select a file to upload');
-        }
-        response = await transcriptionAPI.uploadAudio(
-          selectedFile,
-          sourceLanguage,
-          targetLanguages,
-          user.userId
-        );
-      } else {
-        // Recorded audio
-        if (!audioBlob) {
-          throw new Error('Please record audio first');
-        }
-        response = await transcriptionAPI.uploadRecordedAudio(
-          audioBlob,
-          sourceLanguage,
-          targetLanguages,
-          user.userId
-        );
-      }
-
-      setDocId(response.doc_id);
-      setIsDrawerOpen(true);
-      showNotification('Audio uploaded successfully!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      const errorInfo = handleAPIError(error, 'upload');
-      
-      if (errorInfo.shouldUpgrade) {
-        setError('Please upgrade your subscription to continue');
-        // Trigger upgrade modal
-        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
-          detail: { message: errorInfo.message }
-        }));
-    } else {
-        setError(errorInfo.message || 'Upload failed. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
+      const { uid, userId } = getUser();
+      const id = uid || userId;
+      if (!id) { notify('Please log in again', 'error'); return; }
+      const res = tab === 0
+        ? await transcriptionAPI.uploadAudio(file, sourceLang, targetLangs, id)
+        : await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, targetLangs, id);
+      setDocId(res.doc_id);
+      setDrawerOpen(true);
+      notify('Transcription submitted!');
+    } catch (e) {
+      const info = handleAPIError(e, 'upload');
+      if (info.shouldUpgrade) window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: info }));
+      else notify(info.message || 'Upload failed. Please try again.', 'error');
+    } finally { setLoading(false); }
   };
 
   return (
-    <Box sx={{ width: '100%', py: 3, px: 2 }}>
-        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-              Voice Recognition & Transcription
-            </Typography>
-
-            {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-              <Tabs
-                value={selectedTab}
-                onChange={(_, newValue) => setSelectedTab(newValue)}
-                sx={{
-                  '& .MuiTab-root': {
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                <Tab label="Upload Audio/Video" />
-                <Tab label="Record Audio" />
-              </Tabs>
-            </Box>
-
-            {/* Language Selection */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Source Language
-                </Typography>
-                <FormControl fullWidth>
-                  <Select
-                    value={sourceLanguage}
-                    onChange={(e) => setSourceLanguage(e.target.value)}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    {languageOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LanguageIcon sx={{ color: 'primary.main' }} />
-                          {option.label}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Target Languages
-                </Typography>
-                <FormControl fullWidth>
-                  <Select
-                    multiple
-                    value={targetLanguages}
-                    onChange={(e) => setTargetLanguages(e.target.value)}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value) => {
-                          const option = languageOptions.find(opt => opt.value === value);
-                          return (
-                            <Chip
-                              key={value}
-                              label={option?.label || value}
-                              size="small"
-                              sx={{ backgroundColor: 'primary.main', color: 'white' }}
-                            />
-                          );
-                        })}
-                      </Box>
-                    )}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    {languageOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LanguageIcon sx={{ color: 'primary.main' }} />
-                          {option.label}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            {/* File Upload or Recording Section */}
-            {selectedTab === 0 ? (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Upload Audio/Video File
-                </Typography>
-                <Box
-                  sx={{
-                    border: '2px dashed',
-                    borderColor: 'primary.main',
-                    borderRadius: '12px',
-                    p: 4,
-                    textAlign: 'center',
-                    backgroundColor: 'rgba(25, 118, 210, 0.02)',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
-                    },
-                  }}
-                  onClick={() => uploadInputRef.current?.click()}
-                >
-                  <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                  <Typography variant="body1" sx={{ mb: 1 }}>
-                    Click to upload or drag and drop
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Supports MP3, WAV, MP4, AVI (Max 10MB)
-                  </Typography>
-                  <input
-                    ref={uploadInputRef}
-                    type="file"
-                    accept="audio/*,video/*"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </Box>
-                {selectedFile && (
-                  <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
-                    <Typography variant="body2">
-                      Selected: {selectedFile.name}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            ) : (
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Record Audio
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
-                  <Button
-                    variant={isRecording ? "contained" : "outlined"}
-                    color={isRecording ? "error" : "primary"}
-                    startIcon={isRecording ? <StopIcon /> : <MicIcon />}
-                    onClick={toggleRecording}
-                    sx={{ borderRadius: '24px', px: 3 }}
-                  >
-                    {isRecording ? 'Stop Recording' : 'Start Recording'}
-                  </Button>
-                  {audioURL && (
-                    <>
-                      <Button
-                        variant="outlined"
-                        startIcon={isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                        onClick={handlePlayPause}
-                        disabled={!isAudioReady}
-                        sx={{ borderRadius: '24px' }}
-                      >
-                        {!isAudioReady ? 'Loading...' : (isPlaying ? 'Pause' : 'Play')}
-                      </Button>
-                      <IconButton
-                        onClick={handleDiscardRecording}
-                        sx={{ color: 'error.main' }}
-                      >
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    </>
-                  )}
-                </Box>
-                {audioURL && (
-                  <audio
-                    ref={audioPlayerRef}
-                    src={audioURL}
-                    style={{ display: 'none' }}
-                    onEnded={() => setIsPlaying(false)}
-                    onError={(e) => {
-                      console.error('Audio error:', e);
-                      showNotification('Error loading audio', 'error');
-                      setIsPlaying(false);
-                    }}
-                    onLoadStart={() => {
-                      console.log('Audio loading started');
-                      setIsAudioReady(false);
-                    }}
-                    onCanPlay={() => {
-                      console.log('Audio can play');
-                      setIsAudioReady(true);
-                    }}
-                    preload="metadata"
-                  />
-                )}
-              </Box>
-            )}
-
-            {/* Submit Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleSubmit}
-                disabled={isLoading || (!selectedFile && !audioBlob)}
-                startIcon={<SendIcon />}
-                sx={{
-                  borderRadius: '24px',
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                }}
-              >
-                {isLoading ? 'Processing...' : 'Transcribe Audio'}
-              </Button>
-            </Box>
-
-            {/* Error Display */}
-            {error && (
-              <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
-                {typeof error === 'string' ? error : error.message || 'An error occurred'}
-              </Alert>
-            )}
-
-            {/* Results */}
-            {docId && (
-              <Box sx={{ mt: 4, p: 3, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '12px' }}>
-                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                  Transcription Complete!
-                </Typography>
-                <Typography variant="body1">
-                  Document ID: {docId}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Your transcription has been processed successfully. View the results in the drawer.
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  sx={{ mt: 2 }}
-                  onClick={() => setIsDrawerOpen(true)}
-                >
-                  View Results
-                </Button>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Snackbar */}
-        <Snackbar
-          open={showSnackbar}
-          autoHideDuration={6000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-
-        {/* Results Drawer */}
-        <Drawer
-          anchor="right"
-          open={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
+    <Box>
+      {/* Mode Tabs */}
+      <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)}
           sx={{
-            '& .MuiDrawer-paper': {
-              width: { xs: '100%', sm: '600px' },
-              borderTopLeftRadius: 16,
-              borderBottomLeftRadius: 16,
-            },
+            minHeight: 40,
+            '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 },
           }}
-          aria-label="Transcription results drawer"
         >
-          {docId && (
-            <ViewAudioComponent 
-              audioId={docId}
-              onError={(error) => {
-                showNotification(error.message, 'error');
-                setIsDrawerOpen(false);
+          {['Upload File', 'Record Audio'].map((label, i) => (
+            <Tab key={i} label={label} sx={{
+              textTransform: 'none', fontWeight: 600, fontSize: '0.85rem',
+              color: tab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+              minHeight: 40,
+              '&.Mui-selected': { color: '#38bdf8' },
+            }} />
+          ))}
+        </Tabs>
+      </Box>
+
+      {/* Language selectors */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+            <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel sx={LABEL_SX}>Target Languages</InputLabel>
+            <Select
+              multiple value={targetLangs} label="Target Languages"
+              onChange={e => setTargetLangs(e.target.value)} sx={SELECT_SX}
+              renderValue={sel => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {sel.map(v => (
+                    <Chip key={v} label={LANGUAGES.find(l => l.value === v)?.label || v} size="small"
+                      sx={{ background: 'rgba(14,165,233,0.2)', color: '#38bdf8', fontSize: '0.72rem', borderRadius: '50px' }} />
+                  ))}
+                </Box>
+              )}
+            >
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      {/* Upload zone */}
+      {tab === 0 && (
+        <>
+          <input ref={fileInput} type="file" accept="audio/*,video/*" hidden onChange={e => { setFile(e.target.files[0]); e.target.value = ''; }} />
+          <Box onClick={() => fileInput.current?.click()} sx={{
+            ...GLASS,
+            p: 4, textAlign: 'center', cursor: 'pointer', mb: 3,
+            borderStyle: 'dashed',
+            borderColor: file ? '#10b981' : 'rgba(255,255,255,0.08)',
+            background: file ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+            transition: 'all 0.25s ease',
+            '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)', transform: 'scale(1.005)' },
+          }}>
+            {file ? (
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
+                <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
+                <Typography sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Typography>
+              </Stack>
+            ) : (
+              <>
+                <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <CloudUpload sx={{ fontSize: 26, color: '#0ea5e9' }} />
+                </Box>
+                <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Drop your file here or click to browse</Typography>
+                <Typography sx={{ color: '#64748b', fontSize: '0.8rem' }}>MP3, WAV, MP4, AVI · Max 10 MB</Typography>
+              </>
+            )}
+          </Box>
+        </>
+      )}
+
+      {/* Record zone */}
+      {tab === 1 && (
+        <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+            <Button
+              variant={isRecording ? 'contained' : 'outlined'}
+              startIcon={isRecording ? <Stop /> : <Mic />}
+              onClick={toggleRecording}
+              sx={{
+                borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 2.5,
+                ...(isRecording
+                  ? { background: 'rgba(239,68,68,0.8)', color: '#fff', borderColor: 'transparent', '&:hover': { background: 'rgba(220,38,38,0.9)' } }
+                  : { borderColor: '#0ea5e9', color: '#38bdf8', '&:hover': { background: 'rgba(14,165,233,0.08)' } }),
               }}
-            />
-          )}
-        </Drawer>
-        
-        {/* Upgrade Prompt Modal */}
-        <UpgradePromptModal
-          open={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          currentUsage={upgradeData?.currentUsage || 0}
-          limit={upgradeData?.limit || 0}
-          endpoint={upgradeData?.endpoint || 'upload'}
-          tier={upgradeData?.tier || 'free_trial'}
-        />
+            >
+              {isRecording ? 'Stop Recording' : 'Start Recording'}
+            </Button>
+            {isRecording && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444', animation: 'pulse 1s infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } } }} />
+                <Typography sx={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>Recording…</Typography>
+              </Box>
+            )}
+            {audioURL && !isRecording && (
+              <>
+                <Button variant="outlined" size="small" startIcon={isPlaying ? <Pause /> : <PlayArrow />} onClick={togglePlay}
+                  sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', '&:hover': { borderColor: '#8b5cf6', color: '#a78bfa' } }}>
+                  {isPlaying ? 'Pause' : 'Play'}
+                </Button>
+                <IconButton onClick={discardRecording} size="small" sx={{ color: '#ef4444', '&:hover': { background: 'rgba(239,68,68,0.1)' } }}>
+                  <DeleteOutline fontSize="small" />
+                </IconButton>
+                <audio ref={player} src={audioURL} onEnded={() => setIsPlaying(false)} style={{ display: 'none' }} />
+              </>
+            )}
+          </Stack>
+        </Box>
+      )}
+
+      {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+
+      <Button
+        variant="contained" size="large" onClick={handleSubmit}
+        disabled={loading || (tab === 0 ? !file : !blob)}
+        startIcon={<Send />}
+        sx={{
+          borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
+          background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.35)',
+          '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(14,165,233,0.5)', transform: 'translateY(-1px)' },
+          '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+        }}
+      >
+        {loading ? 'Processing…' : 'Transcribe'}
+      </Button>
+
+      <Snackbar open={snack.open} autoHideDuration={5000} onClose={() => setSnack(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px', fontWeight: 600 }}>{snack.msg}</Alert>
+      </Snackbar>
+
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
+        {docId && <ViewAudioComponent audioId={docId} onError={e => { notify(e.message, 'error'); setDrawerOpen(false); }} />}
+      </Drawer>
+
+      <UpgradePromptModal open={upgradeModal.open} onClose={() => setUpgradeModal({ open: false, data: null })}
+        currentUsage={upgradeModal.data?.currentUsage || 0} limit={upgradeModal.data?.limit || 0}
+        endpoint="upload" tier={upgradeModal.data?.tier || 'free_trial'} />
     </Box>
   );
-};
-
-export default TranscribeComponent;
+}

@@ -1,408 +1,192 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  IconButton,
-  MenuItem,
-  Paper,
-  Select,
-  TextField,
-  Typography,
-  CircularProgress,
-  Alert,
-  Tab,
-  Tabs,
-  Drawer
+  Box, Button, FormControl, Grid, Select, MenuItem,
+  TextField, Alert, Tab, Tabs, Drawer, LinearProgress,
+  InputLabel, Chip, IconButton, Stack,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import {
-  VolumeUp,
-  CloudUpload,
-  SwapHoriz,
-  Language,
-  InsertDriveFile,
-} from '@mui/icons-material';
+import { VolumeUp, CloudUpload, SwapHoriz, CheckCircle } from '@mui/icons-material';
 import ViewttsAudioComponent from './ViewttsAudioComponent';
 import { ttsAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+import { LANGUAGES } from '../constants/languages';
 
-const SUPPORTED_LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'lg', label: 'Luganda' },
-  { value: 'sw', label: 'Kiswahili' },
-  { value: 'ac', label: 'Acholi' },
-  { value: 'at', label: 'Ateso' },
-  { value: 'nyn', label: 'Runyankore' },
-];
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const SELECT_SX = {
+  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+};
+const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
 
-const SUPPORTED_FILE_TYPES = [
-  { type: 'PDF', extension: '.pdf' },
-  { type: 'Word', extension: '.doc, .docx' },
-  { type: 'Text', extension: '.txt' },
-];
+export default function SynthesizeComponent() {
+  const [tab, setTab] = useState(0);
+  const [sourceLang, setSourceLang] = useState('en');
+  const [targetLangs, setTargetLangs] = useState([]);
+  const [text, setText] = useState('');
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [docId, setDocId] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-// Custom styled components
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: '16px',
-  background: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(12px)',
-  border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)', // Light black shadow
-}));
+  const getUser = () => JSON.parse(localStorage.getItem('user') || '{}');
 
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-  '& .MuiTab-root': {
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '1rem',
-    color: '#000000', // Black text
-    '&.Mui-selected': {
-      color: '#1976d2', // Blue for selected tab
-    },
-  },
-  '& .MuiTabs-indicator': {
-    backgroundColor: '#1976d2', // Blue indicator
-  },
-}));
+  const swapLangs = () => {
+    if (targetLangs.length === 1) { setSourceLang(targetLangs[0]); setTargetLangs([sourceLang]); }
+  };
 
-const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: '12px',
-  textTransform: 'none',
-  fontWeight: 600,
-  padding: theme.spacing(1, 4),
-  background: 'linear-gradient(45deg, #1976d2, #42a5f5)', // Blue gradient
-  color: '#ffffff',
-  '&:hover': {
-    background: 'linear-gradient(45deg, #1565c0, #2196f3)', // Darker blue on hover
-    boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
-  },
-  '&:disabled': {
-    background: 'rgba(25, 118, 210, 0.5)',
-    color: '#ffffff',
-  },
-  transition: 'all 0.3s ease',
-}));
+  const handleGenerate = async () => {
+    setError(null); setLoading(true); setDocId(null); setDrawerOpen(false);
+    try {
+      const { userId } = getUser();
+      if (!userId) throw new Error('Please log in to use text-to-speech');
+      if (tab === 0) {
+        if (!text.trim()) throw new Error('Please enter text to synthesize');
+        if (text.length > 5000) throw new Error('Text exceeds 5000 character limit');
+        await checkUsageBeforeRequest('vocify');
+        const res = await ttsAPI.synthesizeText(text, sourceLang, userId);
+        if (!res.doc_id) throw new Error('No document ID received');
+        setDocId(res.doc_id);
+      } else {
+        if (!file) throw new Error('Please select a document');
+        if (file.size > 10 * 1024 * 1024) throw new Error('File must be under 10MB');
+        if (!targetLangs.length) throw new Error('Select at least one target language');
+        await checkUsageBeforeRequest('synthesize_document');
+        const res = await ttsAPI.translateDocumentWithTTS(file, sourceLang, targetLangs, userId);
+        if (!res.doc_id) throw new Error('No document ID received');
+        setDocId(res.doc_id);
+      }
+      setDrawerOpen(true);
+    } catch (e) {
+      const info = handleAPIError(e, 'synthesize');
+      if (info.shouldUpgrade) window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: info }));
+      setError(info.message || e.message || 'Generation failed. Please try again.');
+    } finally { setLoading(false); }
+  };
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
-    backgroundColor: '#ffffff',
-    '& fieldset': {
-      borderColor: 'rgba(0, 0, 0, 0.1)', // Subtle black border
-    },
-    '&:hover fieldset': {
-      borderColor: '#1976d2', // Blue on hover
-    },
-  },
-  '& .MuiInputLabel-root': {
-    color: '#000000', // Black label
-    '&.Mui-focused': {
-      color: '#1976d2', // Blue when focused
-    },
-  },
-}));
+  return (
+    <Box>
+      {/* Tabs */}
+      <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <Tabs value={tab} onChange={(_, v) => { setTab(v); setError(null); }}
+          sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 } }}>
+          {[
+            { label: 'Text to Speech', icon: <VolumeUp sx={{ fontSize: 17 }} /> },
+            { label: 'Document to Speech', icon: <CloudUpload sx={{ fontSize: 17 }} /> },
+          ].map(({ label, icon }, i) => (
+            <Tab key={i} label={label} icon={icon} iconPosition="start" sx={{
+              textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
+              color: tab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+              '&.Mui-selected': { color: '#38bdf8' },
+            }} />
+          ))}
+        </Tabs>
+      </Box>
 
-const LanguageSelector = ({ sourceLang, targetLangs, onSourceChange, onTargetChange }) => (
-  <Box sx={{ mb: 4 }}>
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: '12px',
-        background: '#ffffff',
-        border: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)', // Light black shadow
-      }}
-    >
-      <Grid container spacing={3} alignItems="center">
-        <Grid item xs={12} md={5}>
-          <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
-            Source Language
-          </Typography>
-          <FormControl fullWidth>
-            <Select
-              value={sourceLang}
-              onChange={(e) => onSourceChange(e.target.value)}
-              sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <MenuItem key={lang.value} value={lang.value}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Language sx={{ color: '#1976d2' }} />
-                    <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
-                  </Box>
-                </MenuItem>
-              ))}
+      {/* Language selectors */}
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={5}>
+          <FormControl fullWidth size="small">
+            <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+            <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
-
-        <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-          <IconButton
-            onClick={() => {
-              if (targetLangs.length === 1) {
-                onSourceChange(targetLangs[0]);
-                onTargetChange([sourceLang]);
-              }
-            }}
-            sx={{
-              bgcolor: '#1976d2',
-              color: '#ffffff',
-              '&:hover': { bgcolor: '#1565c0' },
-              borderRadius: '50%',
-              p: 1.5,
-            }}
-          >
-            <SwapHoriz />
+        <Grid item xs={12} sm={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton onClick={swapLangs} sx={{
+            width: 36, height: 36, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)',
+            color: '#0ea5e9', '&:hover': { background: 'rgba(14,165,233,0.25)' },
+          }}>
+            <SwapHoriz fontSize="small" />
           </IconButton>
         </Grid>
-
-        <Grid item xs={12} md={5}>
-          <Typography variant="subtitle2" gutterBottom sx={{ color: '#000000', fontWeight: 500 }}>
-            Target Languages
-          </Typography>
-          <FormControl fullWidth>
-            <Select
-              multiple
-              value={targetLangs}
-              onChange={(e) => onTargetChange(e.target.value)}
-              sx={{ borderRadius: '12px', backgroundColor: '#ffffff' }}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <MenuItem key={lang.value} value={lang.value}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Language sx={{ color: '#1976d2' }} />
-                    <Typography sx={{ color: '#000000' }}>{lang.label}</Typography>
-                  </Box>
-                </MenuItem>
-              ))}
+        <Grid item xs={12} sm={5}>
+          <FormControl fullWidth size="small">
+            <InputLabel sx={LABEL_SX}>Target Languages</InputLabel>
+            <Select multiple value={targetLangs} label="Target Languages" onChange={e => setTargetLangs(e.target.value)} sx={SELECT_SX}
+              renderValue={sel => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {sel.map(v => <Chip key={v} label={LANGUAGES.find(l => l.value === v)?.label || v} size="small"
+                    sx={{ background: 'rgba(14,165,233,0.2)', color: '#38bdf8', fontSize: '0.72rem', borderRadius: '50px' }} />)}
+                </Box>
+              )}>
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
       </Grid>
-    </Paper>
-  </Box>
-);
 
-const SynthesizeComponent = () => {
-  const [user, setUser] = useState({ username: '', userId: '' });
-  const [activeTab, setActiveTab] = useState(0);
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguages, setTargetLanguages] = useState([]);
-  const [inputText, setInputText] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [processingStatus, setProcessingStatus] = useState(null);
-  const [taskId, setTaskId] = useState(null);
-  const [docId, setDocId] = useState(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+      {error && <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2.5, borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>{error}</Alert>}
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    console.log('🔵 SynthesizeComponent: Loading user from localStorage:', storedUser);
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      console.log('🔵 SynthesizeComponent: Parsed user data:', userData);
-      setUser(userData);
-    } else {
-      console.log('🔵 SynthesizeComponent: No user found in localStorage');
-    }
-  }, []);
-
-
-  const handleGenerate = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      setDocId(null);
-      setIsDrawerOpen(false);
-
-      // Check if user is authenticated
-      console.log('🔵 SynthesizeComponent: Current user state:', user);
-      console.log('🔵 SynthesizeComponent: user.userId:', user?.userId);
-      if (!user?.userId) {
-        throw new Error('Please log in to use text-to-speech services');
-      }
-
-      // Check usage limits before making request
-      if (activeTab === 0) {
-        await checkUsageBeforeRequest('vocify'); // Text-to-speech uses vocify endpoint
-      } else {
-        await checkUsageBeforeRequest('synthesize_document'); // Document-to-speech uses synthesize_document endpoint
-      }
-
-      let response;
-      if (activeTab === 0) {
-        if (inputText.length > 5000) {
-          throw new Error('Text exceeds maximum length of 5000 characters');
-        }
-        response = await ttsAPI.synthesizeText(inputText, sourceLanguage, user.userId);
-      } else {
-        if (!selectedFile) {
-          throw new Error('No file selected');
-        }
-        if (selectedFile.size > 10 * 1024 * 1024) {
-          throw new Error('File size exceeds 10MB limit');
-        }
-        response = await ttsAPI.translateDocumentWithTTS(selectedFile, sourceLanguage, targetLanguages, user.userId);
-      }
-
-      if (response.doc_id) {
-        setDocId(response.doc_id);
-        setIsDrawerOpen(true);
-      } else {
-        throw new Error('No document ID received from the server.');
-      }
-    } catch (err) {
-      console.error('Synthesis error:', err);
-      const errorInfo = handleAPIError(err, 'synthesize');
-      
-      if (errorInfo.shouldUpgrade) {
-        setError('Please upgrade your subscription to continue');
-        // Trigger upgrade modal
-        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
-          detail: { message: errorInfo.message }
-        }));
-      } else {
-        setError(errorInfo.message || 'Generation failed. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setError(null);
-    }
-  };
-
-  return (
-    <>
-    <Box sx={{ width: '100%', py: 3, px: 2 }}>
-        <StyledPaper elevation={0}>
-          <StyledTabs
-            value={activeTab}
-            onChange={(_, newValue) => {
-              setActiveTab(newValue);
-              setError(null);
-              setTaskId(null);
-              setProcessingStatus(null);
-            }}
-            centered
-            sx={{ mb: 4 }}
-          >
-            <Tab
-              icon={<VolumeUp />}
-              label="Text to Speech"
-              sx={{ minHeight: 72 }}
-            />
-            <Tab
-              icon={<CloudUpload />}
-              label="Document to Speech"
-              sx={{ minHeight: 72 }}
-            />
-          </StyledTabs>
-
-          <LanguageSelector
-            sourceLang={sourceLanguage}
-            targetLangs={targetLanguages}
-            onSourceChange={setSourceLanguage}
-            onTargetChange={setTargetLanguages}
-          />
-
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 3, bgcolor: '#ffffff', borderRadius: '12px' }}
-            >
-              {error}
-            </Alert>
-          )}
-
-          {activeTab === 0 ? (
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <StyledTextField
-                  fullWidth
-                  multiline
-                  rows={8}
-                  label="Enter text for speech synthesis"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  error={inputText.length > 5000}
-                  helperText={`${inputText.length}/5000 characters`}
-                />
-              </Grid>
-            </Grid>
-          ) : (
-            <Box sx={{ textAlign: 'center' }}>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                style={{ display: 'none' }}
-                id="file-upload"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="file-upload">
-                <StyledButton
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUpload />}
-                >
-                  Upload Document
-                </StyledButton>
-              </label>
-
-              {selectedFile && (
-                <Alert
-                  icon={<InsertDriveFile sx={{ color: '#1976d2' }} />}
-                  severity="info"
-                  sx={{ mb: 3, bgcolor: '#ffffff', borderRadius: '12px' }}
-                >
-                  {selectedFile.name}
-                </Alert>
+      {tab === 0 ? (
+        <TextField
+          fullWidth multiline rows={6}
+          label="Enter text for speech synthesis"
+          value={text} onChange={e => setText(e.target.value)}
+          error={text.length > 5000}
+          helperText={`${text.length} / 5000`}
+          sx={{
+            mb: 3,
+            '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
+            '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } },
+            '& .MuiFormHelperText-root': { color: '#64748b' },
+          }}
+        />
+      ) : (
+        <Box sx={{ mb: 3 }}>
+          <input type="file" accept=".pdf,.doc,.docx,.txt" id="synth-file" hidden onChange={e => { setFile(e.target.files[0]); e.target.value = ''; }} />
+          <label htmlFor="synth-file">
+            <Box component="span" sx={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              ...GLASS, p: 4, cursor: 'pointer',
+              borderStyle: 'dashed',
+              borderColor: file ? '#10b981' : 'rgba(255,255,255,0.08)',
+              background: file ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+              transition: 'all 0.25s ease',
+              '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
+            }}>
+              {file ? (
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
+                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Box>
+                </Stack>
+              ) : (
+                <>
+                  <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    <CloudUpload sx={{ fontSize: 26, color: '#8b5cf6' }} />
+                  </Box>
+                  <Box sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload document</Box>
+                  <Box sx={{ color: '#64748b', fontSize: '0.8rem' }}>PDF, DOC, DOCX, TXT · Max 10 MB</Box>
+                </>
               )}
-
-              <Typography variant="body2" sx={{ mt: 2, color: '#000000' }}>
-                Supported formats: PDF, DOC, DOCX, TXT (Max: 10MB)
-              </Typography>
             </Box>
-          )}
+          </label>
+        </Box>
+      )}
 
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-            <StyledButton
-              variant="contained"
-              onClick={handleGenerate}
-              disabled={loading || (!inputText && !selectedFile) || !sourceLanguage || targetLanguages.length === 0}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <VolumeUp />}
-            >
-              {loading ? 'Processing...' : 'Generate Speech'}
-            </StyledButton>
-          </Box>
-        </StyledPaper>
+      {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button variant="contained" size="large" onClick={handleGenerate}
+          disabled={loading || (tab === 0 ? !text.trim() : !file)}
+          startIcon={<VolumeUp />}
+          sx={{
+            borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
+            background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
+            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
+            '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+          }}>
+          {loading ? 'Generating…' : 'Generate Speech'}
+        </Button>
       </Box>
-      <Drawer
-        anchor="right"
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: { xs: '100%', sm: '600px' },
-            backgroundColor: '#ffffff',
-            borderLeft: '1px solid rgba(25, 118, 210, 0.1)', // Subtle blue border
-          },
-        }}
-      >
+
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
         {docId && <ViewttsAudioComponent audioId={docId} />}
       </Drawer>
-    </>
+    </Box>
   );
-};
-
-export default SynthesizeComponent;
+}

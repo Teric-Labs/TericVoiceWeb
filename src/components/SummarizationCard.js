@@ -1,32 +1,30 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  FormControl,
-  Select,
-  MenuItem,
-  Button,
-  Grid,
-  TextField,
-  Chip,
-  Snackbar,
-  Alert,
-  Drawer,
-  Card,
+  Box, Typography, Tabs, Tab, FormControl, Select, MenuItem,
+  Button, TextField, Snackbar, Alert, Drawer, LinearProgress, InputLabel,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
-  Article as ArticleIcon,
   AudioFile as AudioFileIcon,
   Movie as MovieIcon,
-  Language as LanguageIcon,
+  Article as ArticleIcon,
   Send as SendIcon,
+  CheckCircle,
 } from '@mui/icons-material';
-import ViewSummaryComponent from './ViewSummaryComponent ';
+import ViewSummaryComponent from './ViewSummaryComponent';
 import { summarizationAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 import UpgradePromptModal from './UpgradePromptModal';
+
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const SELECT_SX = {
+  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+};
+const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -40,21 +38,20 @@ const languageOptions = [
 ];
 
 const ALLOWED_FILE_TYPES = {
-  document: {
-    extensions: ['.pdf', '.doc', '.docx', '.txt'],
-    message: 'Please upload a PDF, DOC, DOCX, or TXT file'
-  },
-  audio: {
-    extensions: ['.wav', '.mp3'],
-    message: 'Please upload a WAV or MP3 file'
-  },
-  video: {
-    extensions: ['.mp4', '.avi', '.mov'],
-    message: 'Please upload an MP4, AVI, or MOV file'
-  }
+  document: { extensions: ['.pdf', '.doc', '.docx', '.txt'], message: 'Please upload a PDF, DOC, DOCX, or TXT file' },
+  audio:    { extensions: ['.wav', '.mp3'], message: 'Please upload a WAV or MP3 file' },
+  video:    { extensions: ['.mp4', '.avi', '.mov'], message: 'Please upload an MP4, AVI, or MOV file' },
 };
 
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB limit (increased from 100MB)
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+
+const TAB_ICONS = [
+  <ArticleIcon sx={{ fontSize: 17 }} />,
+  <CloudUploadIcon sx={{ fontSize: 17 }} />,
+  <AudioFileIcon sx={{ fontSize: 17 }} />,
+  <MovieIcon sx={{ fontSize: 17 }} />,
+];
+const TAB_LABELS = ['Paste Text', 'Upload Document', 'Upload Audio', 'Upload Video'];
 
 const SummarizationCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
@@ -66,375 +63,230 @@ const SummarizationCard = () => {
   const [error, setError] = useState(null);
   const [translationId, setTranslationId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  
-  // Debug drawer state changes
-  useEffect(() => {
-    console.log('📊 SummarizationCard - Drawer state changed:', isDrawerOpen);
-  }, [isDrawerOpen]);
-  const [showSnackbar, setShowSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  
-  // Upgrade modal state
+  const [snack, setSnack] = useState({ open: false, msg: '', sev: 'success' });
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeData, setUpgradeData] = useState(null);
-  
+
   const fileInputRef = useRef(null);
 
-  const showNotification = useCallback((message, severity = 'success') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setShowSnackbar(true);
-  }, []);
+  const notify = useCallback((msg, sev = 'success') => setSnack({ open: true, msg, sev }), []);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-        const userData = JSON.parse(storedUser);
-      console.log('🔍 SummarizationCard - User data loaded:', userData);
-      console.log('🆔 User ID (uid):', userData.uid);
-      console.log('🆔 User ID (userId):', userData.userId);
-        setUser(userData);
-    } else {
-      console.warn('⚠️ SummarizationCard - No user data found in localStorage');
-    }
+    const stored = localStorage.getItem('user');
+    if (stored) { try { setUser(JSON.parse(stored)); } catch {} }
   }, []);
 
-  const handleTabChange = useCallback((event, newValue) => {
+  const handleTabChange = useCallback((_, newValue) => {
     setActiveTab(newValue);
     setUploadedFile(null);
     setTextContent('');
     setTranslationId(null);
     setError(null);
-    console.log('Tab changed to:', newValue);
   }, []);
 
   const handleFileUpload = useCallback((event) => {
     const file = event.target.files[0];
-    if (!file) {
-      console.warn('No file selected');
-      return;
-    }
-
+    if (!file) return;
     const fileExtension = `.${file.name.split('.').pop().toLowerCase()}`;
     const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
     const allowedTypes = ALLOWED_FILE_TYPES[fileType];
-
     if (!allowedTypes.extensions.includes(fileExtension)) {
-      console.error('Invalid file type:', fileExtension);
       setUploadedFile(null);
-      showNotification(allowedTypes.message, 'error');
+      notify(allowedTypes.message, 'error');
       return;
     }
-
     if (file.size > MAX_FILE_SIZE) {
-      console.error('File too large:', file.size);
       setUploadedFile(null);
-      showNotification(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`, 'error');
+      notify(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`, 'error');
       return;
     }
-
     setUploadedFile(file);
-    showNotification(`File uploaded: ${file.name}`);
-    console.log('File uploaded:', file.name, 'Size:', file.size);
-  }, [activeTab, showNotification]);
+    notify(`File selected: ${file.name}`);
+  }, [activeTab, notify]);
 
   const handleSubmit = useCallback(async () => {
     if (!sourceLanguage || (!user.userId && !user.uid)) {
-      console.error('Missing required fields:', { sourceLanguage, userId: user.userId, uid: user.uid });
       setError('Please fill in all required fields');
       return;
     }
-
-    // Get the correct user ID (support both uid and userId)
     const userId = user.uid || user.userId;
-    console.log('🚀 SummarizationCard - Starting submission with userId:', userId);
-    console.log('📁 Active tab:', activeTab);
-    console.log('📝 Text content length:', textContent.length);
-    console.log('📁 Uploaded file:', uploadedFile?.name);
-
     setTranslationId(null);
     setIsDrawerOpen(false);
     setIsProcessing(true);
     setError(null);
-
     try {
-      // Check usage limits before making request
       const usageResult = await checkUsageBeforeRequest('summarize');
-      
-      // If usage limit exceeded, show upgrade modal
       if (!usageResult.allowed) {
-        setUpgradeData({
-          currentUsage: usageResult.current_usage || 0,
-          limit: usageResult.limit || 0,
-          endpoint: 'summarize',
-          tier: usageResult.tier || 'free_trial'
-        });
+        setUpgradeData({ currentUsage: usageResult.current_usage || 0, limit: usageResult.limit || 0, endpoint: 'summarize', tier: usageResult.tier || 'free_trial' });
         setShowUpgradeModal(true);
         setIsProcessing(false);
         return;
       }
-
       let response;
       switch (activeTab) {
-        case 0: // Text
-          if (!textContent.trim()) {
-            throw new Error('Text content is required');
-          }
+        case 0:
+          if (!textContent.trim()) throw new Error('Text content is required');
           response = await summarizationAPI.summarizeText(textContent, userId);
           break;
-        case 1: // Document
-          if (!uploadedFile) {
-            throw new Error('Please select a document to upload');
-          }
+        case 1:
+          if (!uploadedFile) throw new Error('Please select a document to upload');
           response = await summarizationAPI.summarizeDocument(uploadedFile, sourceLanguage, userId);
           break;
-        case 2: // Audio
-          if (!uploadedFile) {
-            throw new Error('Please select an audio file to upload');
-          }
+        case 2:
+          if (!uploadedFile) throw new Error('Please select an audio file to upload');
           response = await summarizationAPI.summarizeUpload(uploadedFile, sourceLanguage, userId);
           break;
-        case 3: // Video
-          if (!uploadedFile) {
-            throw new Error('Please select a video file to upload');
-          }
+        case 3:
+          if (!uploadedFile) throw new Error('Please select a video file to upload');
           response = await summarizationAPI.summarizeAudioFromVideo(uploadedFile, sourceLanguage, userId);
           break;
         default:
           throw new Error('Invalid tab selection');
       }
-
-      console.log('📊 SummarizationCard - API response:', response);
-
       if (response?.doc_id) {
-        console.log('📊 SummarizationCard - Setting translationId:', response.doc_id);
         setTranslationId(response.doc_id);
         setIsDrawerOpen(true);
-        showNotification('Summary generated successfully');
-        console.log('📊 SummarizationCard - Drawer should be open now');
+        notify('Summary generated successfully');
       } else {
-        console.log('📊 SummarizationCard - No doc_id in response:', response);
         throw new Error('No document ID received from server');
       }
-    } catch (error) {
-      console.error('Submission error:', error);
-      const errorMessage = handleAPIError(error);
+    } catch (err) {
+      const errorMessage = handleAPIError(err);
       setError(errorMessage);
-      
-      if (error.response?.status === 403) {
-        window.dispatchEvent(new CustomEvent('show-upgrade-modal'));
-      }
+      if (err.response?.status === 403) window.dispatchEvent(new CustomEvent('show-upgrade-modal'));
     } finally {
       setIsProcessing(false);
     }
-  }, [sourceLanguage, user.userId, user.uid, activeTab, textContent, uploadedFile, showNotification]);
+  }, [sourceLanguage, user.userId, user.uid, activeTab, textContent, uploadedFile, notify]);
 
   const renderFileUpload = useCallback(() => {
     const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
     const allowedTypes = ALLOWED_FILE_TYPES[fileType];
-    const label = fileType.charAt(0).toUpperCase() + fileType.slice(1);
-
     return (
       <Box
         sx={{
-          border: '2px dashed',
-          borderColor: 'primary.main',
-          borderRadius: '12px',
-          p: 4,
-          textAlign: 'center',
-          backgroundColor: 'rgba(25, 118, 210, 0.02)',
-          cursor: 'pointer',
-          '&:hover': {
-            backgroundColor: 'rgba(25, 118, 210, 0.05)',
-          },
+          border: '1.5px dashed',
+          borderColor: uploadedFile ? '#10b981' : 'rgba(255,255,255,0.12)',
+          borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
+          background: uploadedFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+          transition: 'all 0.25s ease',
+          '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
         }}
         onClick={() => fileInputRef.current?.click()}
       >
-        <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-        <Typography variant="body1" sx={{ mb: 1 }}>
-          Click to upload or drag and drop
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Supports {allowedTypes.extensions.join(', ')} (Max 500MB)
-        </Typography>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={allowedTypes.extensions.join(',')}
-          onChange={handleFileUpload}
-          style={{ display: 'none' }}
-        />
-        {uploadedFile && (
-          <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
-            <Typography variant="body2">
-              Selected: {uploadedFile.name}
-            </Typography>
+        {uploadedFile ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+            <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
+            <Typography sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{uploadedFile.name}</Typography>
           </Box>
+        ) : (
+          <>
+            <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <CloudUploadIcon sx={{ fontSize: 26, color: '#8b5cf6' }} />
+            </Box>
+            <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>
+              Click to upload or drag and drop
+            </Typography>
+            <Typography sx={{ color: '#64748b', fontSize: '0.8rem' }}>
+              Supports {allowedTypes.extensions.join(', ')} (Max 500MB)
+            </Typography>
+          </>
         )}
+        <input ref={fileInputRef} type="file" accept={allowedTypes.extensions.join(',')} onChange={handleFileUpload} style={{ display: 'none' }} />
       </Box>
     );
   }, [activeTab, handleFileUpload, uploadedFile]);
 
   return (
     <>
-    <Card sx={{ 
-      width: '100%',
-      my: 2, 
-      px: 2,
-      borderRadius: '16px', 
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-      p: 4
-    }}>
-      <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-        AI-Powered Summarization
-      </Typography>
-
-            {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-              <Tabs
-                value={activeTab}
-                onChange={handleTabChange}
+      <Box>
+        {/* Tabs */}
+        <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 }, '& .MuiTabs-scrollButtons': { color: 'rgba(255,255,255,0.4)' } }}
+          >
+            {TAB_LABELS.map((label, i) => (
+              <Tab key={i} label={label} icon={TAB_ICONS[i]} iconPosition="start"
                 sx={{
-                  '& .MuiTab-root': {
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                  },
+                  textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
+                  color: activeTab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+                  '&.Mui-selected': { color: '#38bdf8' },
                 }}
-              >
-                <Tab label="Paste Text" />
-                <Tab label="Upload Document" />
-                <Tab label="Upload Audio" />
-                <Tab label="Upload Video" />
-              </Tabs>
-            </Box>
+              />
+            ))}
+          </Tabs>
+        </Box>
 
-            {/* Language Selection */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Source Language
-                </Typography>
-            <FormControl fullWidth>
-              <Select
-                    value={sourceLanguage}
-                    onChange={(e) => setSourceLanguage(e.target.value)}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    {languageOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LanguageIcon sx={{ color: 'primary.main' }} />
-                          {option.label}
-                        </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+        {/* Language */}
+        <Box sx={{ mb: 3, maxWidth: 320 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+            <Select value={sourceLanguage} label="Source Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
+              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#0f172a' }}>{o.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Box>
 
-            {/* Content Section */}
-            <Box sx={{ mb: 4 }}>
-        {activeTab === 0 && (
-                <Box>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                    Text Content
-                  </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={6}
-                    placeholder="Paste your text here..."
-            value={textContent}
-            onChange={(e) => setTextContent(e.target.value)}
-                    sx={{ borderRadius: '12px' }}
-                  />
-                </Box>
-              )}
+        {/* Content */}
+        <Box sx={{ mb: 3 }}>
+          {activeTab === 0 ? (
+            <TextField
+              fullWidth multiline rows={6}
+              placeholder="Paste your text here…"
+              value={textContent}
+              onChange={e => setTextContent(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
+                '& .MuiInputBase-input::placeholder': { color: '#475569' },
+              }}
+            />
+          ) : renderFileUpload()}
+        </Box>
 
-              {(activeTab === 1 || activeTab === 2 || activeTab === 3) && (
-                <Box>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                    Upload File
-                  </Typography>
-                  {renderFileUpload()}
-                </Box>
-              )}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)}
+            sx={{ mb: 2.5, borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+            {typeof error === 'string' ? error : error?.message || 'An error occurred'}
+          </Alert>
+        )}
+
+        {isProcessing && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained" size="large" onClick={handleSubmit}
+            disabled={isProcessing || !sourceLanguage || (activeTab === 0 && !textContent.trim()) || (activeTab !== 0 && !uploadedFile)}
+            startIcon={<SendIcon />}
+            sx={{
+              borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
+              background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
+              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
+              '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+            }}
+          >
+            {isProcessing ? 'Processing…' : 'Generate Summary'}
+          </Button>
+        </Box>
       </Box>
 
-            {/* Submit Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-                size="large"
-          onClick={handleSubmit}
-          disabled={
-            isProcessing ||
-            !sourceLanguage ||
-            (activeTab === 0 && !textContent.trim()) ||
-            (activeTab !== 0 && !uploadedFile)
-          }
-                startIcon={<SendIcon />}
-                sx={{
-                  borderRadius: '24px',
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                }}
-        >
-          {isProcessing ? 'Processing...' : 'Generate Summary'}
-        </Button>
-      </Box>
-
-      {/* Error Display */}
-      {error && (
-        <Alert severity="error" sx={{ mt: 2, borderRadius: '8px' }}>
-          {typeof error === 'string' ? error : error.message || 'An error occurred'}
-        </Alert>
-      )}
-    </Card>
-
-      {/* Snackbar */}
-      <Snackbar
-          open={showSnackbar}
-        autoHideDuration={6000}
-          onClose={() => setShowSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setShowSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
-            {snackbarMessage}
-        </Alert>
+      <Snackbar open={snack.open} autoHideDuration={5000} onClose={() => setSnack(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px', fontWeight: 600 }}>{snack.msg}</Alert>
       </Snackbar>
 
-        {/* Results Drawer */}
-      <Drawer
-        anchor="right"
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: { xs: '100%', sm: '600px' },
-              borderTopLeftRadius: 16,
-              borderBottomLeftRadius: 16,
-          },
-        }}
-      >
+      <Drawer anchor="right" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
         {translationId && (
           <ViewSummaryComponent
             translationId={translationId}
-            onError={(error) => {
-              console.log('📊 SummarizationCard - ViewSummaryComponent error:', error);
-              showNotification(error.message, 'error');
-              setIsDrawerOpen(false);
-            }}
+            onError={err => { notify(err.message, 'error'); setIsDrawerOpen(false); }}
           />
         )}
       </Drawer>
-      
-      {/* Upgrade Prompt Modal */}
+
       <UpgradePromptModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}

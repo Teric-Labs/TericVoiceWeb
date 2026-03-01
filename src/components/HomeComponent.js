@@ -1,90 +1,91 @@
 import React, { useState } from 'react';
-import { Box, Chip } from '@mui/material';
+import { Box, Tab, Tabs } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { 
-  Mic, 
-  VideoCameraBack,
-  TextFields,
-  VolumeUp,
-  RecordVoiceOver,
-  Summarize
+import {
+  Mic, VideoCameraBack, TextFields, VolumeUp,
+  RecordVoiceOver, Summarize, GraphicEq,
 } from '@mui/icons-material';
-import TranscribeComponent from "./TranscribeComponent";
-import VideoStreamComponent from "./VideoStreamComponent";
-import TranslationComponent from "./TranslationComponent";
+import TranscribeComponent from './TranscribeComponent';
+import VideoStreamComponent from './VideoStreamComponent';
+import TranslationComponent from './TranslationComponent';
 import SummarizeComponent from './SummarizeComponent.js';
 import SynthesizeComponent from './SynthesizeComponent.js';
 import SpeechToSpeechForm from './SpeechToSpeechForm.js';
+import VoiceCloningComponent from './VoiceCloningComponent.js';
 
-// Custom styled FeatureChip component
-const FeatureChip = styled(Chip)(({ theme, isSelected }) => ({
-  height: '50px',
-  borderRadius: '25px',
-  fontWeight: 600,
-  fontSize: '0.9rem',
-  padding: theme.spacing(0, 2),
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-  backgroundColor: isSelected ? '#1976d2' : '#ffffff',
-  color: isSelected ? '#ffffff' : '#000000',
-  boxShadow: isSelected ? '0 4px 20px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
-  border: '1px solid rgba(25, 118, 210, 0.2)',
-  '&:hover': {
-    transform: 'scale(1.05)',
-    backgroundColor: isSelected ? '#1565c0' : '#f5f5f5',
-    boxShadow: '0 6px 24px rgba(25, 118, 210, 0.2)',
+const TABS = [
+  { label: 'Translate',     icon: <TextFields    sx={{ fontSize: 17 }} />, Component: TranslationComponent },
+  { label: 'Text to Voice', icon: <VolumeUp      sx={{ fontSize: 17 }} />, Component: SynthesizeComponent },
+  { label: 'Transcribe',    icon: <Mic           sx={{ fontSize: 17 }} />, Component: TranscribeComponent },
+  { label: 'Video',         icon: <VideoCameraBack sx={{ fontSize: 17 }} />, Component: VideoStreamComponent },
+  { label: 'Voice to Voice',icon: <RecordVoiceOver sx={{ fontSize: 17 }} />, Component: SpeechToSpeechForm },
+  { label: 'Summarize',     icon: <Summarize     sx={{ fontSize: 17 }} />, Component: SummarizeComponent },
+  { label: 'Voice Clone',   icon: <GraphicEq     sx={{ fontSize: 17 }} />, Component: VoiceCloningComponent },
+];
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  minHeight: 48,
+  borderBottom: '1px solid rgba(255,255,255,0.07)',
+  '& .MuiTabs-indicator': {
+    height: 2,
+    borderRadius: 2,
+    background: 'linear-gradient(90deg, #0ea5e9, #8b5cf6)',
   },
-  '& .MuiChip-icon': {
-    color: isSelected ? '#ffffff' : '#1976d2',
-    marginRight: theme.spacing(1),
-  },
+  '& .MuiTabs-scrollButtons': { color: 'rgba(255,255,255,0.4)' },
 }));
 
-const HomeComponent = () => {
-  const [selectedTab, setSelectedTab] = useState(0);
+const StyledTab = styled(Tab)(({ theme }) => ({
+  minHeight: 48,
+  textTransform: 'none',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+  color: 'rgba(255,255,255,0.45)',
+  gap: 6,
+  minWidth: 'auto',
+  px: 2,
+  letterSpacing: '0.01em',
+  transition: 'color 0.2s ease',
+  '&.Mui-selected': {
+    color: '#38bdf8',
+    fontWeight: 700,
+  },
+  '& .MuiTab-iconWrapper': { marginBottom: 0 },
+  '&:hover': { color: 'rgba(255,255,255,0.75)' },
+}));
 
-  const features = [
-    { icon: TextFields, label: 'Text Translation', component: TranslationComponent },
-    { icon: VolumeUp, label: 'Text to Voice', component: SynthesizeComponent },
-    { icon: Mic, label: 'Voice Recognition', component: TranscribeComponent },
-    { icon: VideoCameraBack, label: 'Video Transcription', component: VideoStreamComponent },
-    { icon: RecordVoiceOver, label: 'Voice to Voice', component: SpeechToSpeechForm },
-    { icon: Summarize, label: 'Summarization', component: SummarizeComponent }
-  ];
-
-  const ActiveComponent = features[selectedTab].component;
+export default function HomeComponent() {
+  const [tab, setTab] = useState(0);
+  const { Component } = TABS[tab];
 
   return (
-    <Box sx={{ width: '100%', py: 4 }}>
-      {/* Features Navigation */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 2,
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          mb: 4,
-          px: 2,
-        }}
-      >
-        {features.map((feature, index) => (
-          <FeatureChip
-            key={index}
-            icon={feature.icon}
-            label={feature.label}
-            isSelected={selectedTab === index}
-            onClick={() => setSelectedTab(index)}
-          />
-        ))}
-      </Box>
+    <Box sx={{ width: '100%' }}>
+      <Box sx={{
+        background: 'rgba(255,255,255,0.03)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '20px',
+        border: '1px solid rgba(255,255,255,0.07)',
+        overflow: 'hidden',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+      }}>
+        {/* Tab bar */}
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: 1, background: 'rgba(0,0,0,0.2)' }}>
+          <StyledTabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            {TABS.map(({ label, icon }, i) => (
+              <StyledTab key={i} label={label} icon={icon} iconPosition="start" />
+            ))}
+          </StyledTabs>
+        </Box>
 
-      {/* Active Component - Takes full width */}
-      <Box sx={{ width: '100%' }}>
-        <ActiveComponent />
+        {/* Content */}
+        <Box sx={{ p: { xs: 2.5, md: 3.5 } }}>
+          <Component />
+        </Box>
       </Box>
     </Box>
   );
-};
-
-export default HomeComponent;
+}

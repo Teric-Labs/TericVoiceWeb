@@ -1,25 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  CircularProgress,
+import {
+  Box, Container, Typography, Grid, CircularProgress, Alert, Snackbar,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { 
-  Mic, 
-  VideoCameraBack,
-  TextFields,
-  VolumeUp,
-  RecordVoiceOver,
-  Summarize,
-  History as HistoryIcon,
-  Analytics as AnalyticsIcon,
+import {
+  Mic, VideoCameraBack, TextFields, VolumeUp, RecordVoiceOver, Summarize,
+  History as HistoryIcon, Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import DataTable from './DataTable.js';
 import VideoTable from './VideoTable';
@@ -29,140 +14,42 @@ import VoxTransTable from './VoxTransTable.js';
 import TextTable from './TextTable.js';
 import { dataAPI, agentsAPI, getCurrentUser } from '../services/api';
 
-// Enhanced styled components
-const FeatureChip = styled('div')(({ theme, isSelected }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  height: '56px',
-  borderRadius: '16px',
-  fontWeight: 600,
-  fontSize: '0.9rem',
-  padding: theme.spacing(0, 2.5),
-  cursor: 'pointer',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-  backgroundColor: isSelected ? '#1976d2' : '#ffffff',
-  color: isSelected ? '#ffffff' : '#000000',
-  boxShadow: isSelected 
-    ? '0 8px 32px rgba(25, 118, 210, 0.3)' 
-    : '0 2px 8px rgba(0, 0, 0, 0.08)',
-  border: `1px solid ${isSelected ? 'rgba(25, 118, 210, 0.3)' : 'rgba(25, 118, 210, 0.1)'}`,
-  '&:hover': {
-    transform: 'scale(1.02)',
-    backgroundColor: isSelected ? '#1565c0' : '#f8fafc',
-    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.2)',
-  },
-  '& .MuiSvgIcon-root': {
-    color: isSelected ? '#ffffff' : '#1976d2',
-    marginRight: theme.spacing(1.5),
-    fontSize: '1.25rem',
-  },
-  '&:focus': {
-    outline: `2px solid ${theme.palette.primary.main}`,
-    outlineOffset: '2px',
-  },
-}));
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GOLD = '#f59e0b';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px' };
 
-const ComponentContainer = styled(Box)(({ theme }) => ({
-  backgroundColor: '#ffffff',
-  borderRadius: '20px',
-  padding: theme.spacing(4),
-  border: '1px solid rgba(25, 118, 210, 0.08)',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
-  transition: 'all 0.3s ease',
-}));
+const features = [
+  { Icon: TextFields,      label: 'Text Translation',  Component: TranslationsTable, color: '#0ea5e9' },
+  { Icon: VolumeUp,        label: 'Text to Speech',    Component: TextTable,         color: '#10b981' },
+  { Icon: Mic,             label: 'Voice Recognition', Component: DataTable,         color: '#f59e0b' },
+  { Icon: VideoCameraBack, label: 'Video Transcription', Component: VideoTable,      color: '#8b5cf6' },
+  { Icon: RecordVoiceOver, label: 'Voice to Voice',    Component: VoxTransTable,     color: '#ef4444' },
+  { Icon: Summarize,       label: 'Summarization',     Component: SummaryTable,      color: '#06b6d4' },
+];
 
-const StatsCard = styled(Card)(({ theme }) => ({
-  borderRadius: '16px',
-  border: '1px solid rgba(25, 118, 210, 0.08)',
-  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-  },
-}));
+const STAT_DEFS = [
+  { label: 'Total Translations', Icon: TextFields,      color: '#0ea5e9' },
+  { label: 'Voice Recordings',   Icon: Mic,             color: GOLD },
+  { label: 'Video Transcriptions', Icon: VideoCameraBack, color: '#8b5cf6' },
+  { label: 'AI Conversations',   Icon: RecordVoiceOver, color: '#ef4444' },
+];
 
 const History = () => {
   const [selectedTab, setSelectedTab] = useState(0);
-  const [stats, setStats] = useState([
-    { label: 'Total Translations', value: '0', icon: <TextFields />, color: '#1976d2' },
-    { label: 'Voice Recordings', value: '0', icon: <Mic />, color: '#ff9800' },
-    { label: 'Video Transcriptions', value: '0', icon: <VideoCameraBack />, color: '#9c27b0' },
-    { label: 'AI Conversations', value: '0', icon: <RecordVoiceOver />, color: '#f44336' },
-  ]);
+  const [stats, setStats] = useState(STAT_DEFS.map(s => ({ ...s, value: '0' })));
   const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
 
-  const features = [
-    { 
-      icon: TextFields, 
-      label: 'Text Translation', 
-      component: TranslationsTable,
-      description: 'View all text translation history',
-      color: '#1976d2'
-    },
-    { 
-      icon: VolumeUp, 
-      label: 'Text to Speech', 
-      component: TextTable,
-      description: 'View all text-to-speech conversions',
-      color: '#4caf50'
-    },
-    { 
-      icon: Mic, 
-      label: 'Voice Recognition', 
-      component: DataTable,
-      description: 'View all voice recognition history',
-      color: '#ff9800'
-    },
-    { 
-      icon: VideoCameraBack, 
-      label: 'Video Transcription', 
-      component: VideoTable,
-      description: 'View all video transcription history',
-      color: '#9c27b0'
-    },
-    { 
-      icon: RecordVoiceOver, 
-      label: 'Voice to Voice', 
-      component: VoxTransTable,
-      description: 'View all voice-to-voice translations',
-      color: '#f44336'
-    },
-    { 
-      icon: Summarize, 
-      label: 'Summarization', 
-      component: SummaryTable,
-      description: 'View all summarization history',
-      color: '#00bcd4'
-    }
-  ];
+  const handleTabChange = useCallback(index => setSelectedTab(index), []);
+  const { Component } = features[selectedTab];
 
-  const handleTabChange = useCallback((index) => {
-    setSelectedTab(index);
-  }, []);
-
-  const ActiveComponent = features[selectedTab].component;
-
-  // Format number with commas
-  const formatNumber = (num) => {
-    return num.toLocaleString('en-US');
-  };
-
-  // Fetch user-specific statistics
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const user = getCurrentUser();
         const userId = user?.userId || user?.uid;
+        if (!userId) { setStatsLoading(false); return; }
 
-        if (!userId) {
-          console.warn('User not authenticated, showing zero counts');
-          setStatsLoading(false);
-          return;
-        }
-
-        // Fetch all counts in parallel
         const [translationsData, audiosData, videosData, agentsData] = await Promise.allSettled([
           dataAPI.getTranslations(userId),
           dataAPI.getAudios(userId),
@@ -170,187 +57,123 @@ const History = () => {
           agentsAPI.getUserAgents(userId),
         ]);
 
-        // Extract counts from responses
-        const translationsCount = translationsData.status === 'fulfilled' 
-          ? (translationsData.value?.entries?.length || translationsData.value?.length || 0)
-          : 0;
-        
-        const audiosCount = audiosData.status === 'fulfilled'
-          ? (audiosData.value?.entries?.length || audiosData.value?.length || 0)
-          : 0;
-        
-        const videosCount = videosData.status === 'fulfilled'
-          ? (videosData.value?.entries?.length || videosData.value?.length || 0)
-          : 0;
-        
-        const agentsCount = agentsData.status === 'fulfilled'
-          ? (agentsData.value?.agents?.length || agentsData.value?.length || 0)
-          : 0;
-
-        // Update stats with real counts
-        setStats([
-          { label: 'Total Translations', value: formatNumber(translationsCount), icon: <TextFields />, color: '#1976d2' },
-          { label: 'Voice Recordings', value: formatNumber(audiosCount), icon: <Mic />, color: '#ff9800' },
-          { label: 'Video Transcriptions', value: formatNumber(videosCount), icon: <VideoCameraBack />, color: '#9c27b0' },
-          { label: 'AI Conversations', value: formatNumber(agentsCount), icon: <RecordVoiceOver />, color: '#f44336' },
-        ]);
-      } catch (error) {
-        console.error('Error fetching statistics:', error);
-        // Keep default zero values on error
+        const get = (r) => r.status === 'fulfilled' ? (r.value?.entries?.length || r.value?.length || 0) : 0;
+        const counts = [get(translationsData), get(audiosData), get(videosData), get(agentsData)];
+        setStats(STAT_DEFS.map((s, i) => ({ ...s, value: counts[i].toLocaleString('en-US') })));
+      } catch {
+        setStatsError(true);
       } finally {
         setStatsLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ minHeight: '100vh', py: 4, bgcolor: '#f8fafc' }}>
-        {/* Header Section */}
-        <Box sx={{ mb: 4 }}>
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              fontWeight: 700, 
-              color: '#1976d2',
-              mb: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2
-            }}
-          >
-            <HistoryIcon sx={{ fontSize: '2rem' }} />
-            History & Analytics
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: 'text.secondary',
-              fontSize: '1.1rem'
-            }}
-          >
+      <Snackbar
+        open={statsError}
+        autoHideDuration={6000}
+        onClose={() => setStatsError(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setStatsError(false)} sx={{ borderRadius: '12px' }}>
+          Could not load activity statistics. Your history data is still available below.
+        </Alert>
+      </Snackbar>
+
+      <Box sx={{ py: 4 }}>
+        {/* Page Header */}
+        <Box sx={{ mb: 5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0ea5e9' }}>
+              <HistoryIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Typography sx={{ color: '#f8fafc', fontWeight: 800, fontSize: { xs: '1.5rem', md: '1.9rem' }, letterSpacing: '-0.02em' }}>
+              History & Analytics
+            </Typography>
+          </Box>
+          <Typography sx={{ color: '#64748b', fontSize: '0.95rem' }}>
             Track and analyze all your AI-powered interactions and translations
           </Typography>
         </Box>
 
-        {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {stats.map((stat, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <StatsCard>
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Box sx={{ 
-                      p: 1.5, 
-                      borderRadius: '12px', 
-                      backgroundColor: `${stat.color}15`,
-                      color: stat.color
-                    }}>
-                      {stat.icon}
-                    </Box>
-                  </Box>
-                  {statsLoading ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                      <CircularProgress size={24} sx={{ color: '#1976d2' }} />
-                    </Box>
-                  ) : (
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2', mb: 0.5 }}>
-                      {stat.value}
-                    </Typography>
-                  )}
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {stat.label}
+        {/* Stats */}
+        <Grid container spacing={2.5} sx={{ mb: 5 }}>
+          {stats.map(({ label, Icon, color, value }) => (
+            <Grid item xs={12} sm={6} md={3} key={label}>
+              <Box sx={{
+                ...GLASS,
+                p: 2.5,
+                transition: 'all 0.25s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: `0 8px 24px ${color}20`, borderColor: `${color}30` },
+              }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, mb: 2 }}>
+                  <Icon sx={{ fontSize: 20 }} />
+                </Box>
+                {statsLoading ? (
+                  <CircularProgress size={22} sx={{ color, mb: 0.5 }} />
+                ) : (
+                  <Typography sx={{ color: '#f8fafc', fontWeight: 800, fontSize: '1.8rem', lineHeight: 1, mb: 0.5 }}>
+                    {value}
                   </Typography>
-                </CardContent>
-              </StatsCard>
+                )}
+                <Typography sx={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 600 }}>
+                  {label}
+                </Typography>
+              </Box>
             </Grid>
           ))}
         </Grid>
 
-        {/* Main Content */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '24px',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(25, 118, 210, 0.1)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)',
-            overflow: 'hidden',
-          }}
-          role="region"
-          aria-label="History Section"
-        >
-          {/* Features Navigation */}
-          <Box
-            sx={{
-              p: 3,
-              borderBottom: '1px solid rgba(25, 118, 210, 0.08)',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-            }}
-          >
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontWeight: 600, 
-                mb: 3,
-                color: '#1976d2',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
-              <AnalyticsIcon />
-              Activity History
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 2,
-                justifyContent: 'flex-start',
-                flexWrap: 'wrap',
-              }}
-              role="tablist"
-              aria-label="Feature Navigation"
-            >
-              {features.map((feature, index) => (
-                <FeatureChip
-                  key={index}
-                  isSelected={selectedTab === index}
-                  onClick={() => handleTabChange(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Space') {
-                      handleTabChange(index);
-                      e.preventDefault();
-                    }
-                  }}
+        {/* Main Panel */}
+        <Box sx={{ ...GLASS, overflow: 'hidden' }}>
+          {/* Tab header */}
+          <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: 2.5, borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.2)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+              <AnalyticsIcon sx={{ color: '#0ea5e9', fontSize: 20 }} />
+              <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '1rem' }}>
+                Activity History
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              {features.map(({ Icon, label, color }, i) => (
+                <Box
+                  key={i}
+                  role="button"
                   tabIndex={0}
-                  role="tab"
-                  aria-selected={selectedTab === index}
-                  aria-label={`Select ${feature.label}`}
+                  onClick={() => handleTabChange(i)}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleTabChange(i)}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    px: 2, py: 1, borderRadius: '50px', cursor: 'pointer',
+                    fontWeight: 600, fontSize: '0.82rem',
+                    transition: 'all 0.2s ease',
+                    ...(selectedTab === i
+                      ? { background: `${color}20`, border: `1px solid ${color}40`, color }
+                      : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', '&:hover': { background: 'rgba(255,255,255,0.07)', color: '#f8fafc', borderColor: 'rgba(255,255,255,0.15)' } }),
+                  }}
                 >
-                  <feature.icon />
-                  <span>{feature.label}</span>
-                </FeatureChip>
+                  <Icon sx={{ fontSize: 16 }} />
+                  {label}
+                </Box>
               ))}
             </Box>
           </Box>
 
-          {/* Component Container */}
-          <ComponentContainer role="tabpanel" aria-label={`${features[selectedTab].label} Content`}>
+          {/* Component content */}
+          <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: 3 }}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 1 }}>
+              <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '1rem', mb: 0.3 }}>
                 {features[selectedTab].label}
               </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {features[selectedTab].description}
+              <Typography sx={{ color: '#64748b', fontSize: '0.82rem' }}>
+                Showing your complete {features[selectedTab].label.toLowerCase()} history
               </Typography>
             </Box>
-            <ActiveComponent />
-          </ComponentContainer>
-        </Paper>
+            <Component />
+          </Box>
+        </Box>
       </Box>
     </Container>
   );

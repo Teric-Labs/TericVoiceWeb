@@ -1,242 +1,121 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  IconButton,
-  MenuItem,
-  Select,
-  TextField,
-  Typography,
-  CircularProgress,
-  Alert,
-  Tab,
-  Tabs,
-  Stack,
-  Card,
-  CardContent,
-  Chip,
+  Box, Button, FormControl, Grid, IconButton, MenuItem,
+  Select, TextField, Alert, Tab, Tabs, Stack, Chip, LinearProgress,
+  InputLabel,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import {
-  Translate,
-  CloudUpload,
-  SwapHoriz,
-  Language,
-  PictureAsPdf,
-  Description,
-  Article,
-  InsertDriveFile,
-  ContentCopy,
-  Download,
+  Translate, CloudUpload, SwapHoriz, Language,
+  PictureAsPdf, Description, Article,
+  ContentCopy, Download, CheckCircle,
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
-  setSourceLanguage,
-  setTargetLanguage,
-  setInputText,
-  setTranslatedText,
-  setSelectedFile,
-  setActiveTab,
-  clearError,
-  clearTranslation,
-  translateText,
-  translateDocument,
+  setSourceLanguage, setTargetLanguage, setInputText, setTranslatedText,
+  setSelectedFile, setActiveTab, clearError, clearTranslation,
+  translateText, translateDocument,
 } from '../store/slices/translationSlice';
 import DocumentTranslationDrawer from './DocumentTranslationDrawer';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const SELECT_SX = {
+  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+};
+const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_TEXT_LENGTH = 5000;
 
 const SUPPORTED_LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'lg', label: 'Luganda' },
-  { value: 'sw', label: 'Kiswahili' },
-  { value: 'ac', label: 'Acholi' },
-  { value: 'at', label: 'Ateso' },
+  { value: 'en',  label: 'English' },
+  { value: 'lg',  label: 'Luganda' },
+  { value: 'sw',  label: 'Kiswahili' },
+  { value: 'ac',  label: 'Acholi' },
+  { value: 'at',  label: 'Ateso' },
   { value: 'nyn', label: 'Runyankore' },
 ];
 
 const SUPPORTED_FILE_TYPES = [
-  { icon: <PictureAsPdf color="error" />, type: 'PDF', extension: '.pdf' },
-  { icon: <Description color="primary" />, type: 'Word', extension: '.doc, .docx' },
-  { icon: <Article color="action" />, type: 'Text', extension: '.txt' },
+  { type: 'PDF',  extension: '.pdf' },
+  { type: 'Word', extension: '.doc, .docx' },
+  { type: 'Text', extension: '.txt' },
 ];
-
-// Custom styled components
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-  '& .MuiTab-root': {
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '1rem',
-    color: '#000000',
-    '&.Mui-selected': {
-      color: '#1976d2',
-    },
-  },
-  '& .MuiTabs-indicator': {
-    backgroundColor: '#1976d2',
-  },
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: '12px',
-  textTransform: 'none',
-  fontWeight: 600,
-  padding: theme.spacing(1, 4),
-  background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-  color: '#ffffff',
-  '&:hover': {
-    background: 'linear-gradient(45deg, #1565c0, #2196f3)',
-    boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
-  },
-  '&:disabled': {
-    background: 'rgba(25, 118, 210, 0.5)',
-    color: '#ffffff',
-  },
-  transition: 'all 0.3s ease',
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
-    backgroundColor: '#ffffff',
-    '& fieldset': {
-      borderColor: 'rgba(0, 0, 0, 0.1)',
-    },
-    '&:hover fieldset': {
-      borderColor: '#1976d2',
-    },
-  },
-  '& .MuiInputLabel-root': {
-    color: '#000000',
-    '&.Mui-focused': {
-      color: '#1976d2',
-    },
-  },
-}));
 
 const TranslationCard = () => {
   const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerData, setDrawerData] = useState(null);
   const [userClosedDrawer, setUserClosedDrawer] = useState(false);
-  
-  const {
-    sourceLanguage,
-    targetLanguage,
-    inputText,
-    translatedText,
-    selectedFile,
-    isLoading: loading,
-    error,
-    activeTab,
-  } = useAppSelector((state) => state.translation);
-  const { user } = useAppSelector((state) => state.auth);
 
-  // Automatically open drawer when translation is complete
+  const {
+    sourceLanguage, targetLanguage, inputText, translatedText,
+    selectedFile, isLoading: loading, error, activeTab,
+  } = useAppSelector(state => state.translation);
+  const { user } = useAppSelector(state => state.auth);
+
   useEffect(() => {
     if (translatedText && !loading && !error && !drawerOpen && !userClosedDrawer) {
-      // Small delay to ensure state is properly updated
       setTimeout(() => {
-        const drawerData = {
+        setDrawerData({
           translations: { [targetLanguage]: translatedText },
           original: activeTab === 0 ? inputText : selectedFile?.name || 'Document',
           metadata: {
             file_name: activeTab === 0 ? 'Text Translation' : selectedFile?.name || 'Document',
             file_size: activeTab === 0 ? inputText.length : selectedFile?.size || 0,
             languages_translated: 1,
-            processing_status: 'completed'
-          }
-        };
-        setDrawerData(drawerData);
+            processing_status: 'completed',
+          },
+        });
         setDrawerOpen(true);
       }, 200);
     }
   }, [translatedText, loading, error, targetLanguage, activeTab, inputText, selectedFile]);
 
   const handleTranslate = async () => {
-    if (!user?.userId) {
-      console.error('Please log in to use translation services');
-      return;
-    }
-
-    // Close any existing drawer when starting new translation
+    if (!user?.userId) return;
     setDrawerOpen(false);
     setDrawerData(null);
-    setUserClosedDrawer(false); // Reset the flag for new translation
-
+    setUserClosedDrawer(false);
     try {
       if (activeTab === 0) {
-        if (inputText.length > MAX_TEXT_LENGTH) {
-          throw new Error(`Text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`);
-        }
-        await dispatch(translateText({
-          userId: user.userId,
-          sourceLang: sourceLanguage,
-          targetLang: targetLanguage,
-          text: inputText,
-        })).unwrap();
+        if (inputText.length > MAX_TEXT_LENGTH) throw new Error(`Text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`);
+        await dispatch(translateText({ userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, text: inputText })).unwrap();
       } else {
-        if (!selectedFile) {
-          throw new Error('No file selected');
-        }
-        if (selectedFile.size > MAX_FILE_SIZE) {
-          throw new Error('File size exceeds 10MB limit');
-        }
-        await dispatch(translateDocument({
-          userId: user.userId,
-          sourceLang: sourceLanguage,
-          targetLang: targetLanguage,
-          file: selectedFile,
-        })).unwrap();
+        if (!selectedFile) throw new Error('No file selected');
+        if (selectedFile.size > MAX_FILE_SIZE) throw new Error('File size exceeds 10MB limit');
+        await dispatch(translateDocument({ userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, file: selectedFile })).unwrap();
       }
-    } catch (err) {
-      console.error('Translation failed:', err.message || 'Translation failed. Please try again.');
-    }
+    } catch {}
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const fileType = `.${file.name.split('.').pop().toLowerCase()}`;
-      const validTypes = SUPPORTED_FILE_TYPES.map(type =>
-        type.extension.split(', ').map(ext => ext.toLowerCase())
-      ).flat();
-
-      if (validTypes.includes(fileType)) {
-        dispatch(setSelectedFile(file));
-        dispatch(clearError());
-      } else {
-        console.error('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.');
-        event.target.value = null;
-      }
+    if (!file) return;
+    const fileType = `.${file.name.split('.').pop().toLowerCase()}`;
+    const validTypes = SUPPORTED_FILE_TYPES.map(t => t.extension.split(', ').map(e => e.toLowerCase())).flat();
+    if (validTypes.includes(fileType)) {
+      dispatch(setSelectedFile(file));
+      dispatch(clearError());
     }
+    event.target.value = null;
   };
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(translatedText);
-      console.log('Text copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy text');
-    }
+    try { await navigator.clipboard.writeText(translatedText); } catch {}
   };
 
   const handleDownload = () => {
-    const element = document.createElement('a');
-    const file = new Blob([translatedText], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = 'translation.txt';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handleDownloadDocx = () => {
-    // Implementation for DOCX download would go here
-    console.log('DOCX download feature coming soon!');
+    const el = document.createElement('a');
+    el.href = URL.createObjectURL(new Blob([translatedText], { type: 'text/plain' }));
+    el.download = 'translation.txt';
+    document.body.appendChild(el);
+    el.click();
+    document.body.removeChild(el);
   };
 
   const handleSwapLanguages = () => {
@@ -246,225 +125,167 @@ const TranslationCard = () => {
 
   return (
     <>
-    <Box sx={{ width: '100%', py: 3, px: 2 }}>
-        <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-              Text & Document Translation
-            </Typography>
+      <Box>
+        {/* Tabs */}
+        <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => dispatch(setActiveTab(v))}
+            sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 } }}
+          >
+            {['Text Translation', 'Document Translation'].map((label, i) => (
+              <Tab key={i} label={label}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: activeTab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)', '&.Mui-selected': { color: '#38bdf8' } }}
+              />
+            ))}
+          </Tabs>
+        </Box>
 
-            {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-              <StyledTabs
-                value={activeTab}
-                onChange={(_, newValue) => dispatch(setActiveTab(newValue))}
-                centered
-              >
-                <Tab label="Text Translation" />
-                <Tab label="Document Translation" />
-              </StyledTabs>
-            </Box>
+        {/* Language Selectors */}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={5}>
+            <FormControl fullWidth size="small">
+              <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+              <Select value={sourceLanguage} label="Source Language" onChange={e => dispatch(setSourceLanguage(e.target.value))} sx={SELECT_SX}>
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <IconButton onClick={handleSwapLanguages} sx={{ width: 36, height: 36, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9', '&:hover': { background: 'rgba(14,165,233,0.25)' } }}>
+              <SwapHoriz fontSize="small" />
+            </IconButton>
+          </Grid>
+          <Grid item xs={12} sm={5}>
+            <FormControl fullWidth size="small">
+              <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
+              <Select value={targetLanguage} label="Target Language" onChange={e => dispatch(setTargetLanguage(e.target.value))} sx={SELECT_SX}>
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
 
-            {/* Language Selection */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} md={5}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Source Language
-                </Typography>
-                <FormControl fullWidth>
-                  <Select
-                    value={sourceLanguage}
-                    onChange={(e) => dispatch(setSourceLanguage(e.target.value))}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <MenuItem key={lang.value} value={lang.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Language sx={{ color: 'primary.main' }} />
-                          {lang.label}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <IconButton
-                  onClick={handleSwapLanguages}
-                  sx={{
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                    borderRadius: '50%',
-                    p: 1.5,
-                  }}
-                >
-                  <SwapHoriz />
-                </IconButton>
-              </Grid>
-
-              <Grid item xs={12} md={5}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Target Language
-                </Typography>
-                <FormControl fullWidth>
-                  <Select
-                    value={targetLanguage}
-                    onChange={(e) => dispatch(setTargetLanguage(e.target.value))}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <MenuItem key={lang.value} value={lang.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Language sx={{ color: 'primary.main' }} />
-                          {lang.label}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+        {/* Content */}
+        {activeTab === 0 ? (
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                multiline rows={8} fullWidth
+                label="Input Text"
+                placeholder="Enter text to translate…"
+                value={inputText}
+                onChange={e => dispatch(setInputText(e.target.value))}
+                error={inputText.length > MAX_TEXT_LENGTH}
+                helperText={`${inputText.length} / ${MAX_TEXT_LENGTH}`}
+                sx={{
+                  '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
+                  '& .MuiInputLabel-root': LABEL_SX,
+                  '& .MuiFormHelperText-root': { color: '#64748b' },
+                }}
+              />
             </Grid>
-
-            {/* Content Section */}
-            {activeTab === 0 ? (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                    Input Text
-                  </Typography>
-                  <StyledTextField
-                    multiline
-                    rows={8}
-                    fullWidth
-                    value={inputText}
-                    onChange={(e) => dispatch(setInputText(e.target.value))}
-                    placeholder="Enter text to translate..."
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                    Translated Text
-                  </Typography>
-                  <StyledTextField
-                    multiline
-                    rows={8}
-                    fullWidth
-                    value={translatedText}
-                    placeholder="Translation will appear here..."
-                    variant="outlined"
-                    InputProps={{ readOnly: true }}
-                  />
-                  {translatedText && (
-                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<ContentCopy />}
-                        onClick={handleCopy}
-                        size="small"
-                        sx={{ borderRadius: '8px' }}
-                      >
-                        Copy
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={handleDownload}
-                        size="small"
-                        sx={{ borderRadius: '8px' }}
-                      >
-                        Download
-                      </Button>
-                    </Stack>
-                  )}
-                </Grid>
-              </Grid>
-            ) : (
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Upload Document
-                </Typography>
-                <Box
-                  sx={{
-                    border: '2px dashed',
-                    borderColor: 'primary.main',
-                    borderRadius: '12px',
-                    p: 4,
-                    textAlign: 'center',
-                    backgroundColor: 'rgba(25, 118, 210, 0.02)',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
-                    },
-                  }}
-                  onClick={() => document.getElementById('file-input')?.click()}
-                >
-                  <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                  <Typography variant="body1" sx={{ mb: 1 }}>
-                    Click to upload or drag and drop
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Supports PDF, DOC, DOCX, TXT (Max 10MB)
-                  </Typography>
-                  <input
-                    id="file-input"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </Box>
-                {selectedFile && (
-                  <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
-                    <Typography variant="body2">
-                      Selected: {selectedFile.name}
-                    </Typography>
+            <Grid item xs={12} md={6}>
+              <TextField
+                multiline rows={8} fullWidth
+                label="Translated Text"
+                placeholder="Translation will appear here…"
+                value={translatedText}
+                InputProps={{ readOnly: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
+                  '& .MuiInputLabel-root': LABEL_SX,
+                }}
+              />
+              {translatedText && (
+                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                  <Button variant="outlined" size="small" startIcon={<ContentCopy />} onClick={handleCopy}
+                    sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', '&:hover': { borderColor: '#0ea5e9', color: '#38bdf8' } }}>
+                    Copy
+                  </Button>
+                  <Button variant="outlined" size="small" startIcon={<Download />} onClick={handleDownload}
+                    sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', '&:hover': { borderColor: '#8b5cf6', color: '#a78bfa' } }}>
+                    Download
+                  </Button>
+                </Stack>
+              )}
+            </Grid>
+          </Grid>
+        ) : (
+          <Box sx={{ mb: 3 }}>
+            <Box
+              sx={{
+                border: '1.5px dashed',
+                borderColor: selectedFile ? '#10b981' : 'rgba(255,255,255,0.12)',
+                borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
+                background: selectedFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                transition: 'all 0.25s ease',
+                '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
+              }}
+              onClick={() => document.getElementById('transl-file-input')?.click()}
+            >
+              {selectedFile ? (
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
+                  <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
+                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{selectedFile.name}</Box>
+                </Stack>
+              ) : (
+                <>
+                  <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                    <CloudUpload sx={{ fontSize: 26, color: '#0ea5e9' }} />
                   </Box>
-                )}
-                {translatedText && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: '#16a34a' }}>
-                      ✅ Translation Completed Successfully
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Results are displayed in the drawer on the right
-                    </Typography>
-                  </Box>
-                )}
+                  <Box sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload document</Box>
+                  <Box sx={{ color: '#64748b', fontSize: '0.8rem' }}>PDF, DOC, DOCX, TXT · Max 10MB</Box>
+                  <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+                    {SUPPORTED_FILE_TYPES.map(t => (
+                      <Chip key={t.type} label={t.type} size="small"
+                        sx={{ background: 'rgba(14,165,233,0.1)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.2)', fontSize: '0.7rem' }} />
+                    ))}
+                  </Stack>
+                </>
+              )}
+              <input id="transl-file-input" type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} style={{ display: 'none' }} />
+            </Box>
+            {translatedText && (
+              <Box sx={{ ...GLASS, p: 2.5, mt: 2, borderColor: 'rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.05)' }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <CheckCircle sx={{ color: '#10b981', fontSize: 18 }} />
+                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>Translation Completed Successfully</Box>
+                </Stack>
+                <Box sx={{ color: '#64748b', fontSize: '0.8rem', mt: 0.5 }}>Results are displayed in the drawer on the right</Box>
               </Box>
             )}
+          </Box>
+        )}
 
-            {/* Error Display */}
-            {error && (
-              <Alert severity="error" sx={{ mt: 3, borderRadius: '8px' }}>
-                {error}
-              </Alert>
-            )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2.5, borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+            {error}
+          </Alert>
+        )}
 
-            {/* Submit Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <StyledButton
-                onClick={handleTranslate}
-                disabled={loading || (!inputText && !selectedFile)}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Translate />}
-                size="large"
-              >
-                {loading ? 'Translating...' : 'Translate'}
-              </StyledButton>
-            </Box>
-          </CardContent>
-        </Card>
+        {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained" size="large" onClick={handleTranslate}
+            disabled={loading || (!inputText && !selectedFile)}
+            startIcon={<Translate />}
+            sx={{
+              borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
+              background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.35)',
+              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(14,165,233,0.5)', transform: 'translateY(-1px)' },
+              '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+            }}
+          >
+            {loading ? 'Translating…' : 'Translate'}
+          </Button>
+        </Box>
       </Box>
-      
-      {/* Document Translation Drawer */}
+
       <DocumentTranslationDrawer
         isOpen={drawerOpen}
-        onClose={() => {
-          setDrawerOpen(false);
-          setUserClosedDrawer(true); // Mark that user manually closed
-        }}
+        onClose={() => { setDrawerOpen(false); setUserClosedDrawer(true); }}
         translationData={drawerData}
         isLoading={loading}
         error={error}
