@@ -92,7 +92,6 @@ const VoiceAssistant = ({ agentId }) => {
         
         setAgentInfo(data);
       } catch (error) {
-        console.error('Error fetching agent info:', error);
         setError("Failed to load agent information");
       } finally {
         setIsLoadingInfo(false);
@@ -164,7 +163,6 @@ const VoiceAssistant = ({ agentId }) => {
       });
       
       audioPlayer.current.addEventListener('error', (e) => {
-        console.error('Audio playback error:', e);
         setError('Failed to play audio response');
         setStatus('idle');
       });
@@ -172,7 +170,6 @@ const VoiceAssistant = ({ agentId }) => {
       await audioPlayer.current.play();
 
     } catch (err) {
-      console.error('Audio processing error:', err);
       // Provide more specific error messages to the user
       if (err.message.includes('empty response')) {
         setError('No response received from server. Please try again.');
@@ -205,7 +202,6 @@ const VoiceAssistant = ({ agentId }) => {
 
       // Check if the browser supports the MIME type
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        console.warn('audio/webm;codecs=opus not supported, falling back to audio/webm');
         options.mimeType = 'audio/webm';
       }
 
@@ -223,7 +219,6 @@ const VoiceAssistant = ({ agentId }) => {
           const audioBlob = new Blob(audioChunks.current, { type: options.mimeType });
           await handleAudioUpload(audioBlob);
         } catch (error) {
-          console.error('Error handling recorded audio:', error);
           setError('Failed to process recorded audio');
           setStatus('idle');
         }
@@ -233,7 +228,6 @@ const VoiceAssistant = ({ agentId }) => {
       setIsRecording(true);
       setStatus('recording');
     } catch (err) {
-      console.error('Error starting recording:', err);
       setError("Microphone access denied. Please enable microphone permissions.");
     }
   }, [handleAudioUpload]);

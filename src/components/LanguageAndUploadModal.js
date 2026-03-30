@@ -129,11 +129,11 @@ const FilePreview = ({ file, onRemove, index }) => {
         borderRadius: '12px',
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(25, 118, 210, 0.1)',
+        border: '1px solid rgba(14, 165, 233, 0.1)',
         transition: 'all 0.3s ease',
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: '0 8px 24px rgba(25, 118, 210, 0.15)',
+          boxShadow: '0 8px 24px rgba(14, 165, 233, 0.15)',
         },
       }}
     >
@@ -144,7 +144,7 @@ const FilePreview = ({ file, onRemove, index }) => {
               sx={{
                 width: 48,
                 height: 48,
-                background: 'linear-gradient(135deg, #1976d2, #64b5f6)',
+                background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
                 animation: `${pulse} 2s infinite`,
                 animationDelay: `${0.1 * index}s`,
               }}
@@ -152,7 +152,7 @@ const FilePreview = ({ file, onRemove, index }) => {
               <VolumeUpIcon sx={{ color: 'white' }} />
             </Avatar>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1976d2' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#0ea5e9' }}>
                 {file.name}
               </Typography>
               <Typography variant="body2" sx={{ color: '#666666' }}>
@@ -166,9 +166,9 @@ const FilePreview = ({ file, onRemove, index }) => {
                 size="small"
                 onClick={() => setIsPlaying(!isPlaying)}
                 sx={{
-                  color: '#1976d2',
+                  color: '#0ea5e9',
                   '&:hover': {
-                    backgroundColor: alpha('#1976d2', 0.1),
+                    backgroundColor: alpha('#0ea5e9', 0.1),
                   },
                 }}
               >
@@ -201,8 +201,8 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
   <Card
     sx={{
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.05), rgba(100, 181, 246, 0.05))',
-      border: '1px solid rgba(25, 118, 210, 0.2)',
+      background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(100, 181, 246, 0.05))',
+      border: '1px solid rgba(14, 165, 233, 0.2)',
       p: 2,
       mb: 2,
     }}
@@ -212,12 +212,12 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
         sx={{
           width: 40,
           height: 40,
-          background: 'linear-gradient(135deg, #1976d2, #64b5f6)',
+          background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
         }}
       >
         <AutoDetectIcon sx={{ color: 'white' }} />
       </Avatar>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ color: '#0ea5e9', fontWeight: 600 }}>
         AI Language Detection
       </Typography>
     </Box>
@@ -233,10 +233,10 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
       disabled={isDetecting}
       sx={{
         borderRadius: '8px',
-        borderColor: '#1976d2',
-        color: '#1976d2',
+        borderColor: '#0ea5e9',
+        color: '#0ea5e9',
         '&:hover': {
-          backgroundColor: alpha('#1976d2', 0.1),
+          backgroundColor: alpha('#0ea5e9', 0.1),
         },
       }}
     >
@@ -263,7 +263,7 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
 const AdvancedOptions = ({ options, onChange }) => (
   <Accordion sx={{ borderRadius: '12px', mb: 2 }}>
     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-      <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ color: '#0ea5e9', fontWeight: 600 }}>
         Advanced Options
       </Typography>
     </AccordionSummary>
@@ -336,6 +336,7 @@ const LanguageAndUploadModal = ({
   const [activeStep, setActiveStep] = useState(0);
   const [detectedLanguage, setDetectedLanguage] = useState(null);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [advancedOptions, setAdvancedOptions] = useState({
     includeTimestamps: false,
     includeSpeakerLabels: false,
@@ -356,21 +357,30 @@ const LanguageAndUploadModal = ({
     setTranscribeLanguages(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const handleFileChange = (event) => {
-    const files = Array.from(event.target.files);
+  const processFiles = (files) => {
     const validFiles = files.filter(file => file.type.startsWith('audio/'));
-    
     if (validFiles.length !== files.length) {
       setError('Some files were rejected. Only audio files are allowed.');
+    } else {
+      setError('');
     }
-
     if (isMultiple) {
       setSelectedFiles(validFiles);
     } else {
-      setSelectedFiles(validFiles[0]);
+      setSelectedFiles(validFiles[0] || null);
     }
-    
-    setError('');
+  };
+
+  const handleFileChange = (event) => {
+    processFiles(Array.from(event.target.files));
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    processFiles(Array.from(e.dataTransfer.files));
   };
 
   const removeFile = (fileToRemove) => {
@@ -444,24 +454,24 @@ const LanguageAndUploadModal = ({
 
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
-    
+
     setUploading(true);
     try {
-      await onSubmit({ 
-        speakLanguage, 
-        transcribeLanguages, 
-        selectedFiles, 
+      await onSubmit({
+        speakLanguage,
+        transcribeLanguages,
+        selectedFiles,
         description,
-        advancedOptions 
+        advancedOptions
       });
-      handleClose();
+      resetAndClose();
     } catch (err) {
       setError('An error occurred during submission. Please try again.');
     }
     setUploading(false);
   };
 
-  const handleClose = () => {
+  const resetAndClose = () => {
     setActiveStep(0);
     setSelectedFiles(isMultiple ? [] : null);
     setDescription('');
@@ -472,9 +482,9 @@ const LanguageAndUploadModal = ({
   };
 
   return (
-    <EnhancedModal 
-      open={open} 
-      onClose={handleClose}
+    <EnhancedModal
+      open={open}
+      onClose={resetAndClose}
       aria-labelledby="upload-modal-title"
     >
       <Paper
@@ -493,7 +503,7 @@ const LanguageAndUploadModal = ({
           outline: 'none',
           background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(25, 118, 210, 0.2)',
+          border: '1px solid rgba(14, 165, 233, 0.2)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         }}
       >
@@ -506,7 +516,7 @@ const LanguageAndUploadModal = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.05), rgba(100, 181, 246, 0.05))',
+            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(100, 181, 246, 0.05))',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -514,7 +524,7 @@ const LanguageAndUploadModal = ({
               sx={{
                 width: 48,
                 height: 48,
-                background: 'linear-gradient(135deg, #1976d2, #64b5f6)',
+                background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
               }}
             >
               <SmartToyIcon sx={{ color: 'white' }} />
@@ -524,7 +534,7 @@ const LanguageAndUploadModal = ({
                 variant="h5"
                 sx={{
                   fontWeight: 600,
-                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                  background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                   backgroundClip: 'text',
                   textFillColor: 'transparent',
                 }}
@@ -536,7 +546,7 @@ const LanguageAndUploadModal = ({
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={handleClose} size="small">
+          <IconButton onClick={resetAndClose} size="small" aria-label="Close modal">
             <X size={20} />
           </IconButton>
         </Box>
@@ -568,31 +578,33 @@ const LanguageAndUploadModal = ({
           {activeStep === 0 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
                   Upload Audio Files
                 </Typography>
                 
-                <Button
-                  variant="outlined"
+                <Box
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                   component="label"
-                  startIcon={<FileUploadIcon />}
                   sx={{
-                    borderRadius: '12px',
-                    p: 2,
-                    textTransform: 'none',
-                    borderWidth: '2px',
-                    borderStyle: 'dashed',
-                    borderColor: '#1976d2',
-                    color: '#1976d2',
-                    width: '100%',
-                    mb: 3,
-                    '&:hover': {
-                      borderWidth: '2px',
-                      backgroundColor: alpha('#1976d2', 0.05),
-                    },
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: 'center', gap: 1,
+                    borderRadius: '12px', p: 4, mb: 3, cursor: 'pointer',
+                    border: '2px dashed',
+                    borderColor: isDragOver ? 'primary.main' : 'rgba(14, 165, 233,0.35)',
+                    bgcolor: isDragOver ? alpha('#0ea5e9', 0.08) : 'transparent',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { bgcolor: alpha('#0ea5e9', 0.05), borderColor: 'primary.main' },
                   }}
                 >
-                  {isMultiple ? 'Upload Multiple Audio Files' : 'Upload Audio File'}
+                  <FileUploadIcon sx={{ fontSize: 40, color: isDragOver ? 'primary.main' : 'text.disabled' }} />
+                  <Typography variant="body1" fontWeight={600} color="primary">
+                    {isDragOver ? 'Drop files here' : (isMultiple ? 'Drag & drop audio files or click to browse' : 'Drag & drop an audio file or click to browse')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Supports MP3, WAV, M4A, OGG and other audio formats
+                  </Typography>
                   <input
                     type="file"
                     hidden
@@ -600,7 +612,7 @@ const LanguageAndUploadModal = ({
                     accept="audio/*"
                     multiple={isMultiple}
                   />
-                </Button>
+                </Box>
 
                 {validationErrors.files && (
                   <Typography variant="body2" color="error" sx={{ mb: 2 }}>
@@ -611,7 +623,7 @@ const LanguageAndUploadModal = ({
                 {/* File List */}
                 {selectedFiles && (
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 2, color: '#0ea5e9', fontWeight: 600 }}>
                       Selected Files ({isMultiple ? selectedFiles.length : 1})
                     </Typography>
                     {isMultiple ? (
@@ -642,7 +654,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 1 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
                   Language Configuration
                 </Typography>
 
@@ -669,8 +681,8 @@ const LanguageAndUploadModal = ({
                               label={language.code.toUpperCase()}
                               size="small"
                               sx={{
-                                backgroundColor: alpha('#1976d2', 0.1),
-                                color: '#1976d2',
+                                backgroundColor: alpha('#0ea5e9', 0.1),
+                                color: '#0ea5e9',
                                 fontSize: '0.7rem',
                               }}
                             />
@@ -728,8 +740,8 @@ const LanguageAndUploadModal = ({
                               label={language.code.toUpperCase()}
                               size="small"
                               sx={{
-                                backgroundColor: alpha('#1976d2', 0.1),
-                                color: '#1976d2',
+                                backgroundColor: alpha('#0ea5e9', 0.1),
+                                color: '#0ea5e9',
                                 fontSize: '0.7rem',
                               }}
                             />
@@ -752,7 +764,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 2 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
                   Advanced Processing Options
                 </Typography>
                 <AdvancedOptions
@@ -767,7 +779,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 3 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#1976d2', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
                   Review & Submit
                 </Typography>
 
@@ -790,9 +802,9 @@ const LanguageAndUploadModal = ({
                   />
 
                   {/* Summary Card */}
-                  <Card sx={{ borderRadius: '12px', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+                  <Card sx={{ borderRadius: '12px', border: '1px solid rgba(14, 165, 233, 0.2)' }}>
                     <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+                      <Typography variant="h6" sx={{ mb: 2, color: '#0ea5e9', fontWeight: 600 }}>
                         Processing Summary
                       </Typography>
                       <Stack spacing={2}>
@@ -843,7 +855,7 @@ const LanguageAndUploadModal = ({
         >
           <Button
             variant="outlined"
-            onClick={handleClose}
+            onClick={resetAndClose}
             sx={{
               borderRadius: '12px',
               textTransform: 'none',
@@ -877,9 +889,9 @@ const LanguageAndUploadModal = ({
                 sx={{
                   borderRadius: '12px',
                   textTransform: 'none',
-                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                  background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+                    background: 'linear-gradient(45deg, #0284c7, #38bdf8)',
                   }
                 }}
               >

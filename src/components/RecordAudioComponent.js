@@ -1,18 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Box,
-  Grid,
-  Paper,
-  LinearProgress,
-  Snackbar,
-  Alert,
-  Typography,
-  useTheme
+  Button, Select, MenuItem, FormControl, InputLabel,
+  Box, Grid, Paper, LinearProgress, Snackbar, Alert, Typography, useTheme,
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
@@ -22,23 +11,16 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LanguageIcon from '@mui/icons-material/Language';
 import WaveSurfer from 'wavesurfer.js';
 import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
-  const apiEndpoint = 'https://phosai-main-api.onrender.com/upload_recorded_audio/';
 
-import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
-
-const RecordingAudioComponent = () => {
-  const theme = useTheme();
-  const [language, setLanguage] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [waveSurfer, setWaveSurfer] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const waveformRef = useRef(null);
-  const mediaRecorder = useRef(null);
-  const [loading, setLoading] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
-  const [bannerMessage, setBannerMessage] = useState('');
-import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+const languageOptions = [
+  { label: 'English',     value: 'en' },
+  { label: 'Ateso',       value: 'at' },
+  { label: 'Acholi',      value: 'ac' },
+  { label: 'Swahili',     value: 'sw' },
+  { label: 'Runyankore',  value: 'nyn' },
+  { label: 'Kinyarwanda', value: 'rw' },
+  { label: 'French',      value: 'fr' },
+];
 
 const RecordingAudioComponent = () => {
   const theme = useTheme();
@@ -47,21 +29,12 @@ const RecordingAudioComponent = () => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [waveSurfer, setWaveSurfer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const waveformRef = useRef(null);
-  const mediaRecorder = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerMessage, setBannerMessage] = useState('');
 
-  const languageOptions = [
-    { label: 'English', value: 'en' },
-    { label: 'Ateso', value: 'at' },
-    { label: 'Acholi', value: 'ac' },
-    { label: 'Swahili', value: 'sw' },
-    { label: 'Runyankore', value: 'nyn' },
-    { label: 'Kinyarwanda', value: 'rw' },
-    { label: 'French', value: 'fr' },
-  ];
+  const waveformRef = useRef(null);
+  const mediaRecorder = useRef(null);
 
   useEffect(() => {
     const waveSurferInstance = WaveSurfer.create({
@@ -78,15 +51,10 @@ const RecordingAudioComponent = () => {
 
     waveSurferInstance.on('play', () => setIsPlaying(true));
     waveSurferInstance.on('pause', () => setIsPlaying(false));
-    
     setWaveSurfer(waveSurferInstance);
 
     return () => waveSurferInstance.destroy();
   }, [theme.palette]);
-
-  const handleLanguageChange = (event) => {
-    setLanguage(event.target.value);
-  };
 
   const handleRecordingStart = async () => {
     if (!language) {
@@ -94,23 +62,20 @@ const RecordingAudioComponent = () => {
       setShowBanner(true);
       return;
     }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       const chunks = [];
-
       recorder.ondataavailable = (event) => chunks.push(event.data);
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         setAudioBlob(blob);
         waveSurfer.loadBlob(blob);
       };
-
       recorder.start();
       mediaRecorder.current = recorder;
       setIsRecording(true);
-    } catch (error) {
+    } catch {
       setBannerMessage('Error accessing microphone');
       setShowBanner(true);
     }
@@ -123,9 +88,7 @@ const RecordingAudioComponent = () => {
     }
   };
 
-  const handlePlayPause = () => {
-    waveSurfer.playPause();
-  };
+  const handlePlayPause = () => waveSurfer.playPause();
 
   const handleDiscardRecording = () => {
     setAudioBlob(null);
@@ -134,39 +97,19 @@ const RecordingAudioComponent = () => {
 
   const handleSubmit = async () => {
     if (!audioBlob) return;
-
     setLoading(true);
-    
     try {
-      // Check usage limits before making request
       await checkUsageBeforeRequest('upload_recorded_audio');
-      
-      // Get user from localStorage
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user.uid) {
-        throw new Error('User not authenticated');
-      }
-
-      // Use centralized API
-      const response = await transcriptionAPI.uploadRecordedAudio(
-        audioBlob, 
-        language, 
-        ['en', 'lg'], // Default target languages
-        user.uid
-      );
-      
+      if (!user.uid && !user.userId) throw new Error('User not authenticated');
+      await transcriptionAPI.uploadRecordedAudio(audioBlob, language, ['en', 'lg'], user.uid || user.userId);
       setBannerMessage('Recording uploaded successfully!');
       handleDiscardRecording();
     } catch (error) {
-      console.error('Upload error:', error);
       const errorInfo = handleAPIError(error, 'upload_recorded_audio');
-      
       if (errorInfo.shouldUpgrade) {
         setBannerMessage('Please upgrade your subscription to continue');
-        // Trigger upgrade modal
-        window.dispatchEvent(new CustomEvent('show-upgrade-modal', {
-          detail: { message: errorInfo.message }
-        }));
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: errorInfo.message } }));
       } else {
         setBannerMessage(errorInfo.message || 'Upload failed. Please try again.');
       }
@@ -177,40 +120,13 @@ const RecordingAudioComponent = () => {
   };
 
   return (
-    <Paper 
-      elevation={3} 
-      sx={{
-        p: 4,
-        backgroundColor: 'white',
-        borderRadius: 2,
-        maxWidth: 1200,
-        margin: 'auto'
-      }}
-    >
+    <Paper elevation={3} sx={{ p: 4, backgroundColor: 'white', borderRadius: 2, maxWidth: 1200, margin: 'auto' }}>
       {loading && (
-        <LinearProgress 
-          sx={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            right: 0,
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8
-          }} 
-        />
+        <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
       )}
-      
-      <Snackbar
-        open={showBanner}
-        autoHideDuration={6000}
-        onClose={() => setShowBanner(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setShowBanner(false)}
-          severity={bannerMessage.includes('successfully') ? 'success' : 'error'}
-          sx={{ width: '100%' }}
-        >
+
+      <Snackbar open={showBanner} autoHideDuration={6000} onClose={() => setShowBanner(false)} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={() => setShowBanner(false)} severity={bannerMessage.includes('successfully') ? 'success' : 'error'} sx={{ width: '100%' }}>
           {bannerMessage}
         </Alert>
       </Snackbar>
@@ -230,46 +146,18 @@ const RecordingAudioComponent = () => {
                 Select Language
               </Box>
             </InputLabel>
-            <Select
-              labelId="language-label"
-              value={language}
-              onChange={handleLanguageChange}
-              sx={{ 
-                '& .MuiSelect-select': { 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1 
-                }
-              }}
-            >
-              {languageOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
+            <Select labelId="language-label" value={language} onChange={e => setLanguage(e.target.value)}>
+              {languageOptions.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
             </Select>
           </FormControl>
 
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            mt: 4 
-          }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <Button
               variant="contained"
-              color={isRecording ? "error" : "primary"}
+              color={isRecording ? 'error' : 'primary'}
               onClick={isRecording ? handleRecordingStop : handleRecordingStart}
               startIcon={isRecording ? <StopIcon /> : <MicIcon />}
-              sx={{
-                py: 2,
-                px: 4,
-                borderRadius: 2,
-                boxShadow: 3,
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  transition: 'transform 0.2s'
-                }
-              }}
+              sx={{ py: 2, px: 4, borderRadius: 2, boxShadow: 3, '&:hover': { transform: 'translateY(-2px)', transition: 'transform 0.2s' } }}
             >
               {isRecording ? 'Stop Recording' : 'Start Recording'}
             </Button>
@@ -277,47 +165,17 @@ const RecordingAudioComponent = () => {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper 
-            elevation={1}
-            sx={{ 
-              p: 3, 
-              backgroundColor: theme.palette.grey[50],
-              borderRadius: 2
-            }}
-          >
+          <Paper elevation={1} sx={{ p: 3, backgroundColor: theme.palette.grey[50], borderRadius: 2 }}>
             <Box ref={waveformRef} sx={{ mb: 3 }} />
-            
             {audioBlob && (
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 2, 
-                justifyContent: 'center',
-                flexWrap: 'wrap'
-              }}>
-                <Button
-                  variant="outlined"
-                  onClick={handlePlayPause}
-                  startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />}
-                  sx={{ minWidth: 130 }}
-                >
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Button variant="outlined" onClick={handlePlayPause} startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />} sx={{ minWidth: 130 }}>
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleDiscardRecording}
-                  startIcon={<DeleteOutlineIcon />}
-                  sx={{ minWidth: 130 }}
-                >
+                <Button variant="outlined" color="error" onClick={handleDiscardRecording} startIcon={<DeleteOutlineIcon />} sx={{ minWidth: 130 }}>
                   Discard
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  startIcon={<CloudUploadIcon />}
-                  sx={{ minWidth: 130 }}
-                >
+                <Button variant="contained" onClick={handleSubmit} disabled={loading} startIcon={<CloudUploadIcon />} sx={{ minWidth: 130 }}>
                   Upload
                 </Button>
               </Box>

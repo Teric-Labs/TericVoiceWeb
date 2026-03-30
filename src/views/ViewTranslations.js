@@ -1,6 +1,6 @@
 import React from "react";
 import { Box} from "@mui/material";
-import ViewTranslationsComponent from "../components/ViewTranslationsComponent ";
+import ViewTranslationsComponent from "../components/ViewTranslationsComponent";
 import { useParams } from 'react-router-dom';
 const ViewTranslations =()=>{
     const { id } = useParams();

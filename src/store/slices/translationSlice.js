@@ -12,56 +12,18 @@ export const translateText = createAsyncThunk(
         translationData.userId
       );
       
-      // Extract the translated text from the response
-      // Response structure: {"lg": "translated text"} - simple key-value pair
-      // OR nested: {"lg": {"en": "original", "lg": "translated"}} - legacy format
-      const targetLang = translationData.targetLang;
-      
-      // Check if response has the target language key
-      if (response && response[targetLang]) {
-        const translatedText = response[targetLang];
-        
-        // If the value is a string, use it directly
-        if (typeof translatedText === 'string') {
-          return {
-            originalText: translationData.text,
-            translatedText: translatedText || 'Translation not available',
-            sourceLang: translationData.sourceLang,
-            targetLang: translationData.targetLang
-          };
-        }
-        
-        // If the value is an object (nested format), extract the translation
-        if (typeof translatedText === 'object' && translatedText[targetLang]) {
-          return {
-            originalText: translationData.text,
-            translatedText: translatedText[targetLang] || 'Translation not available',
-            sourceLang: translationData.sourceLang,
-            targetLang: translationData.targetLang
-          };
-        }
-      }
-      
-      // Fallback: try to get first value if structure is unexpected
-      const firstValue = Object.values(response)[0];
-      if (typeof firstValue === 'string') {
+      if (response.status === 'started') {
         return {
+          status: 'started',
+          jobId: response.job_id,
           originalText: translationData.text,
-          translatedText: firstValue,
-          sourceLang: translationData.sourceLang,
-          targetLang: translationData.targetLang
+          sourceText: translationData.text
         };
       }
       
-      console.error('Unexpected translation response format:', response);
-      return {
-        originalText: translationData.text,
-        translatedText: 'Translation failed - unexpected response format',
-        sourceLang: translationData.sourceLang,
-        targetLang: translationData.targetLang
-      };
+      return rejectWithValue(response.msg || 'Failed to start text translation');
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Translation failed');
+      return rejectWithValue(error.response?.data?.message || 'Text translation failed');
     }
   }
 );
@@ -77,23 +39,19 @@ export const translateDocument = createAsyncThunk(
         translationData.userId
       );
       
-      // Extract the translated text from the response
-      // Response structure: {"msg": {"lg": "translated"}, "orignal": "original"}
-      if (response.msg && response.msg[translationData.targetLang]) {
+      // Response structure for Expert Architecture: 
+      // { "status": "started", "job_id": "...", "filename": "...", "original_text_preview": "..." }
+      if (response.status === 'started') {
         return {
-          originalText: response.orignal || 'Original text not available',
-          translatedText: response.msg[translationData.targetLang],
-          sourceLang: translationData.sourceLang,
-          targetLang: translationData.targetLang
+          status: 'started',
+          jobId: response.job_id,
+          originalText: response.original_text_preview, // Just a preview for now
+          sourceText: response.original_text_preview
         };
       }
       
-      return {
-        originalText: response.orignal || 'Original text not available',
-        translatedText: 'Translation failed',
-        sourceLang: translationData.sourceLang,
-        targetLang: translationData.targetLang
-      };
+      // Fallback for legacy or error
+      return rejectWithValue(response.msg || 'Failed to start document translation');
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Document translation failed');
     }
@@ -127,6 +85,13 @@ const translationSlice = createSlice({
     },
     setTranslatedText: (state, action) => {
       state.translatedText = action.payload;
+    },
+    appendTranslatedChunk: (state, action) => {
+      if (state.translatedText) {
+        state.translatedText += `\n\n${action.payload}`;
+      } else {
+        state.translatedText = action.payload;
+      }
     },
     setSelectedFile: (state, action) => {
       state.selectedFile = action.payload;
@@ -201,6 +166,7 @@ export const {
   setTargetLanguage,
   setInputText,
   setTranslatedText,
+  appendTranslatedChunk,
   setSelectedFile,
   setActiveTab,
   clearError,

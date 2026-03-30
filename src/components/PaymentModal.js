@@ -37,9 +37,20 @@ import { CardElement, Elements, useStripe, useElements } from '@stripe/react-str
 import { loadStripe } from '@stripe/stripe-js';
 import { subscriptionAPI } from '../services/api';
 
-const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY)
-  : null;
+// Lazy-loaded stripe promise to prevent top-level load errors
+let stripePromise = null;
+const getStripe = () => {
+  const key = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+  if (!key) return Promise.resolve(null);
+  
+  if (!stripePromise) {
+    stripePromise = loadStripe(key).catch(err => {
+      console.warn("Stripe failed to load. Payment features disabled:", err);
+      return null;
+    });
+  }
+  return stripePromise;
+};
 
 const slideIn = keyframes`
   from {
@@ -155,7 +166,6 @@ const PaymentModalContent = ({
         throw new Error(paymentResult.error || 'Payment failed');
       }
     } catch (err) {
-      console.error('Payment error:', err);
       
       // Handle different types of errors
       let errorMessage = 'Payment failed. Please try again.';
@@ -249,10 +259,10 @@ const PaymentModalContent = ({
 
   const getTierColor = (tierId) => {
     switch (tierId) {
-      case 'classic': return '#1976d2';
+      case 'classic': return '#0ea5e9';
       case 'classic_pro': return '#9c27b0';
       case 'enterprise_plus': return '#f57c00';
-      default: return '#1976d2';
+      default: return '#0ea5e9';
     }
   };
 
@@ -278,7 +288,7 @@ const PaymentModalContent = ({
         
         {/* Card Payment Details — secured by Stripe */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: '16px', border: '1px solid rgba(25, 118, 210, 0.1)' }}>
+          <Paper sx={{ p: 3, bgcolor: 'rgba(14, 165, 233, 0.05)', borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
               <CreditCardIcon color="primary" />
               Card Payment Details
@@ -386,7 +396,7 @@ const PaymentModalContent = ({
       
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(25, 118, 210, 0.1)' }}>
+          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Box sx={{ 
@@ -418,7 +428,7 @@ const PaymentModalContent = ({
         </Grid>
         
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(25, 118, 210, 0.1)' }}>
+          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 Payment Summary
@@ -591,7 +601,7 @@ const PaymentModalContent = ({
 
 // Wrap with Stripe Elements so inner component can use useStripe/useElements
 const PaymentModal = (props) => (
-  <Elements stripe={stripePromise}>
+  <Elements stripe={getStripe()}>
     <PaymentModalContent {...props} />
   </Elements>
 );

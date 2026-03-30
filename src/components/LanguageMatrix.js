@@ -1,841 +1,417 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  useTheme,
-  alpha,
-  Tooltip,
-  Card,
-  CardContent,
-  Button,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Badge,
-  Avatar,
-  Stack,
-  Divider,
-  Alert,
-  Tabs,
-  Tab,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Collapse,
-  Fade,
-  Zoom,
-  Slide
+  Box, Typography, Container, Chip, Grid, Button,
+  TextField, InputAdornment, MenuItem, Select, FormControl,
 } from '@mui/material';
-import { createTheme, ThemeProvider, responsiveFontSizes } from '@mui/material/styles';
-import { styled, keyframes } from '@mui/material/styles';
-import TranslateIcon from '@mui/icons-material/Translate';
+import { Link } from 'react-router-dom';
+import { keyframes } from '@mui/material/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import LanguageIcon from '@mui/icons-material/Language';
-import AutoGraphIcon from '@mui/icons-material/AutoGraph';
-import UpdateIcon from '@mui/icons-material/Update';
 import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import PublicIcon from '@mui/icons-material/Public';
-import FlagIcon from '@mui/icons-material/Flag';
-import StarIcon from '@mui/icons-material/Star';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import InfoIcon from '@mui/icons-material/Info';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import CssBaseline from '@mui/material/CssBaseline';
+import { ArrowForward } from '@mui/icons-material';
 
-// Enhanced animations
-const float = keyframes`
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(5px) rotate(-1deg); }
-`;
-
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
-
+// ── Animations ────────────────────────────────────────────────────────────
 const slideUp = keyframes`
-  from { 
-    opacity: 0; 
-    transform: translateY(30px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0px); 
-  }
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+const pulseGlow = keyframes`
+  0%,100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
 `;
 
-const glow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(25, 118, 210, 0.4); }
-  50% { box-shadow: 0 0 30px rgba(25, 118, 210, 0.8); }
-  100% { box-shadow: 0 0 15px rgba(25, 118, 210, 0.4); }
-`;
+// ── Design tokens ─────────────────────────────────────────────────────────
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GOLD = '#f59e0b';
+const DARK_BG = '#07071a';
+const CARD_BG = 'rgba(255,255,255,0.03)';
+const CARD_BORDER = '1px solid rgba(255,255,255,0.07)';
 
-// Floating background elements
-const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
-  <Box
-    sx={{
-      position: 'absolute',
-      width: size,
-      height: size,
-      borderRadius: '50%',
-      background: `radial-gradient(circle, ${color}20, ${color}05)`,
-      border: `1px solid ${color}15`,
-      ...position,
-      animation: `${float} ${3 + Math.random() * 2}s ease-in-out infinite`,
-      animationDelay: delay,
-      zIndex: 0,
-    }}
-  />
-);
-
-// Enhanced Stats Card
-const StatsCard = ({ icon: Icon, title, value, description, color = '#1976d2', trend, index }) => (
-  <Card 
-    sx={{ 
-      height: '100%',
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(10px)',
-      border: `1px solid ${alpha(color, 0.2)}`,
-          borderRadius: '16px',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      animation: `${slideUp} 0.6s ease-out forwards`,
-      animationDelay: `${0.1 * index}s`,
-      opacity: 0,
-      transform: 'translateY(30px)',
-          '&:hover': {
-        transform: 'translateY(-8px) scale(1.02)',
-        boxShadow: `0 12px 40px ${alpha(color, 0.3)}`,
-        border: `1px solid ${alpha(color, 0.4)}`,
-      },
-    }}
-  >
-    <CardContent sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Avatar
-          sx={{
-            width: 56,
-            height: 56,
-            background: `linear-gradient(135deg, ${color}, ${alpha(color, 0.7)})`,
-            animation: `${pulse} 2s infinite`,
-            animationDelay: `${0.2 * index}s`,
-          }}
-        >
-          <Icon sx={{ fontSize: 28, color: 'white' }} />
-        </Avatar>
-        {trend && (
-          <Chip
-            icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
-            label={trend}
-            size="small"
-            sx={{
-              backgroundColor: alpha('#4caf50', 0.1),
-              color: '#4caf50',
-          fontWeight: 600,
-              fontSize: '0.75rem',
-            }}
-          />
-        )}
-      </Box>
-      <Typography variant="h4" component="div" sx={{ mb: 1, fontWeight: 'bold', color: color }}>
-        {value}
-      </Typography>
-      <Typography variant="h6" component="div" sx={{ color: color, fontWeight: 600, mb: 1 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" sx={{ color: '#666666', lineHeight: 1.4 }}>
-        {description}
-      </Typography>
-    </CardContent>
-  </Card>
-);
-
-// Language Card Component
-const LanguageCard = ({ language, supportMatrix, index }) => {
-  const [expanded, setExpanded] = useState(false);
-  const supportedFeatures = Object.entries(supportMatrix).filter(([_, languages]) => 
-    languages.includes(language.name)
+// ── Kente pattern ─────────────────────────────────────────────────────────
+function KentePattern() {
+  return (
+    <Box component="svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+      sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04, pointerEvents: 'none' }}
+    >
+      <defs>
+        <pattern id="kente-lm" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+          <polygon points="20,2 38,20 20,38 2,20" fill="none" stroke="#f59e0b" strokeWidth="1.2" />
+          <polygon points="20,9 31,20 20,31 9,20" fill="none" stroke="#0ea5e9" strokeWidth="0.7" />
+          <line x1="0" y1="20" x2="40" y2="20" stroke="#8b5cf6" strokeWidth="0.4" />
+          <line x1="20" y1="0" x2="20" y2="40" stroke="#8b5cf6" strokeWidth="0.4" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#kente-lm)" />
+    </Box>
   );
-  const totalFeatures = Object.keys(supportMatrix).length;
-  const supportPercentage = Math.round((supportedFeatures.length / totalFeatures) * 100);
+}
+
+// ── Language Data ─────────────────────────────────────────────────────────
+const LANGUAGE_DATA = [
+  { name: 'English',     code: 'en',  region: 'Global',       flag: '🇺🇸', population: '1.5B',  priority: 'high'   },
+  { name: 'Luganda',     code: 'lg',  region: 'Uganda',       flag: '🇺🇬', population: '8M',    priority: 'high'   },
+  { name: 'Runyankole',  code: 'nyn', region: 'Uganda',       flag: '🇺🇬', population: '3M',    priority: 'medium' },
+  { name: 'Acholi',      code: 'ac',  region: 'Uganda',       flag: '🇺🇬', population: '1.5M',  priority: 'medium' },
+  { name: 'Ateso',       code: 'at',  region: 'Uganda',       flag: '🇺🇬', population: '1.8M',  priority: 'medium' },
+  { name: 'French',      code: 'fr',  region: 'Global',       flag: '🇫🇷', population: '280M',  priority: 'high'   },
+  { name: 'Lumasaba',    code: 'myx', region: 'Uganda',       flag: '🇺🇬', population: '1.2M',  priority: 'low'    },
+  { name: 'Lusoga',      code: 'xog', region: 'Uganda',       flag: '🇺🇬', population: '2M',    priority: 'medium' },
+  { name: 'Swahili',     code: 'sw',  region: 'East Africa',  flag: '🇹🇿', population: '200M',  priority: 'high'   },
+  { name: 'Kinyarwanda', code: 'rw',  region: 'Rwanda',       flag: '🇷🇼', population: '12M',   priority: 'medium' },
+  { name: 'Lugbara',     code: 'lgg', region: 'Uganda',       flag: '🇺🇬', population: '1M',    priority: 'low'    },
+  { name: 'Arabic',      code: 'ar',  region: 'Middle East',  flag: '🇸🇦', population: '400M',  priority: 'high'   },
+  { name: 'Spanish',     code: 'es',  region: 'Global',       flag: '🇪🇸', population: '500M',  priority: 'high'   },
+  { name: 'Portuguese',  code: 'pt',  region: 'Global',       flag: '🇵🇹', population: '260M',  priority: 'medium' },
+  { name: 'German',      code: 'de',  region: 'Europe',       flag: '🇩🇪', population: '100M',  priority: 'medium' },
+];
+
+const SUPPORT_MATRIX = {
+  'Transcription':  ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+  'Translation':    ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+  'Text to Speech': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+  'Voice to Voice': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+  'Summarization':  ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+  'AI Agents':      ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
+};
+
+const FEATURES = Object.keys(SUPPORT_MATRIX);
+const REGIONS = ['All', ...new Set(LANGUAGE_DATA.map(l => l.region))];
+
+// ── Animated counter ──────────────────────────────────────────────────────
+function AnimatedCounter({ target, suffix = '' }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef();
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          let start = 0;
+          const end = parseInt(target, 10);
+          const duration = 1400;
+          const step = Math.ceil(end / (duration / 16));
+          const timer = setInterval(() => {
+            start += step;
+            if (start >= end) { setCount(end); clearInterval(timer); }
+            else setCount(start);
+          }, 16);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────
+function StatCard({ value, suffix, label, color, index }) {
+  return (
+    <Box sx={{
+      background: CARD_BG, border: CARD_BORDER, borderRadius: '20px', p: 3,
+      textAlign: 'center', flex: 1, minWidth: 160,
+      animation: `${slideUp} 0.6s ease ${index * 0.1}s both`,
+      transition: 'all 0.3s ease',
+      '&:hover': { transform: 'translateY(-4px)', borderColor: `${color}40`, background: `${color}08` },
+    }}>
+      <Typography sx={{
+        fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.02em',
+        background: `linear-gradient(135deg, ${color}, ${color}aa)`,
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+        lineHeight: 1,
+      }}>
+        <AnimatedCounter target={value} suffix={suffix} />
+      </Typography>
+      <Typography sx={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 600, mt: 0.75, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+// ── Language card ─────────────────────────────────────────────────────────
+function LanguageCard({ lang, index }) {
+  const supported = FEATURES.filter(f => SUPPORT_MATRIX[f].includes(lang.name));
+  const pct = Math.round((supported.length / FEATURES.length) * 100);
+  const priorityColor = lang.priority === 'high' ? '#10b981' : lang.priority === 'medium' ? GOLD : '#94a3b8';
 
   return (
-    <Card
-      sx={{
-        borderRadius: '16px',
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${alpha('#1976d2', 0.1)}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        animation: `${slideUp} 0.6s ease-out forwards`,
-        animationDelay: `${0.1 * index}s`,
-        opacity: 0,
-        transform: 'translateY(30px)',
-        '&:hover': {
-          transform: 'translateY(-5px)',
-          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.15)',
-          border: `1px solid ${alpha('#1976d2', 0.3)}`,
-        },
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar
+    <Box sx={{
+      background: CARD_BG, border: CARD_BORDER, borderRadius: '20px', p: 3,
+      animation: `${slideUp} 0.5s ease ${(index % 6) * 0.06 + 0.1}s both`,
+      transition: 'all 0.3s ease',
+      '&:hover': { transform: 'translateY(-5px)', borderColor: 'rgba(14,165,233,0.25)', boxShadow: '0 20px 48px rgba(14,165,233,0.08)' },
+    }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{lang.flag}</Typography>
+          <Box>
+            <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '1rem', lineHeight: 1.2 }}>{lang.name}</Typography>
+            <Typography sx={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{lang.code.toUpperCase()} · {lang.region}</Typography>
+          </Box>
+        </Box>
+        <Chip label={lang.priority} size="small" sx={{
+          background: `${priorityColor}18`, color: priorityColor,
+          border: `1px solid ${priorityColor}30`, fontWeight: 700, fontSize: '0.7rem',
+          borderRadius: '50px', '& .MuiChip-label': { px: 1.5 },
+        }} />
+      </Box>
+
+      {/* Progress bar */}
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+          <Typography sx={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Feature coverage</Typography>
+          <Typography sx={{ color: '#0ea5e9', fontWeight: 700, fontSize: '0.8rem' }}>{pct}%</Typography>
+        </Box>
+        <Box sx={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+          <Box sx={{ width: `${pct}%`, height: '100%', background: G, borderRadius: 4, transition: 'width 0.8s ease' }} />
+        </Box>
+      </Box>
+
+      {/* Supported features */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+        {supported.map(f => (
+          <Chip key={f} label={f} size="small" icon={<CheckCircleIcon sx={{ fontSize: '13px !important', color: '#10b981 !important' }} />}
+            sx={{ background: 'rgba(16,185,129,0.08)', color: '#94a3b8', border: '1px solid rgba(16,185,129,0.15)', fontSize: '0.68rem', fontWeight: 500, borderRadius: '6px', '& .MuiChip-label': { pl: 0.5 } }} />
+        ))}
+        {FEATURES.filter(f => !SUPPORT_MATRIX[f].includes(lang.name)).map(f => (
+          <Chip key={f} label={f} size="small" icon={<HourglassEmptyIcon sx={{ fontSize: '13px !important', color: `${GOLD} !important` }} />}
+            sx={{ background: `rgba(245,158,11,0.05)`, color: '#475569', border: `1px solid rgba(245,158,11,0.12)`, fontSize: '0.68rem', fontWeight: 500, borderRadius: '6px', '& .MuiChip-label': { pl: 0.5 } }} />
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────
+export default function LanguageMatrix() {
+  const [search, setSearch] = useState('');
+  const [region, setRegion] = useState('All');
+  const [view, setView] = useState('cards'); // 'cards' | 'table'
+
+  const filtered = LANGUAGE_DATA.filter(l => {
+    const q = search.toLowerCase();
+    const matchSearch = l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q) || l.region.toLowerCase().includes(q);
+    const matchRegion = region === 'All' || l.region === region;
+    return matchSearch && matchRegion;
+  });
+
+  return (
+    <Box sx={{ background: DARK_BG, minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <KentePattern />
+
+      {/* Ambient glows */}
+      <Box sx={{ position: 'absolute', top: '5%', left: '10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%)', animation: `${pulseGlow} 8s ease-in-out infinite`, pointerEvents: 'none' }} />
+      <Box sx={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)', animation: `${pulseGlow} 10s ease-in-out infinite 2s`, pointerEvents: 'none' }} />
+
+      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, py: { xs: 10, md: 14 } }}>
+
+        {/* ── Hero header ────────────────────────────── */}
+        <Box sx={{ textAlign: 'center', mb: 8, animation: `${slideUp} 0.6s ease both` }}>
+          <Chip label="🌍 Language Coverage" size="small" sx={{
+            background: `rgba(245,158,11,0.12)`, border: `1px solid rgba(245,158,11,0.3)`,
+            color: GOLD, fontWeight: 700, borderRadius: '50px', mb: 3,
+            '& .MuiChip-label': { px: 2 },
+          }} />
+          <Typography sx={{
+            color: '#f8fafc', fontWeight: 800,
+            fontSize: { xs: '2.5rem', md: '3.5rem' },
+            letterSpacing: '-0.03em', lineHeight: 1.1, mb: 2,
+          }}>
+            Every language.{' '}
+            <Box component="span" sx={{ background: G, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Every voice.
+            </Box>
+          </Typography>
+          <Typography sx={{ color: '#64748b', fontSize: { xs: '1rem', md: '1.15rem' }, maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
+            Comprehensive support for African and global languages across all A-Voices AI services.
+          </Typography>
+        </Box>
+
+        {/* ── Stat cards ─────────────────────────────── */}
+        <Box sx={{ display: 'flex', gap: 2.5, flexWrap: 'wrap', mb: 8, justifyContent: 'center' }}>
+          <StatCard value={15} suffix="+" label="Languages" color="#0ea5e9" index={0} />
+          <StatCard value={6} suffix="" label="AI Services" color="#8b5cf6" index={1} />
+          <StatCard value={95} suffix="%" label="Coverage" color="#10b981" index={2} />
+          <StatCard value={30} suffix="+" label="Countries" color={GOLD} index={3} />
+        </Box>
+
+        {/* ── Search & filter bar ─────────────────────────── */}
+        <Box sx={{
+          background: 'rgba(255,255,255,0.03)', border: CARD_BORDER, borderRadius: '20px',
+          p: 2.5, mb: 5, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          <TextField
+            size="small"
+            placeholder="Search languages…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#475569', fontSize: 20 }} /></InputAdornment>,
+            }}
+            sx={{
+              flex: 1, minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '50px', color: '#f8fafc',
+                background: 'rgba(255,255,255,0.04)',
+                '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' },
+                '&:hover fieldset': { borderColor: 'rgba(14,165,233,0.3)' },
+                '&.Mui-focused fieldset': { borderColor: '#0ea5e9' },
+              },
+              '& input::placeholder': { color: '#475569' },
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={region}
+              onChange={e => setRegion(e.target.value)}
               sx={{
-                width: 48,
-                height: 48,
-                background: `linear-gradient(135deg, #1976d2, #64b5f6)`,
-                fontWeight: 'bold',
-                fontSize: '1.2rem',
+                borderRadius: '50px', color: '#f8fafc', background: 'rgba(255,255,255,0.04)',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.08)' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(14,165,233,0.3)' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+                '& .MuiSvgIcon-root': { color: '#64748b' },
               }}
             >
-              {language.name.charAt(0)}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 0.5 }}>
-                {language.name}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip
-                  label={language.code.toUpperCase()}
-                  size="small"
-                  sx={{
-                    backgroundColor: alpha('#1976d2', 0.1),
-                    color: '#1976d2',
-                    fontWeight: 600,
-                    fontSize: '0.7rem',
-                  }}
-                />
-                <Chip
-                  icon={<PublicIcon sx={{ fontSize: 14 }} />}
-                  label={language.region}
-                  size="small"
-                  sx={{
-                    backgroundColor: alpha('#4caf50', 0.1),
-                    color: '#4caf50',
-                    fontWeight: 500,
-                    fontSize: '0.7rem',
-                  }}
-                />
-              </Box>
-            </Box>
-          </Box>
-          <IconButton
-            onClick={() => setExpanded(!expanded)}
-            sx={{
-              color: '#1976d2',
-              transition: 'transform 0.3s ease',
-              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-          >
-            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
-        </Box>
+              {REGIONS.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+            </Select>
+          </FormControl>
 
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2" sx={{ color: '#666666', fontWeight: 500 }}>
-              Support Coverage
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
-              {supportPercentage}%
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              width: '100%',
-              height: 8,
-              backgroundColor: alpha('#1976d2', 0.1),
-              borderRadius: 4,
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              sx={{
-                width: `${supportPercentage}%`,
-                height: '100%',
-                background: `linear-gradient(90deg, #1976d2, #64b5f6)`,
-                borderRadius: 4,
-                transition: 'width 0.8s ease-in-out',
-              }}
-            />
-          </Box>
-        </Box>
-
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle2" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
-            Supported Features ({supportedFeatures.length}/{totalFeatures})
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {supportedFeatures.map(([feature, _]) => (
-              <Chip
-                key={feature}
-                icon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
-                label={feature}
-                size="small"
+          {/* View toggle */}
+          <Box sx={{ display: 'flex', gap: 0.75 }}>
+            {['cards', 'table'].map(v => (
+              <Chip key={v} label={v === 'cards' ? '⊞ Cards' : '☰ Table'} onClick={() => setView(v)}
                 sx={{
-                  backgroundColor: alpha('#4caf50', 0.1),
-                  color: '#4caf50',
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
+                  background: view === v ? G : 'rgba(255,255,255,0.05)',
+                  color: view === v ? '#fff' : '#64748b',
+                  fontWeight: 700, cursor: 'pointer', borderRadius: '50px',
+                  border: `1px solid ${view === v ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
+                  transition: 'all 0.2s ease',
+                  '& .MuiChip-label': { px: 2 },
                 }}
               />
             ))}
           </Box>
-        </Collapse>
-      </CardContent>
-    </Card>
-  );
-};
 
-const LanguageMatrix = () => {
-  const theme = useTheme();
-  const [isVisible, setIsVisible] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('All');
-  const [selectedFeature, setSelectedFeature] = useState('All');
-  const [viewMode, setViewMode] = useState(0); // 0: Table, 1: Cards
-  const [showOnlySupported, setShowOnlySupported] = useState(false);
+          <Typography sx={{ color: '#475569', fontSize: '0.82rem', fontWeight: 600, ml: 'auto' }}>
+            {filtered.length} language{filtered.length !== 1 ? 's' : ''} found
+          </Typography>
+        </Box>
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+        {/* ── Feature legend ─────────────────────────── */}
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 4 }}>
+          {FEATURES.map(f => (
+            <Chip key={f} label={f} size="small" sx={{
+              background: 'rgba(14,165,233,0.08)', color: '#94a3b8',
+              border: '1px solid rgba(14,165,233,0.12)', fontWeight: 600, borderRadius: '6px',
+              '& .MuiChip-label': { px: 1.5 },
+            }} />
+          ))}
+        </Box>
 
-  const languageData = [
-    { name: 'English', code: 'en', region: 'Global', flag: '🇺🇸', population: '1.5B', priority: 'high' },
-    { name: 'Luganda', code: 'lg', region: 'Uganda', flag: '🇺🇬', population: '8M', priority: 'high' },
-    { name: 'Runyankole', code: 'nyn', region: 'Uganda', flag: '🇺🇬', population: '3M', priority: 'medium' },
-    { name: 'Acholi', code: 'ac', region: 'Uganda', flag: '🇺🇬', population: '1.5M', priority: 'medium' },
-    { name: 'Ateso', code: 'at', region: 'Uganda', flag: '🇺🇬', population: '1.8M', priority: 'medium' },
-    { name: 'French', code: 'fr', region: 'Global', flag: '🇫🇷', population: '280M', priority: 'high' },
-    { name: 'Lumasaba', code: 'myx', region: 'Uganda', flag: '🇺🇬', population: '1.2M', priority: 'low' },
-    { name: 'Lusoga', code: 'xog', region: 'Uganda', flag: '🇺🇬', population: '2M', priority: 'medium' },
-    { name: 'Swahili', code: 'sw', region: 'East Africa', flag: '🇹🇿', population: '200M', priority: 'high' },
-    { name: 'Kinyarwanda', code: 'rw', region: 'Rwanda', flag: '🇷🇼', population: '12M', priority: 'medium' },
-    { name: 'Lugbara', code: 'lgg', region: 'Uganda', flag: '🇺🇬', population: '1M', priority: 'low' },
-    { name: 'Arabic', code: 'ar', region: 'Middle East', flag: '🇸🇦', population: '400M', priority: 'high' },
-    { name: 'Spanish', code: 'es', region: 'Global', flag: '🇪🇸', population: '500M', priority: 'high' },
-    { name: 'Portuguese', code: 'pt', region: 'Global', flag: '🇵🇹', population: '260M', priority: 'medium' },
-    { name: 'German', code: 'de', region: 'Europe', flag: '🇩🇪', population: '100M', priority: 'medium' },
-  ];
-
-  const supportMatrix = {
-    'Text Translation': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Audio Transcription': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Video Transcription': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Text to Speech': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Voice to Voice': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Summarization': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'LLM': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'French', 'Kinyarwanda', 'Lugbara', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-    'Voice Conversation': ['English', 'Luganda', 'Runyankole', 'Swahili', 'Ateso', 'Acholi', 'Kinyarwanda', 'Arabic', 'Spanish', 'Portuguese', 'German'],
-  };
-
-  const regions = ['All', ...new Set(languageData.map(lang => lang.region))];
-  const features = ['All', ...Object.keys(supportMatrix)];
-
-  const getSupportStatus = (language, feature) => {
-    const supportedLanguages = supportMatrix[feature] || [];
-    return supportedLanguages.includes(language.name);
-  };
-
-  const getStatusIcon = (isSupported) => {
-    return isSupported ? (
-      <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20 }} />
-    ) : (
-      <HourglassEmptyIcon sx={{ color: '#ff9800', fontSize: 20 }} />
-    );
-  };
-
-  const getStatusChip = (isSupported) => {
-    return (
-      <Chip
-        label={isSupported ? 'Supported' : 'Coming Soon'}
-        size="small"
-        sx={{
-          backgroundColor: isSupported ? alpha('#4caf50', 0.1) : alpha('#ff9800', 0.1),
-          color: isSupported ? '#4caf50' : '#ff9800',
-          fontWeight: 600,
-          fontSize: '0.75rem',
-        }}
-      />
-    );
-  };
-
-  const filteredLanguages = languageData.filter(language => {
-    const matchesSearch = language.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         language.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         language.region.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRegion = selectedRegion === 'All' || language.region === selectedRegion;
-    
-    const matchesFeature = selectedFeature === 'All' || getSupportStatus(language, selectedFeature);
-    
-    const matchesSupported = !showOnlySupported || Object.keys(supportMatrix).some(feature => 
-      getSupportStatus(language, feature)
-    );
-    
-    return matchesSearch && matchesRegion && matchesFeature && matchesSupported;
-  });
-
-  const TabPanel = ({ children, value, index, ...other }) => (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`language-tabpanel-${index}`}
-      aria-labelledby={`language-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-        <Box sx={{ 
-        py: 2, 
-        px: 2,
-        background: '#ffffff',
-          position: 'relative',
-          overflow: 'hidden',
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '100vw',
-        border: '1px solid #e0e0e0',
-        }}>
-          {/* Floating background elements */}
-          <FloatingElement size="120px" position={{ top: '10%', left: '5%' }} delay="0s" />
-          <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#64b5f6" />
-          <FloatingElement size="100px" position={{ top: '20%', right: '15%' }} delay="0.5s" />
-          <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#42a5f5" />
-          <FloatingElement size="140px" position={{ bottom: '10%', left: '20%' }} delay="2s" />
-          
-          {/* Main gradient overlay */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '100%',
-              background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.02) 0%, transparent 70%)',
-              zIndex: 1,
-            }}
-          />
-
-          {/* Content */}
-          <Box sx={{ position: 'relative', zIndex: 2 }}>
-            {/* Header Section */}
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Fade in={isVisible} timeout={1000}>
-              <Typography
-                  variant="h4"
-                sx={{
-                  fontWeight: 700,
-                    color: '#1976d2',
-                    mb: 1,
-                    fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                }}
-              >
-                Language Support Matrix
-              </Typography>
-              </Fade>
-              <Fade in={isVisible} timeout={1500}>
-              <Typography
-                  variant="body1"
-                sx={{
-                    color: '#666666',
-                    maxWidth: '600px',
-                  mx: 'auto',
-                  fontWeight: 500,
-                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                }}
-              >
-                Comprehensive language support across all our AI-powered services
-              </Typography>
-              </Fade>
-            </Box>
-
-            {/* Statistics Cards */}
-            <Box sx={{ 
-              display: 'flex', 
-              flexWrap: 'wrap', 
-              gap: 2, 
-              mb: 3,
-              justifyContent: 'space-between'
+        {/* ── Language cards ─────────────────────────── */}
+        {view === 'cards' ? (
+          <Grid container spacing={2.5}>
+            {filtered.map((lang, i) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={lang.code}>
+                <LanguageCard lang={lang} index={i} />
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          /* Table view */
+          <Box sx={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '20px', overflow: 'hidden' }}>
+            {/* Table head */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: `200px repeat(${FEATURES.length}, 1fr)`,
+              background: 'rgba(255,255,255,0.04)',
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
+              p: 2,
+              overflowX: 'auto',
             }}>
-              <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-                <StatsCard
-                  icon={LanguageIcon}
-                  title="Total Languages"
-                  value={languageData.length}
-                  description="Supported languages across our platform"
-                  color="#1976d2"
-                  trend="+2 this month"
-                  index={0}
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-                <StatsCard
-                  icon={TranslateIcon}
-                  title="Translation Services"
-                  value="8"
-                  description="Different translation and processing services"
-                  color="#4caf50"
-                  trend="100% coverage"
-                  index={1}
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-                <StatsCard
-                  icon={AutoGraphIcon}
-                  title="Coverage"
-                  value="95%"
-                  description="Language coverage for African languages"
-                  color="#ff9800"
-                  trend="+5% this quarter"
-                  index={2}
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-                <StatsCard
-                  icon={UpdateIcon}
-                  title="Regular Updates"
-                  value="Monthly"
-                  description="New languages and features added regularly"
-                  color="#9c27b0"
-                  trend="Next: Hausa"
-                  index={3}
-                />
-              </Box>
-            </Box>
-
-            {/* Search and Filter Section */}
-            <Paper sx={{ 
-              p: 2, 
-              mb: 2, 
-              borderRadius: '16px', 
-              background: 'rgba(255, 255, 255, 0.95)', 
-              backdropFilter: 'blur(10px)' 
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: 2, 
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <TextField
-                    fullWidth
-                    placeholder="Search languages..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ color: '#1976d2' }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '12px',
-                      }
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 150px', minWidth: '120px' }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Region</InputLabel>
-                    <Select
-                      value={selectedRegion}
-                      onChange={(e) => setSelectedRegion(e.target.value)}
-                      label="Region"
-                      sx={{ borderRadius: '12px' }}
-                    >
-                      {regions.map(region => (
-                        <MenuItem key={region} value={region}>{region}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box sx={{ flex: '1 1 150px', minWidth: '120px' }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Feature</InputLabel>
-                    <Select
-                      value={selectedFeature}
-                      onChange={(e) => setSelectedFeature(e.target.value)}
-                      label="Feature"
-                      sx={{ borderRadius: '12px' }}
-                    >
-                      {features.map(feature => (
-                        <MenuItem key={feature} value={feature}>{feature}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box sx={{ flex: '1 1 150px', minWidth: '120px' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={showOnlySupported}
-                        onChange={(e) => setShowOnlySupported(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Supported Only"
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 150px', minWidth: '120px' }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<FilterListIcon />}
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedRegion('All');
-                      setSelectedFeature('All');
-                      setShowOnlySupported(false);
-                    }}
-                    sx={{ borderRadius: '12px' }}
-                  >
-                    Clear Filters
-                  </Button>
-                </Box>
-              </Box>
-            </Paper>
-
-            {/* View Mode Tabs */}
-            <Box sx={{ mb: 2 }}>
-              <Tabs
-                value={viewMode}
-                onChange={(e, newValue) => setViewMode(newValue)}
-                centered
-                sx={{
-                  '& .MuiTab-root': {
-                    borderRadius: '12px 12px 0 0',
-                    fontWeight: 600,
-                  },
-                  '& .Mui-selected': {
-                    color: '#1976d2',
-                  },
-                }}
-              >
-                <Tab label="Table View" />
-                <Tab label="Card View" />
-              </Tabs>
-            </Box>
-
-            {/* Table View */}
-            <TabPanel value={viewMode} index={0}>
-              <Paper sx={{ 
-                p: 4, 
-                borderRadius: '16px', 
-                background: 'rgba(255, 255, 255, 0.95)', 
-                backdropFilter: 'blur(10px)' 
-              }}>
-              <Typography variant="h4" sx={{ mb: 4, fontWeight: 600, color: '#1976d2' }}>
-                Language Support Overview
-              </Typography>
-              
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600, color: '#1976d2' }}>Language</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#1976d2' }}>Region</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: '#1976d2' }}>Population</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: '#1976d2' }}>Priority</TableCell>
-                      {Object.keys(supportMatrix).map((feature) => (
-                        <TableCell key={feature} sx={{ fontWeight: 600, color: '#1976d2', textAlign: 'center' }}>
-                          {feature}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                      {filteredLanguages.map((language) => (
-                        <TableRow key={language.code} sx={{ '&:hover': { backgroundColor: alpha('#1976d2', 0.02) } }}>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography sx={{ fontSize: '1.2rem' }}>{language.flag}</Typography>
-                            <Typography sx={{ fontWeight: 600, color: '#1976d2' }}>
-                              {language.name}
-                            </Typography>
-                            <Chip
-                              label={language.code.toUpperCase()}
-                              size="small"
-                              sx={{
-                                  backgroundColor: alpha('#1976d2', 0.1),
-                                color: '#1976d2',
-                                fontWeight: 600,
-                              }}
-                            />
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ color: '#666666' }}>
-                            {language.region}
-                          </Typography>
-                        </TableCell>
-                          <TableCell>
-                            <Typography sx={{ color: '#666666', fontWeight: 500 }}>
-                              {language.population}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={language.priority}
-                              size="small"
-                              sx={{
-                                backgroundColor: language.priority === 'high' ? alpha('#4caf50', 0.1) : 
-                                              language.priority === 'medium' ? alpha('#ff9800', 0.1) : 
-                                              alpha('#f44336', 0.1),
-                                color: language.priority === 'high' ? '#4caf50' : 
-                                       language.priority === 'medium' ? '#ff9800' : '#f44336',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                              }}
-                            />
-                        </TableCell>
-                        {Object.keys(supportMatrix).map((feature) => {
-                          const isSupported = getSupportStatus(language, feature);
-                          return (
-                            <TableCell key={feature} sx={{ textAlign: 'center' }}>
-                              <Tooltip title={isSupported ? 'Supported' : 'Coming Soon'}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                  {getStatusIcon(isSupported)}
-                                </Box>
-                              </Tooltip>
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-            </TabPanel>
-
-            {/* Card View */}
-            <TabPanel value={viewMode} index={1}>
-              <Box sx={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: 2,
-                justifyContent: 'flex-start'
-              }}>
-                {filteredLanguages.map((language, index) => (
-                  <Box sx={{ 
-                    flex: '1 1 250px', 
-                    minWidth: '250px',
-                    maxWidth: '300px'
-                  }} key={language.code}>
-                    <LanguageCard
-                      language={language}
-                      supportMatrix={supportMatrix}
-                      index={index}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </TabPanel>
-
-            {/* Feature Details */}
-            <Box sx={{ 
-              display: 'flex', 
-              flexWrap: 'wrap', 
-              gap: 2, 
-              mt: 2,
-              justifyContent: 'flex-start'
-            }}>
-              {Object.entries(supportMatrix).map(([feature, supportedLanguages]) => (
-                <Box sx={{ 
-                  flex: '1 1 250px', 
-                  minWidth: '250px',
-                  maxWidth: '300px'
-                }} key={feature}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
-                        {feature}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 2, color: '#666666' }}>
-                        {supportedLanguages.length} languages supported
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {supportedLanguages.slice(0, 3).map((lang) => (
-                          <Chip
-                            key={lang}
-                            label={lang}
-                            size="small"
-                            sx={{
-                              backgroundColor: alpha('#1976d2', 0.1),
-                              color: '#1976d2',
-                              fontWeight: 500,
-                            }}
-                          />
-                        ))}
-                        {supportedLanguages.length > 3 && (
-                          <Chip
-                            label={`+${supportedLanguages.length - 3} more`}
-                            size="small"
-                            sx={{
-                              backgroundColor: alpha('#1976d2', 0.05),
-                              color: '#1976d2',
-                              fontWeight: 500,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Box>
+              <Typography sx={{ color: '#64748b', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Language</Typography>
+              {FEATURES.map(f => (
+                <Typography key={f} sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.78rem', textAlign: 'center', px: 1 }}>{f}</Typography>
               ))}
             </Box>
+            {/* Table rows */}
+            {filtered.map((lang, i) => (
+              <Box key={lang.code} sx={{
+                display: 'grid',
+                gridTemplateColumns: `200px repeat(${FEATURES.length}, 1fr)`,
+                p: 2, overflowX: 'auto',
+                borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                transition: 'background 0.2s ease',
+                '&:hover': { background: 'rgba(255,255,255,0.02)' },
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Typography sx={{ fontSize: '1.4rem' }}>{lang.flag}</Typography>
+                  <Box>
+                    <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.9rem' }}>{lang.name}</Typography>
+                    <Typography sx={{ color: '#475569', fontSize: '0.72rem', fontWeight: 600 }}>{lang.region}</Typography>
+                  </Box>
+                </Box>
+                {FEATURES.map(f => {
+                  const supported = SUPPORT_MATRIX[f].includes(lang.name);
+                  return (
+                    <Box key={f} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {supported
+                        ? <CheckCircleIcon sx={{ color: '#10b981', fontSize: 20 }} />
+                        : <HourglassEmptyIcon sx={{ color: '#374151', fontSize: 18 }} />
+                      }
+                    </Box>
+                  );
+                })}
+              </Box>
+            ))}
+          </Box>
+        )}
 
-            {/* Coming Soon Alert */}
-            <Alert 
-              severity="info" 
-              icon={<InfoIcon />}
-              sx={{ 
-                mt: 2, 
-                borderRadius: '12px',
-                backgroundColor: alpha('#1976d2', 0.1),
-                border: `1px solid ${alpha('#1976d2', 0.2)}`,
+        {/* Empty state */}
+        {filtered.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 10 }}>
+            <Typography sx={{ color: '#475569', fontSize: '1rem', fontWeight: 600 }}>No languages match your filters.</Typography>
+            <Button onClick={() => { setSearch(''); setRegion('All'); }} sx={{ mt: 2, color: '#0ea5e9', fontWeight: 700, textTransform: 'none' }}>
+              Clear Filters
+            </Button>
+          </Box>
+        )}
+
+        {/* ── Bottom CTA ──────────────────────────────── */}
+        <Box sx={{
+          mt: 10, textAlign: 'center',
+          background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '28px', p: { xs: 5, md: 7 }, position: 'relative', overflow: 'hidden',
+        }}>
+          <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(14,165,233,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <Box sx={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}60, transparent)` }} />
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography sx={{ color: GOLD, fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 2 }}>
+              Missing a language?
+            </Typography>
+            <Typography sx={{ color: '#f8fafc', fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.4rem' }, letterSpacing: '-0.02em', mb: 2 }}>
+              We're always expanding coverage.
+            </Typography>
+            <Typography sx={{ color: '#64748b', fontSize: '1rem', mb: 4, maxWidth: 400, mx: 'auto' }}>
+              New languages are added monthly. Start for free and grow with us.
+            </Typography>
+            <Button component={Link} to="/get-started" variant="contained" endIcon={<ArrowForward />}
+              sx={{
+                background: G, color: '#fff', fontWeight: 700, px: 4, py: 1.5, borderRadius: '50px',
+                boxShadow: '0 6px 28px rgba(14,165,233,0.4)',
+                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 10px 36px rgba(14,165,233,0.55)' },
               }}
             >
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                <strong>Upcoming Languages:</strong> Hausa, Yoruba, Igbo, Amharic, and Somali are coming soon! 
-                We're constantly expanding our language support based on user demand.
-              </Typography>
-            </Alert>
+              Get Started Free
+            </Button>
           </Box>
         </Box>
-    </ThemeProvider>
+      </Container>
+    </Box>
   );
-};
-
-export default LanguageMatrix;
+}

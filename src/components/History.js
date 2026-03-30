@@ -19,19 +19,19 @@ const GOLD = '#f59e0b';
 const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px' };
 
 const features = [
-  { Icon: TextFields,      label: 'Text Translation',  Component: TranslationsTable, color: '#0ea5e9' },
-  { Icon: VolumeUp,        label: 'Text to Speech',    Component: TextTable,         color: '#10b981' },
-  { Icon: Mic,             label: 'Voice Recognition', Component: DataTable,         color: '#f59e0b' },
-  { Icon: VideoCameraBack, label: 'Video Transcription', Component: VideoTable,      color: '#8b5cf6' },
-  { Icon: RecordVoiceOver, label: 'Voice to Voice',    Component: VoxTransTable,     color: '#ef4444' },
-  { Icon: Summarize,       label: 'Summarization',     Component: SummaryTable,      color: '#06b6d4' },
+  { Icon: TextFields,      label: 'Text Translation',    Component: TranslationsTable, color: '#0ea5e9' },
+  { Icon: VolumeUp,        label: 'Text to Speech',      Component: TextTable,         color: '#8b5cf6' },
+  { Icon: Mic,             label: 'Voice Recognition',   Component: DataTable,         color: '#0ea5e9' },
+  { Icon: VideoCameraBack, label: 'Video Transcription', Component: VideoTable,        color: '#8b5cf6' },
+  { Icon: RecordVoiceOver, label: 'Voice to Voice',      Component: VoxTransTable,     color: '#0ea5e9' },
+  { Icon: Summarize,       label: 'Summarization',       Component: SummaryTable,      color: '#8b5cf6' },
 ];
 
 const STAT_DEFS = [
   { label: 'Total Translations', Icon: TextFields,      color: '#0ea5e9' },
-  { label: 'Voice Recordings',   Icon: Mic,             color: GOLD },
-  { label: 'Video Transcriptions', Icon: VideoCameraBack, color: '#8b5cf6' },
-  { label: 'AI Conversations',   Icon: RecordVoiceOver, color: '#ef4444' },
+  { label: 'Voice Recordings',   Icon: Mic,             color: '#8b5cf6' },
+  { label: 'Video Transcriptions', Icon: VideoCameraBack, color: '#0ea5e9' },
+  { label: 'AI Conversations',   Icon: RecordVoiceOver, color: '#8b5cf6' },
 ];
 
 const History = () => {
@@ -50,17 +50,22 @@ const History = () => {
         const userId = user?.userId || user?.uid;
         if (!userId) { setStatsLoading(false); return; }
 
-        const [translationsData, audiosData, videosData, agentsData] = await Promise.allSettled([
-          dataAPI.getTranslations(userId),
-          dataAPI.getAudios(userId),
-          dataAPI.getVideos(userId),
-          agentsAPI.getUserAgents(userId),
-        ]);
-
-        const get = (r) => r.status === 'fulfilled' ? (r.value?.entries?.length || r.value?.length || 0) : 0;
-        const counts = [get(translationsData), get(audiosData), get(videosData), get(agentsData)];
-        setStats(STAT_DEFS.map((s, i) => ({ ...s, value: counts[i].toLocaleString('en-US') })));
-      } catch {
+        // Use the new consolidated stats endpoint for high-fidelity accuracy and performance
+        const response = await dataAPI.getUserStats(userId);
+        
+        if (response && response.stats) {
+          // Map backend stats to STAT_DEFS based on label matching
+          const updatedStats = STAT_DEFS.map(def => {
+            const backendStat = response.stats.find(s => s.label === def.label);
+            return {
+              ...def,
+              value: (backendStat?.value || 0).toLocaleString('en-US')
+            };
+          });
+          setStats(updatedStats);
+        }
+      } catch (err) {
+        console.error('[History] Failed to fetch stats:', err);
         setStatsError(true);
       } finally {
         setStatsLoading(false);

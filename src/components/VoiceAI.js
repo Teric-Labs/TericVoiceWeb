@@ -183,7 +183,7 @@ const VoiceAI = () => {
   return (
     <Box sx={{
       minHeight: '100vh',
-      background: 'linear-gradient(145deg, rgba(25, 118, 210, 0.05), rgba(100, 181, 246, 0.05))',
+      background: 'linear-gradient(145deg, rgba(14, 165, 233, 0.05), rgba(100, 181, 246, 0.05))',
       py: 4,
     }}>
       <Container maxWidth="xl">
@@ -194,7 +194,7 @@ const VoiceAI = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                 backgroundClip: 'text',
                 textFillColor: 'transparent',
               }}
@@ -236,7 +236,7 @@ const VoiceAI = () => {
               sx={{
                 borderRadius: '28px',
                 textTransform: 'none',
-                background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                 px: 3,
                 py: 1,
                 '&:hover': {
@@ -256,7 +256,7 @@ const VoiceAI = () => {
           sx={{
             height: '70vh',
             borderRadius: '24px',
-            border: '1px solid rgba(25, 118, 210, 0.1)',
+            border: '1px solid rgba(14, 165, 233, 0.1)',
             background: 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(10px)',
             display: 'flex',
@@ -284,12 +284,12 @@ const VoiceAI = () => {
                   elevation={0}
                   sx={{
                     background: msg.type === 'user' 
-                      ? 'linear-gradient(45deg, #1976d2, #64b5f6)'
+                      ? 'linear-gradient(45deg, #0ea5e9, #8b5cf6)'
                       : 'rgba(255, 255, 255, 0.9)',
                     color: msg.type === 'user' ? 'white' : 'text.primary',
                     p: 2,
                     borderRadius: '16px',
-                    border: msg.type === 'ai' ? '1px solid rgba(25, 118, 210, 0.1)' : 'none'
+                    border: msg.type === 'ai' ? '1px solid rgba(14, 165, 233, 0.1)' : 'none'
                   }}
                 >
                   <Typography>{msg.content}</Typography>
@@ -318,7 +318,7 @@ const VoiceAI = () => {
                   height: 64,
                   background: isListening
                     ? 'linear-gradient(45deg, #f44336, #ff7961)'
-                    : 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                    : 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                   color: 'white',
                   '&:hover': {
                     transform: 'scale(1.05)',
@@ -346,7 +346,7 @@ const VoiceAI = () => {
                   px: 2,
                   py: 1,
                   borderRadius: '28px',
-                  background: 'rgba(25, 118, 210, 0.1)',
+                  background: 'rgba(14, 165, 233, 0.1)',
                 }}
               >
                 <VolumeUp color="primary" />
@@ -391,7 +391,7 @@ const VoiceAI = () => {
                     <Button onClick={handleDialogClose} sx={{ borderRadius: '28px', textTransform: 'none' }}>
                       Cancel
                     </Button>
-                    <Button variant="contained" onClick={handleCreateAgent} disabled={createLoading} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #1976d2, #64b5f6)', px: 3 }}>
+                    <Button variant="contained" onClick={handleCreateAgent} disabled={createLoading} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)', px: 3 }}>
                       {createLoading ? <CircularProgress size={24} /> : 'Create Agent'}
                     </Button>
                   </DialogActions>

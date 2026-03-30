@@ -154,7 +154,6 @@ const Voice2VoiceCard = () => {
       setIsDrawerOpen(true);
       showNotification('Voice translation completed successfully!');
     } catch (error) {
-      console.error('Voice translation error:', error);
       const errorMessage = handleAPIError(error);
       setError(errorMessage);
       

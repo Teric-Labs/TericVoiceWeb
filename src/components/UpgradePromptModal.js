@@ -13,9 +13,7 @@ import {
   Chip,
   IconButton,
   Fade,
-  Zoom,
   LinearProgress,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
@@ -23,6 +21,8 @@ import {
   Paper,
   Avatar,
   Stack,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -58,8 +58,8 @@ const float = keyframes`
 `;
 
 const glow = keyframes`
-  0%, 100% { box-shadow: 0 0 20px rgba(25, 118, 210, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(25, 118, 210, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
 `;
 
 // Styled components
@@ -68,7 +68,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     borderRadius: '24px',
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-    border: '1px solid rgba(25, 118, 210, 0.1)',
+    border: '1px solid rgba(14, 165, 233, 0.1)',
     maxWidth: '900px',
     width: '90vw',
     maxHeight: '90vh',
@@ -77,7 +77,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 }));
 
 const GradientCard = styled(Card)(({ theme }) => ({
-  background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+  background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
   color: 'white',
   borderRadius: '20px',
   position: 'relative',
@@ -97,12 +97,12 @@ const GradientCard = styled(Card)(({ theme }) => ({
 
 const FeatureCard = styled(Card)(({ theme }) => ({
   borderRadius: '16px',
-  border: '1px solid rgba(25, 118, 210, 0.1)',
+  border: '1px solid rgba(139, 92, 246, 0.1)',
   transition: 'all 0.3s ease',
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: '0 12px 24px rgba(25, 118, 210, 0.15)',
-    border: '1px solid rgba(25, 118, 210, 0.3)',
+    boxShadow: '0 12px 24px rgba(139, 92, 246, 0.15)',
+    border: '1px solid rgba(139, 92, 246, 0.3)',
   },
 }));
 
@@ -112,12 +112,12 @@ const UpgradeButton = styled(Button)(({ theme }) => ({
   fontSize: '1.1rem',
   fontWeight: 700,
   textTransform: 'none',
-  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
-  boxShadow: '0 8px 20px rgba(25, 118, 210, 0.3)',
+  background: 'linear-gradient(45deg, #a855f7, #8b5cf6)',
+  boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)',
   animation: `${glow} 2s ease-in-out infinite`,
   '&:hover': {
-    background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
-    boxShadow: '0 12px 24px rgba(25, 118, 210, 0.4)',
+    background: 'linear-gradient(45deg, #9333ea, #7c3aed)',
+    boxShadow: '0 12px 24px rgba(139, 92, 246, 0.4)',
     transform: 'translateY(-2px)',
   },
 }));
@@ -127,20 +127,30 @@ const FloatingIcon = styled(Box)(({ theme }) => ({
   animationDelay: '0.5s',
 }));
 
-const UpgradePromptModal = ({ 
-  open, 
-  onClose, 
-  currentUsage, 
-  limit, 
-  endpoint, 
-  tier = 'free_trial' 
-}) => {
+const UpgradePromptModal = () => {
+  const [open, setOpen] = useState(false);
+  const [currentUsage, setCurrentUsage] = useState(0);
+  const [limit, setLimit] = useState(0);
+  const [endpoint, setEndpoint] = useState('');
+  const [tier, setTier] = useState('free_trial');
+
   const [pricingTiers, setPricingTiers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
-  
-  // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [successSnack, setSuccessSnack] = useState({ open: false, message: '' });
+  const [successState, setSuccessState] = useState(false);
+
+  const onClose = () => setOpen(false);
+
+  useEffect(() => {
+    const handleLimitExceeded = (e) => {
+      setOpen(true);
+      setEndpoint(e.detail?.endpoint || '');
+    };
+    window.addEventListener('subscription-limit-exceeded', handleLimitExceeded);
+    return () => window.removeEventListener('subscription-limit-exceeded', handleLimitExceeded);
+  }, []);
 
   const loadPricingTiers = useCallback(async () => {
     try {
@@ -148,20 +158,18 @@ const UpgradePromptModal = ({
       const response = await subscriptionAPI.getPricingTiers();
       const tiers = response.pricing_tiers || [];
       setPricingTiers(tiers);
-      
-      // Auto-select the next tier up from current
-      const currentTierIndex = tiers.findIndex(tierItem => tierItem.id === tier);
+      const currentTierIndex = tiers.findIndex(t => t.id === tier);
       if (currentTierIndex >= 0 && currentTierIndex < tiers.length - 1) {
         setSelectedTier(tiers[currentTierIndex + 1]);
       } else {
-        setSelectedTier(tiers.find(tierItem => tierItem.popular) || tiers[1]);
+        setSelectedTier(tiers.find(t => t.popular) || tiers[1]);
       }
-    } catch (error) {
-      console.error('Error loading pricing tiers:', error);
+    } catch {
+      // keep empty list, user can retry
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tier]);
 
   useEffect(() => {
     if (open) {
@@ -176,23 +184,18 @@ const UpgradePromptModal = ({
       // Open payment modal instead of direct upgrade
       setShowPaymentModal(true);
     } catch (error) {
-      console.error('Upgrade failed:', error);
     }
   };
 
-  const handlePaymentSuccess = (tier, paymentResult) => {
-    console.log('Payment successful:', paymentResult);
-    console.log('Upgraded to tier:', tier);
-    
-    // Show success notification
-    alert(`🎉 Successfully upgraded to ${tier.title}! Your subscription is now active.`);
-    
-    // Close both modals
+  const handlePaymentSuccess = (upgradedTier) => {
     setShowPaymentModal(false);
-    onClose();
-    
-    // Optionally refresh the page or update user state
-    window.location.reload();
+    setSuccessState(true);
+    setSuccessSnack({
+      open: true,
+      message: `Successfully upgraded to ${upgradedTier?.title || 'new plan'}! Your subscription is now active.`,
+    });
+    // Close the upgrade modal after a brief moment so user sees the success
+    setTimeout(() => onClose(), 3000);
   };
 
   const getUsagePercentage = () => {
@@ -212,10 +215,10 @@ const UpgradePromptModal = ({
   const getTierColor = (tierId) => {
     switch (tierId) {
       case 'free_trial': return '#9e9e9e';
-      case 'classic': return '#1976d2';
+      case 'classic': return '#0ea5e9';
       case 'classic_pro': return '#7b1fa2';
       case 'enterprise_plus': return '#f57c00';
-      default: return '#1976d2';
+      default: return '#0ea5e9';
     }
   };
 
@@ -252,10 +255,11 @@ const UpgradePromptModal = ({
                   </Typography>
                 </Box>
               </Box>
-              <IconButton 
-                onClick={onClose} 
-                sx={{ 
-                  color: 'white', 
+              <IconButton
+                onClick={onClose}
+                aria-label="Close upgrade modal"
+                sx={{
+                  color: 'white',
                   bgcolor: 'rgba(255,255,255,0.1)',
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
                 }}
@@ -320,7 +324,7 @@ const UpgradePromptModal = ({
                 <FeatureCard
                   sx={{
                     cursor: 'pointer',
-                    border: selectedTier?.id === tier.id ? '2px solid #1976d2' : '1px solid rgba(25, 118, 210, 0.1)',
+                    border: selectedTier?.id === tier.id ? '2px solid #0ea5e9' : '1px solid rgba(14, 165, 233, 0.1)',
                     transform: selectedTier?.id === tier.id ? 'scale(1.02)' : 'scale(1)',
                   }}
                   onClick={() => setSelectedTier(tier)}
@@ -379,7 +383,7 @@ const UpgradePromptModal = ({
         )}
 
         {/* Benefits Section */}
-        <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: '16px' }}>
+        <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(14, 165, 233, 0.05)', borderRadius: '16px' }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
             🎯 Why Upgrade?
           </Typography>
@@ -458,13 +462,28 @@ const UpgradePromptModal = ({
         </Box>
       </DialogActions>
       
-      {/* Payment Modal */}
       <PaymentModal
         open={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         selectedTier={selectedTier}
         onPaymentSuccess={handlePaymentSuccess}
       />
+
+      <Snackbar
+        open={successSnack.open}
+        autoHideDuration={5000}
+        onClose={() => setSuccessSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          onClose={() => setSuccessSnack(s => ({ ...s, open: false }))}
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {successSnack.message}
+        </Alert>
+      </Snackbar>
     </StyledDialog>
   );
 };

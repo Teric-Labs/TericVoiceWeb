@@ -3,15 +3,15 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
-      light: '#64b5f6',
-      dark: '#1565c0',
+      main: '#0ea5e9',
+      light: '#8b5cf6',
+      dark: '#0284c7',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#64b5f6',
+      main: '#8b5cf6',
       light: '#90caf9',
-      dark: '#42a5f5',
+      dark: '#38bdf8',
       contrastText: '#000000',
     },
     background: {
@@ -29,7 +29,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: 'Poppins, Arial, sans-serif',
+    fontFamily: 'Inter, Arial, sans-serif',
     h1: {
       fontWeight: 700,
       fontSize: '2.5rem',
@@ -80,22 +80,22 @@ const theme = createTheme({
           fontWeight: 600,
           borderRadius: '24px',
           padding: '12px 24px',
-          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)',
+          boxShadow: '0 2px 8px rgba(14, 165, 233, 0.15)',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.25)',
+            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)',
           },
         },
         contained: {
-          background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+          background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
           '&:hover': {
-            background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+            background: 'linear-gradient(45deg, #0284c7, #38bdf8)',
           },
         },
         outlined: {
-          borderColor: '#1976d2',
-          color: '#1976d2',
+          borderColor: '#0ea5e9',
+          color: '#0ea5e9',
           '&:hover': {
-            backgroundColor: 'rgba(25, 118, 210, 0.04)',
+            backgroundColor: 'rgba(14, 165, 233, 0.04)',
           },
         },
       },
@@ -105,7 +105,7 @@ const theme = createTheme({
         root: {
           borderRadius: '16px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          border: '1px solid rgba(25, 118, 210, 0.1)',
+          border: '1px solid rgba(14, 165, 233, 0.1)',
         },
       },
     },
@@ -125,10 +125,10 @@ const theme = createTheme({
               borderColor: 'rgba(0, 0, 0, 0.1)',
             },
             '&:hover fieldset': {
-              borderColor: '#1976d2',
+              borderColor: '#0ea5e9',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#1976d2',
+              borderColor: '#0ea5e9',
             },
           },
         },

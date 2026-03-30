@@ -4,7 +4,18 @@ import { PaymentElement, Elements, useStripe, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js';
 import axios from 'axios';
 
-const stripePromise = loadStripe("pk_test_51OoNCdDqmFs47Ob6SjZEbrwKYGtagQUoqytYuGG6wkQRy0VFvZVqduRtCVx9WH1HpXo8b8Tbx7QSnfcOyhKQea4T000RTDwWLA");
+// Lazy-loaded stripe promise to prevent top-level load errors
+let stripePromise = null;
+const getStripe = () => {
+  if (!stripePromise) {
+    stripePromise = loadStripe("pk_test_51OoNCdDqmFs47Ob6SjZEbrwKYGtagQUoqytYuGG6wkQRy0VFvZVqduRtCVx9WH1HpXo8b8Tbx7QSnfcOyhKQea4T000RTDwWLA")
+      .catch(err => {
+        console.warn("Stripe failed to load:", err);
+        return null;
+      });
+  }
+  return stripePromise;
+};
 
 const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
   const stripe = useStripe();
@@ -76,7 +87,6 @@ const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
         throw new Error(`Unexpected payment status: ${paymentIntent.status}`);
       }
     } catch (error) {
-      console.error('Payment error:', error);
       setErrorMessage(error.message || 'An unexpected error occurred');
       setSnackbarMessage('Payment failed. Please try again.');
       setSnackbarSeverity('error');
@@ -159,7 +169,7 @@ const StripeCheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
   };
 
   return (
-    <Elements stripe={stripePromise} options={options}>
+    <Elements stripe={getStripe()} options={options}>
       <CheckoutForm amount={amount} tier={tier} tierId={tierId} userId={userId} onClose={onClose} />
     </Elements>
   );

@@ -1,19 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
-  Grid,
-  Divider,
-  IconButton,
-  Paper,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  useTheme,
-  Container,
-  Chip,
-  Button,
-  Snackbar,
+  Box, Typography, Accordion, AccordionSummary, AccordionDetails,
+  IconButton, Button, Snackbar, Container, Stack, Chip, LinearProgress,
 } from "@mui/material";
 import {
   CloudDownload as DownloadIcon,
@@ -21,249 +9,159 @@ import {
   VolumeUp as VolumeUpIcon,
   ExpandMore as ExpandMoreIcon,
   ContentCopy as CopyIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import { dataAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+
+const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' };
 
 const ViewttsAudioComponent = ({ audioId }) => {
   const [entries, setEntries] = useState([]);
   const [audioDate, setAudioDate] = useState("");
   const [audioTitle, setAudioTitle] = useState("");
+  const [loading, setLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEntries = async () => {
       try {
         const response = await dataAPI.getVocifyVoice(audioId);
         const fetchedEntries = response.entries;
-
         if (fetchedEntries.length > 0) {
           setEntries(fetchedEntries);
           setAudioDate(fetchedEntries[0].date);
           setAudioTitle(fetchedEntries[0].title);
         }
-      } catch (error) {
-        console.error("Failed to fetch entries", error);
+      } catch {
         setSnackbarMessage("Failed to fetch audio data");
         setSnackbarOpen(true);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchEntries();
   }, [audioId]);
 
   const handleCopyText = (text) => {
     navigator.clipboard.writeText(text)
-      .then(() => {
-        setSnackbarMessage("Text copied to clipboard");
-        setSnackbarOpen(true);
-      })
-      .catch((err) => {
-        setSnackbarMessage("Failed to copy text");
-        setSnackbarOpen(true);
-      });
+      .then(() => { setSnackbarMessage("Text copied to clipboard"); setSnackbarOpen(true); })
+      .catch(() => { setSnackbarMessage("Failed to copy text"); setSnackbarOpen(true); });
   };
 
-  const handleDirectDownload = (audioUrl) => {
+  const handleDownload = (audioUrl) => {
     try {
-      if (!audioUrl) {
-        throw new Error("Audio URL is invalid or not provided.");
-      }
-  
-      const decodedUrl = decodeURIComponent(audioUrl);
-  
-      // Create a link element and programmatically trigger a click
       const link = document.createElement("a");
-      link.href = decodedUrl;
-      link.download = ""; // Optional: Browser will infer the filename
-      link.target = "_blank"; // Open in a new tab if necessary
-  
+      link.href = decodeURIComponent(audioUrl);
+      link.download = "";
+      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-  
-      setSnackbarMessage("Audio download initiated.");
+      setSnackbarMessage("Download initiated.");
       setSnackbarOpen(true);
-    } catch (error) {
-      console.error("Direct download failed:", error);
-      setSnackbarMessage("Failed to initiate download. Please try again later.");
+    } catch {
+      setSnackbarMessage("Download failed.");
       setSnackbarOpen(true);
     }
   };
 
-  const styles = {
-    mainPaper: {
-      borderRadius: "24px",
-      background: "rgba(255, 255, 255, 0.9)",
-      backdropFilter: "blur(10px)",
-      border: "1px solid rgba(25, 118, 210, 0.1)",
-      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-      transition: "transform 0.3s ease",
-      "&:hover": {
-        transform: "translateY(-4px)",
-      },
-    },
-    actionButton: {
-      background: "linear-gradient(45deg, #1976d2, #64b5f6)",
-      color: "white",
-      borderRadius: "50%",
-      padding: "12px",
-      "&:hover": {
-        background: "linear-gradient(45deg, #1565c0, #42a5f5)",
-      },
-    },
-    accordion: {
-      background: "rgba(255, 255, 255, 0.7)",
-      borderRadius: "16px",
-      marginBottom: "16px",
-      "&:before": {
-        display: "none",
-      },
-    },
-    audioPlayer: {
-      borderRadius: "12px",
-      backgroundColor: "rgba(25, 118, 210, 0.04)",
-      "& .rhap_main-controls-button": {
-        color: theme.palette.primary.main,
-      },
-      "& .rhap_progress-filled": {
-        backgroundColor: theme.palette.primary.main,
-      },
-      "& .rhap_download-progress": {
-        backgroundColor: theme.palette.primary.light,
-      },
-    },
-    copyButton: {
-      marginLeft: 2,
-      color: theme.palette.primary.main,
-      "&:hover": {
-        backgroundColor: "rgba(25, 118, 210, 0.04)",
-      },
-    },
-    translationBox: {
-      position: 'relative',
-      backgroundColor: "rgba(25, 118, 210, 0.04)",
-      borderRadius: "8px",
-      padding: "16px",
-      marginBottom: "16px",
-    },
-  };
-
   return (
-    <Container maxWidth="lg">
-      <Paper elevation={0} sx={styles.mainPaper}>
-        <Box p={4}>
-          {/* Header Section */}
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
-              <Typography variant="h4" gutterBottom sx={{ 
-                fontWeight: 600,
-                background: "linear-gradient(45deg, #1976d2, #64b5f6)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent"
-              }}>
-                {audioTitle}
+    <Box sx={{ minHeight: '100vh', background: '#0a0a0f', py: 4 }}>
+      <Container maxWidth="lg">
+        {/* Back Button */}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mb: 3, color: 'rgba(255,255,255,0.6)', textTransform: 'none', fontWeight: 700, borderRadius: '50px', px: 2, '&:hover': { color: '#0ea5e9', background: 'rgba(14,165,233,0.08)' } }}
+        >
+          Back to History
+        </Button>
+
+        {/* Header */}
+        <Box sx={{ ...GLASS, p: { xs: 3, md: 4 }, mb: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
+            <Box>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.5rem', md: '2rem' }, background: G, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.03em', mb: 0.5 }}>
+                {audioTitle || 'TTS Audio'}
               </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Created on: {new Date(audioDate).toLocaleString()}
+              <Typography sx={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>
+                Created: {audioDate ? new Date(audioDate).toLocaleString() : '—'}
               </Typography>
-              <Box mt={2}>
-                <Chip
-                  icon={<TranslateIcon />}
-                  label="Multi-language Support"
-                  sx={{ mr: 1, mb: 1 }}
-                  color="primary"
-                />
-                <Chip
-                  icon={<VolumeUpIcon />}
-                  label="Audio Available"
-                  sx={{ mb: 1 }}
-                  color="secondary"
+              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                <Chip icon={<TranslateIcon sx={{ fontSize: 13 }} />} label="Multi-language" size="small" sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)', fontWeight: 700 }} />
+                <Chip icon={<VolumeUpIcon sx={{ fontSize: 13 }} />} label="Audio Ready" size="small" sx={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.2)', fontWeight: 700 }} />
+              </Stack>
+            </Box>
+          </Stack>
+        </Box>
+
+        {loading && <LinearProgress sx={{ borderRadius: 4, mb: 3, '& .MuiLinearProgress-bar': { background: G } }} />}
+
+        {/* Content */}
+        {entries.length > 0 && Object.entries(entries[0].translations_with_tts || {}).map(([lang, data]) => (
+          <Accordion
+            key={lang}
+            sx={{
+              mb: 2, borderRadius: '16px !important', '&:before': { display: 'none' },
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: 'none',
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />}
+              sx={{ borderRadius: '16px', '& .MuiAccordionSummary-content': { my: 1.5 } }}
+            >
+              <Stack direction="row" alignItems="center" gap={2}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(14,165,233,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TranslateIcon sx={{ fontSize: 17, color: '#0ea5e9' }} />
+                </Box>
+                <Typography sx={{ fontWeight: 800, color: '#f8fafc', fontSize: '0.95rem' }}>
+                  {lang.toUpperCase()} Translation
+                </Typography>
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 3, pb: 3 }}>
+              {/* Translation Text */}
+              <Box sx={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', p: 2.5, mb: 2.5, border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, fontSize: '0.95rem', pr: 5 }}>
+                  {data.translation}
+                </Typography>
+                <IconButton
+                  onClick={() => handleCopyText(data.translation)}
+                  size="small"
+                  sx={{ position: 'absolute', top: 10, right: 10, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}
+                >
+                  <CopyIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              {/* Audio Player */}
+              <Box sx={{ mb: 2 }}>
+                <AudioPlayer
+                  src={data.audio_file_path}
+                  style={{ borderRadius: '12px', background: 'rgba(255,255,255,0.03)', boxShadow: 'none' }}
+                  customVolumeControls={[]}
+                  customAdditionalControls={[]}
+                  showJumpControls={false}
                 />
               </Box>
-            </Grid>
-          </Grid>
+              <Button
+                startIcon={<DownloadIcon />}
+                onClick={() => handleDownload(data.audio_file_path)}
+                sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: G, color: '#fff', px: 3, '&:hover': { opacity: 0.9 } }}
+              >
+                Download Audio
+              </Button>
+            </AccordionDetails>
+          </Accordion>
+        ))}
+      </Container>
 
-          <Divider sx={{ my: 4 }} />
-
-          {/* Content Section */}
-          {entries.length > 0 && (
-            <Box>
-
-              {/* Translations Section */}
-              {Object.entries(entries[0].translations_with_tts || {}).map(
-                ([language, translationData]) => (
-                  <Accordion
-                    key={language}
-                    sx={styles.accordion}
-                    TransitionProps={{ unmountOnExit: true }}
-                  >
-                    <AccordionSummary
-                      expandIcon={
-                        <ExpandMoreIcon sx={{ color: theme.palette.primary.main }} />
-                      }
-                    >
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <TranslateIcon color="primary" />
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {language.toUpperCase()} Translation
-                        </Typography>
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={styles.translationBox}>
-                        <Typography
-                          variant="body1"
-                          sx={{ color: theme.palette.text.secondary }}
-                        >
-                          {translationData.translation}
-                        </Typography>
-                        <IconButton 
-                          onClick={() => handleCopyText(translationData.translation)}
-                          sx={styles.copyButton}
-                          size="small"
-                        >
-                          <CopyIcon />
-                        </IconButton>
-                      </Box>
-                      
-                      <Box sx={{ mb: 2 }}>
-                        <AudioPlayer
-                          src={translationData.audio_file_path}
-                          onPlay={(e) => console.log(`Playing ${language} audio`)}
-                          style={styles.audioPlayer}
-                          customVolumeControls={[]}
-                          customAdditionalControls={[]}
-                          showJumpControls={false}
-                        />
-                        <Button
-                          startIcon={<DownloadIcon />}
-                          onClick={() => handleDirectDownload(translationData.audio_file_path)}
-                          sx={{
-                            mt: 2,
-                            background: "linear-gradient(45deg, #1976d2, #64b5f6)",
-                            color: "white",
-                            "&:hover": {
-                              background: "linear-gradient(45deg, #1565c0, #42a5f5)",
-                            },
-                          }}
-                        >
-                          Download Audio
-                        </Button>
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )
-              )}
-            </Box>
-          )}
-        </Box>
-      </Paper>
-
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -271,7 +169,7 @@ const ViewttsAudioComponent = ({ audioId }) => {
         message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
-    </Container>
+    </Box>
   );
 };
 

@@ -135,7 +135,7 @@ const TranslationCard = () => {
           >
             {['Text Translation', 'Document Translation'].map((label, i) => (
               <Tab key={i} label={label}
-                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: activeTab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)', '&.Mui-selected': { color: '#38bdf8' } }}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: activeTab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)', '&.Mui-selected': { color: '#0ea5e9' } }}
               />
             ))}
           </Tabs>
@@ -168,57 +168,42 @@ const TranslationCard = () => {
 
         {/* Content */}
         {activeTab === 0 ? (
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                multiline rows={8} fullWidth
-                label="Input Text"
-                placeholder="Enter text to translate…"
-                value={inputText}
-                onChange={e => dispatch(setInputText(e.target.value))}
-                error={inputText.length > MAX_TEXT_LENGTH}
-                helperText={`${inputText.length} / ${MAX_TEXT_LENGTH}`}
-                sx={{
-                  '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
-                  '& .MuiInputLabel-root': LABEL_SX,
-                  '& .MuiFormHelperText-root': { color: '#64748b' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                multiline rows={8} fullWidth
-                label="Translated Text"
-                placeholder="Translation will appear here…"
-                value={translatedText}
-                InputProps={{ readOnly: true }}
-                sx={{
-                  '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
-                  '& .MuiInputLabel-root': LABEL_SX,
-                }}
-              />
-              {translatedText && (
-                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                  <Button variant="outlined" size="small" startIcon={<ContentCopy />} onClick={handleCopy}
-                    sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', '&:hover': { borderColor: '#0ea5e9', color: '#38bdf8' } }}>
-                    Copy
-                  </Button>
-                  <Button variant="outlined" size="small" startIcon={<Download />} onClick={handleDownload}
-                    sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', '&:hover': { borderColor: '#8b5cf6', color: '#a78bfa' } }}>
-                    Download
-                  </Button>
-                </Stack>
-              )}
-            </Grid>
-          </Grid>
+          <Box sx={{ mb: 4 }}>
+            <TextField
+              multiline 
+              rows={12} 
+              fullWidth
+              label="Content to Translate"
+              placeholder="Type or paste your text here for professional translation…"
+              value={inputText}
+              onChange={e => dispatch(setInputText(e.target.value))}
+              error={inputText.length > MAX_TEXT_LENGTH}
+              helperText={`${inputText.length} / ${MAX_TEXT_LENGTH} characters`}
+              sx={{
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: '20px', 
+                  color: '#f8fafc', 
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  fontSize: '1rem',
+                  lineHeight: 1.6,
+                  padding: '20px',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' }, 
+                  '&:hover fieldset': { borderColor: 'rgba(14, 165, 233, 0.4)' }, 
+                  '&.Mui-focused fieldset': { borderColor: '#0ea5e9', borderWidth: '2px' } 
+                },
+                '& .MuiInputLabel-root': { ...LABEL_SX, transform: 'translate(20px, 20px) scale(1)', '&.Mui-input-shrink': { transform: 'translate(14px, -9px) scale(0.75)' } },
+                '& .MuiFormHelperText-root': { color: '#64748b', textAlign: 'right', fontWeight: 500 },
+              }}
+            />
+          </Box>
         ) : (
           <Box sx={{ mb: 3 }}>
             <Box
               sx={{
                 border: '1.5px dashed',
-                borderColor: selectedFile ? '#10b981' : 'rgba(255,255,255,0.12)',
+                borderColor: selectedFile ? '#0ea5e9' : 'rgba(255,255,255,0.12)',
                 borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
-                background: selectedFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                background: selectedFile ? 'rgba(14,165,233,0.05)' : 'rgba(255,255,255,0.02)',
                 transition: 'all 0.25s ease',
                 '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
               }}
@@ -226,8 +211,8 @@ const TranslationCard = () => {
             >
               {selectedFile ? (
                 <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
-                  <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
-                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{selectedFile.name}</Box>
+                  <CheckCircle sx={{ color: '#0ea5e9', fontSize: 22 }} />
+                  <Box sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>{selectedFile.name}</Box>
                 </Stack>
               ) : (
                 <>
@@ -239,7 +224,7 @@ const TranslationCard = () => {
                   <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
                     {SUPPORTED_FILE_TYPES.map(t => (
                       <Chip key={t.type} label={t.type} size="small"
-                        sx={{ background: 'rgba(14,165,233,0.1)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.2)', fontSize: '0.7rem' }} />
+                        sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)', fontSize: '0.7rem' }} />
                     ))}
                   </Stack>
                 </>
@@ -247,10 +232,10 @@ const TranslationCard = () => {
               <input id="transl-file-input" type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} style={{ display: 'none' }} />
             </Box>
             {translatedText && (
-              <Box sx={{ ...GLASS, p: 2.5, mt: 2, borderColor: 'rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.05)' }}>
+              <Box sx={{ ...GLASS, p: 2.5, mt: 2, borderColor: 'rgba(14, 165, 233, 0.25)', background: 'rgba(14, 165, 233, 0.05)' }}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircle sx={{ color: '#10b981', fontSize: 18 }} />
-                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>Translation Completed Successfully</Box>
+                  <CheckCircle sx={{ color: '#0ea5e9', fontSize: 18 }} />
+                  <Box sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>Translation Completed Successfully</Box>
                 </Stack>
                 <Box sx={{ color: '#64748b', fontSize: '0.8rem', mt: 0.5 }}>Results are displayed in the drawer on the right</Box>
               </Box>
@@ -273,8 +258,8 @@ const TranslationCard = () => {
             startIcon={<Translate />}
             sx={{
               borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-              background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.35)',
-              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(14,165,233,0.5)', transform: 'translateY(-1px)' },
+              background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.2)',
+              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#8b5cf6)', boxShadow: '0 6px 28px rgba(14,165,233,0.35)', transform: 'translateY(-1px)' },
               '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
             }}
           >

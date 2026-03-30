@@ -24,7 +24,6 @@ export const useSubscriptionTracking = () => {
       setSubscriptionStatus(status);
       return status;
     } catch (err) {
-      console.error('Error fetching subscription status:', err);
       setError(err.message);
       return null;
     } finally {
@@ -42,7 +41,6 @@ export const useSubscriptionTracking = () => {
       setUsageStats(stats);
       return stats;
     } catch (err) {
-      console.error('Error fetching usage stats:', err);
       setError(err.message);
       return null;
     } finally {
@@ -58,7 +56,6 @@ export const useSubscriptionTracking = () => {
       const result = await subscriptionAPI.checkUsage(endpoint);
       return result;
     } catch (err) {
-      console.error('Error checking endpoint access:', err);
       return { allowed: false, message: err.message };
     }
   }, [user.uid]);
@@ -89,7 +86,6 @@ export const useSubscriptionTracking = () => {
   useEffect(() => {
     const handleSubscriptionLimitExceeded = (event) => {
       const { message, endpoint } = event.detail;
-      console.warn(`Subscription limit exceeded for ${endpoint}:`, message);
       showUpgradePrompt(message);
     };
 
@@ -142,7 +138,6 @@ export const useUsageCheck = (endpoint) => {
       
       return result.allowed;
     } catch (err) {
-      console.error('Usage check failed:', err);
       setError(err.message);
       setCanUse(false);
       return false;

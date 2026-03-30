@@ -72,7 +72,7 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
         {/* Header */}
         <Box
           sx={{
-            background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+            background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
             p: 3,
             position: 'relative'
           }}
@@ -121,7 +121,7 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                      background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                       color: 'white',
                       height: 'fit-content'
                     }}
@@ -170,9 +170,9 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
               fontWeight: 600,
               borderRadius: 2,
               textTransform: 'none',
-              background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+              background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #1565c0, #42a5f5)'
+                background: 'linear-gradient(45deg, #0284c7, #38bdf8)'
               }
             }}
           >

@@ -142,7 +142,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box sx={{ 
-          background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+          background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
           p: 3,
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -224,7 +224,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                       <Chip 
                         size="small" 
                         label="Preview" 
-                        sx={{ backgroundColor: '#e3f2fd', color: '#1976d2' }}
+                        sx={{ backgroundColor: 'rgba(14,165,233,0.08)', color: '#0ea5e9' }}
                       />
                     </Box>
                   </AccordionSummary>
@@ -275,7 +275,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
             onClick={() => setIsPremiumExpanded(!isPremiumExpanded)}
             sx={{
               p: 2.5,
-              color: '#1976d2',
+              color: '#0ea5e9',
               textTransform: 'none',
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -283,12 +283,12 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
               alignItems: 'center',
               gap: 2,
               '&:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                backgroundColor: 'rgba(14, 165, 233, 0.04)',
               }
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Bolt sx={{ fontSize: 24, color: '#1976d2' }} />
+              <Bolt sx={{ fontSize: 24, color: '#0ea5e9' }} />
               <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 600 }}>
                 Unlock Full Transcription Features
               </Typography>
@@ -320,7 +320,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                     position: 'relative',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': { 
-                      borderColor: '#1976d2',
+                      borderColor: '#0ea5e9',
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }
@@ -329,7 +329,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                       <Box sx={{ 
                         p: 1.5, 
                         borderRadius: 1.5, 
-                        background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+                        background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
                         color: 'white'
                       }}>
                         {feature.icon}
@@ -344,8 +344,8 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                               size="small"
                               label={feature.highlight}
                               sx={{ 
-                                backgroundColor: '#e3f2fd',
-                                color: '#1976d2',
+                                backgroundColor: 'rgba(14,165,233,0.08)',
+                                color: '#0ea5e9',
                                 fontWeight: 600,
                                 fontSize: '0.75rem'
                               }}
@@ -374,9 +374,9 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                   fontWeight: 600,
                   fontSize: '1.1rem',
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #1565c0 0%, #42a5f5 100%)'
+                    background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)'
                   }
                 }}
               >

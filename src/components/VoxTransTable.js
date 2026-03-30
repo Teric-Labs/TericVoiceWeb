@@ -84,7 +84,6 @@ const VoiceTransTable = () => {
   const fetchTranslations = useCallback(async () => {
     setLoading(true);
     if (!user.userId) {
-      console.error('Invalid user ID format');
       setLoading(false);
       return;
     }
@@ -115,7 +114,6 @@ const VoiceTransTable = () => {
         message: 'Failed to fetch translations',
         severity: 'error'
       });
-      console.error('Error fetching translations:', err);
     } finally {
       setLoading(false);
     }
@@ -236,7 +234,6 @@ const VoiceTransTable = () => {
                         Date
                       </TableSortLabel>
                     </TableCell>
-                    <TableCell>Original Text</TableCell>
                     <TableCell>Source Language</TableCell>
                     <TableCell>Translations</TableCell>
                     <TableCell></TableCell>
@@ -253,11 +250,6 @@ const VoiceTransTable = () => {
                           month: 'short',
                           day: 'numeric'
                         })}
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 250 }}>
-                        <Tooltip title={trans.originalText}>
-                          <Typography noWrap>{trans.originalText}</Typography>
-                        </Tooltip>
                       </TableCell>
                       <TableCell>
                         <Chip

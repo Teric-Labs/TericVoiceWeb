@@ -60,8 +60,8 @@ const ProfessionalProgressBar = ({
         };
       default: // translation
         return {
-          gradient: "linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)",
-          backgroundColor: "rgba(25, 118, 210, 0.1)",
+          gradient: "linear-gradient(90deg, #8b5cf6, #a855f7, #8b5cf6)",
+          backgroundColor: "rgba(139, 92, 246, 0.1)",
           animation: "translationPulse 2s ease-in-out infinite"
         };
     }
@@ -115,13 +115,13 @@ const ProfessionalProgressBar = ({
               },
               '@keyframes translationPulse': {
                 '0%': {
-                  background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
+                  background: 'linear-gradient(90deg, #8b5cf6, #a855f7, #8b5cf6)',
                 },
                 '50%': {
-                  background: 'linear-gradient(90deg, #42a5f5, #1976d2, #42a5f5)',
+                  background: 'linear-gradient(90deg, #a855f7, #8b5cf6, #a855f7)',
                 },
                 '100%': {
-                  background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
+                  background: 'linear-gradient(90deg, #8b5cf6, #a855f7, #8b5cf6)',
                 },
               },
               '@keyframes uploadPulse': {

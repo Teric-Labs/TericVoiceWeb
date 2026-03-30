@@ -2,23 +2,38 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Typography, Button, TextField, FormControl, Select,
   MenuItem, Alert, Stack, Chip, LinearProgress, InputLabel,
+  Paper, Slider, Drawer, IconButton as MuiIconButton, Grid,
+  Fade, Zoom
 } from '@mui/material';
 import {
-  GraphicEq, CloudUpload, PlayArrow, Pause, AutoAwesome,
+  GraphicEq, CloudUpload, PlayArrow,
   Mic, Stop, CheckCircle,
+  Close, Download, Bolt, Star,
+  Settings, TextFields, History, AutoAwesome
 } from '@mui/icons-material';
-import { ttsAPI, voiceToVoiceAPI } from '../services/api';
+import { voiceCloningAPI } from '../services/api';
 import { LANGUAGES } from '../constants/languages';
+import AudioPlayer from 'react-h5-audio-player';
+import 'react-h5-audio-player/lib/styles.css';
+import { Link } from 'react-router-dom';
 
 const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const GLASS = { 
+  background: 'rgba(255,255,255,0.03)', 
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.08)', 
+  borderRadius: '20px' 
+};
+
 const SELECT_SX = {
   borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
   '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
   '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
   '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+  '& .MuiSelect-select': { color: '#f8fafc' }
 };
+
 const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
 
 const MODE = { SAMPLE: 'sample', RECORD: 'record' };
@@ -32,14 +47,28 @@ export default function VoiceCloningComponent() {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [loading, setLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState(null);
+  const [temperature, setTemperature] = useState(0.7);
+  const [referenceText, setReferenceText] = useState('');
+  const [showResult, setShowResult] = useState(false);
+  const [clonedData, setClonedData] = useState(null);
+  const [showLongRequestAlert, setShowLongRequestAlert] = useState(false);
 
   const fileRef = useRef(null);
   const mediaRecorder = useRef(null);
   const mediaStream = useRef(null);
-  const audioRef = useRef(null);
   const chunks = useRef([]);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (loading) {
+      timerRef.current = setTimeout(() => setShowLongRequestAlert(true), 8000);
+    } else {
+      clearTimeout(timerRef.current);
+      setShowLongRequestAlert(false);
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [loading]);
 
   useEffect(() => () => {
     mediaStream.current?.getTracks().forEach(t => t.stop());
@@ -52,7 +81,7 @@ export default function VoiceCloningComponent() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStream.current = stream;
       chunks.current = [];
-      const mr = new MediaRecorder(stream);
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mr.ondataavailable = e => chunks.current.push(e.data);
       mr.onstop = () => {
         const blob = new Blob(chunks.current, { type: 'audio/webm' });
@@ -74,224 +103,291 @@ export default function VoiceCloningComponent() {
 
   const handleSubmit = async () => {
     if (!text.trim()) { setError('Please enter text to synthesize.'); return; }
+    if (mode === MODE.SAMPLE && !voiceFile && !recordedBlob) {
+      setError('Please provide a reference voice sample.');
+      return;
+    }
+
     const { uid, userId } = getUser();
     setLoading(true);
     setError(null);
     setAudioUrl(null);
+    
     try {
-      if (mode === MODE.SAMPLE && (voiceFile || recordedBlob)) {
-        const audio = voiceFile || new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
-        const res = await voiceToVoiceAPI.voiceToVoice({
-          audio_file: audio,
-          source_language: language,
-          target_language: language,
-          user_id: uid || userId,
-        });
-        setAudioUrl(res.data?.audio_url || res.data?.url);
+      const formData = new FormData();
+      formData.append('text', text);
+      formData.append('user_id', uid || userId);
+      formData.append('temperature', temperature);
+      if (referenceText) formData.append('reference_text', referenceText);
+
+      const refAudio = voiceFile || (recordedBlob ? new File([recordedBlob], 'recording.wav', { type: 'audio/wav' }) : null);
+      if (refAudio) formData.append('reference_audio', refAudio);
+
+      const res = await voiceCloningAPI.cloneVoice(formData);
+      
+      // FIX: Robustly handle both string and legacy object array return formats
+      const finalUrl = typeof res.audio_url === 'string' ? res.audio_url : (res.audio_url?.[0]?.audio_file_url || res.audio_url);
+      
+      if (finalUrl) {
+        setClonedData(res);
+        setAudioUrl(finalUrl);
+        setShowResult(true);
       } else {
-        const res = await ttsAPI.synthesizeText({
-          text,
-          language,
-          user_id: uid || userId,
-        });
-        setAudioUrl(res.data?.audio_url || res.data?.url);
+        throw new Error('Neural engine failed to generate a public preview link.');
       }
     } catch (e) {
-      setError(e?.response?.data?.message || 'Voice synthesis failed. Please try again.');
+      console.error('Cloning error:', e);
+      setError(e?.response?.data?.message || 'Synthesis failed. The neural engine is currently under high load.');
     } finally {
       setLoading(false);
     }
   };
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { audioRef.current.play(); setIsPlaying(true); }
-  };
-
   return (
-    <Box>
-      {/* Voice Source */}
-      <Box sx={{ ...GLASS, p: 2.5, mb: 2.5 }}>
-        <Typography sx={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 2 }}>
-          Voice Source
-        </Typography>
-        <Stack direction="row" spacing={1} sx={{ mb: 2.5 }}>
-          {[
-            { id: MODE.SAMPLE, label: 'Upload Sample', icon: <CloudUpload sx={{ fontSize: 16 }} /> },
-            { id: MODE.RECORD, label: 'Record Live', icon: <Mic sx={{ fontSize: 16 }} /> },
-          ].map(m => (
-            <Chip
-              key={m.id}
-              icon={m.icon}
-              label={m.label}
-              onClick={() => { setMode(m.id); setVoiceFile(null); setRecordedBlob(null); }}
-              sx={{
-                fontWeight: 600, borderRadius: '50px', height: 36,
-                ...(mode === m.id
-                  ? { background: 'rgba(14,165,233,0.2)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.4)', '& .MuiChip-icon': { color: '#38bdf8 !important' } }
-                  : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)', '& .MuiChip-icon': { color: 'rgba(255,255,255,0.4) !important' } }),
-              }}
-            />
-          ))}
-        </Stack>
-
-        {mode === MODE.SAMPLE && (
-          <>
-            <input ref={fileRef} type="file" accept="audio/*" hidden
-              onChange={e => { setVoiceFile(e.target.files[0]); e.target.value = ''; }} />
-            <Box
-              onClick={() => fileRef.current?.click()}
-              sx={{
-                border: '1.5px dashed',
-                borderColor: voiceFile ? '#10b981' : 'rgba(255,255,255,0.12)',
-                borderRadius: '12px', p: 3, textAlign: 'center', cursor: 'pointer',
-                background: voiceFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
-                transition: 'all 0.25s ease',
-                '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
-              }}
-            >
-              {voiceFile ? (
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
-                  <CheckCircle sx={{ color: '#10b981', fontSize: 20 }} />
-                  <Typography sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{voiceFile.name}</Typography>
+    <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+      <Grid container spacing={4}>
+        {/* Left Side: Configuration & Identity */}
+        <Grid item xs={12} md={5}>
+          <Fade in timeout={600}>
+            <Box>
+              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Bolt sx={{ color: '#0ea5e9' }} /> Neural Voice Identity
+              </Typography>
+              
+              <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
+                <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
+                  {[
+                    { id: MODE.SAMPLE, label: 'Studio Upload', icon: <CloudUpload sx={{ fontSize: 16 }} /> },
+                    { id: MODE.RECORD, label: 'Live Capture', icon: <Mic sx={{ fontSize: 16 }} /> },
+                  ].map(m => (
+                    <Chip
+                      key={m.id}
+                      icon={m.icon}
+                      label={m.label}
+                      onClick={() => { setMode(m.id); setVoiceFile(null); setRecordedBlob(null); }}
+                      sx={{
+                        fontWeight: 700, borderRadius: '12px', height: 40, flex: 1,
+                        ...(mode === m.id
+                          ? { background: 'rgba(14,165,233,0.15)', color: '#38bdf8', border: '1px solid rgba(14,165,233,0.3)', '& .MuiChip-icon': { color: '#38bdf8 !important' } }
+                          : { background: 'rgba(255,255,255,0.02)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.05)', '& .MuiChip-icon': { color: 'rgba(255,255,255,0.3) !important' } }),
+                      }}
+                    />
+                  ))}
                 </Stack>
-              ) : (
-                <>
-                  <Box sx={{ width: 44, height: 44, borderRadius: '12px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5 }}>
-                    <CloudUpload sx={{ fontSize: 22, color: '#0ea5e9' }} />
+
+                {mode === MODE.SAMPLE && (
+                  <Box
+                    onClick={() => fileRef.current?.click()}
+                    sx={{
+                      border: '2px dashed',
+                      borderColor: voiceFile ? '#10b981' : 'rgba(255,255,255,0.1)',
+                      borderRadius: '16px', p: 4, textAlign: 'center', cursor: 'pointer',
+                      background: voiceFile ? 'rgba(16,185,129,0.03)' : 'rgba(255,255,255,0.01)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.03)', transform: 'scale(1.01)' },
+                    }}
+                  >
+                    <input ref={fileRef} type="file" accept="audio/*" hidden onChange={e => { setVoiceFile(e.target.files[0]); e.target.value = ''; }} />
+                    {voiceFile ? (
+                      <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
+                        <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <CheckCircle sx={{ color: '#10b981' }} />
+                        </Box>
+                        <Box textAlign="left">
+                          <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.95rem' }}>Sample Ready</Typography>
+                          <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{voiceFile.name}</Typography>
+                        </Box>
+                      </Stack>
+                    ) : (
+                      <>
+                        <Box sx={{ width: 50, height: 50, borderRadius: '15px', background: 'rgba(14,165,233,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                          <CloudUpload sx={{ fontSize: 28, color: '#0ea5e9' }} />
+                        </Box>
+                        <Typography sx={{ color: '#f8fafc', fontWeight: 700, mb: 0.5 }}>Upload Audio Reference</Typography>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>High-fidelity WAV or MP3 recommended</Typography>
+                      </>
+                    )}
                   </Box>
-                  <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.9rem', mb: 0.5 }}>
-                    Click to upload a voice sample
-                  </Typography>
-                  <Typography sx={{ color: '#64748b', fontSize: '0.78rem' }}>MP3, WAV, M4A, WebM · Max 50MB</Typography>
-                </>
-              )}
-            </Box>
-          </>
-        )}
+                )}
 
-        {mode === MODE.RECORD && (
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
-            <Button
-              variant={isRecording ? 'contained' : 'outlined'}
-              startIcon={isRecording ? <Stop /> : <Mic />}
-              onClick={isRecording ? stopRecording : startRecording}
-              sx={{
-                borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 2.5,
-                ...(isRecording
-                  ? { background: 'rgba(239,68,68,0.85)', color: '#fff', borderColor: 'transparent', '&:hover': { background: 'rgba(220,38,38,0.9)' } }
-                  : { borderColor: '#0ea5e9', color: '#38bdf8', '&:hover': { background: 'rgba(14,165,233,0.08)' } }),
-              }}
-            >
-              {isRecording ? 'Stop Recording' : 'Start Recording'}
-            </Button>
-            {isRecording && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444', animation: 'pulse 1s infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } } }} />
-                <Typography sx={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>Recording…</Typography>
+                {mode === MODE.RECORD && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Button
+                      variant="contained"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      sx={{
+                        borderRadius: '14px', px: 3, py: 1.5, flex: 1,
+                        background: isRecording ? '#ef4444' : G,
+                        fontWeight: 800, fontSize: '0.9rem',
+                        '&:hover': { background: isRecording ? '#dc2626' : G, opacity: 0.9 },
+                        boxShadow: isRecording ? '0 0 20px rgba(239,68,68,0.4)' : 'none'
+                      }}
+                      startIcon={isRecording ? <Stop /> : <Mic />}
+                    >
+                      {isRecording ? 'Stop Capture' : 'Start Capture'}
+                    </Button>
+                    {isRecording && (
+                      <Zoom in>
+                        <Typography sx={{ color: '#ef4444', fontWeight: 800, fontSize: '0.85rem' }}>REC</Typography>
+                      </Zoom>
+                    )}
+                    {recordedBlob && !isRecording && <CheckCircle sx={{ color: '#10b981' }} />}
+                  </Stack>
+                )}
               </Box>
-            )}
-            {recordedBlob && !isRecording && (
-              <Chip
-                icon={<CheckCircle sx={{ fontSize: '16px !important' }} />}
-                label="Recording ready"
-                sx={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', '& .MuiChip-icon': { color: '#10b981 !important' } }}
+
+              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Settings sx={{ color: '#8b5cf6' }} /> Engine Parameters
+              </Typography>
+              
+              <Box sx={{ ...GLASS, p: 3 }}>
+                <FormControl size="small" fullWidth sx={{ mb: 3 }}>
+                  <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
+                  <Select value={language} label="Target Language" onChange={e => setLanguage(e.target.value)} sx={SELECT_SX}>
+                    {LANGUAGES.map(l => (
+                      <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&.Mui-selected': { background: 'rgba(14,165,233,0.2)' } }}>
+                        {l.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Box sx={{ mb: 1 }}>
+                   <Stack direction="row" justifyContent="space-between" mb={1}>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Variation</Typography>
+                    <Typography sx={{ color: '#0ea5e9', fontWeight: 800 }}>{temperature.toFixed(2)}</Typography>
+                  </Stack>
+                  <Slider 
+                    value={temperature} min={0} max={1} step={0.05} 
+                    onChange={(e, v) => setTemperature(v)}
+                    sx={{ color: '#0ea5e9', '& .MuiSlider-thumb': { background: '#fff' } }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+          </Fade>
+        </Grid>
+
+        {/* Right Side: Synthesis Payload */}
+        <Grid item xs={12} md={7}>
+          <Fade in timeout={900}>
+            <Box>
+              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <TextFields sx={{ color: '#10b981' }} /> Narration Script
+              </Typography>
+
+              <Paper sx={{ ...GLASS, p: 3, background: 'rgba(15,23,42,0.4)' }}>
+                <TextField
+                  fullWidth multiline rows={8}
+                  placeholder="Enter the premium narration text here..."
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  variant="standard"
+                  InputProps={{ disableUnderline: true, style: { color: '#f8fafc', fontSize: '1.1rem', lineHeight: 1.6 } }}
+                />
+                
+                <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{text.length} / 2000 characters</Typography>
+                  <Button
+                    variant="contained"
+                    disabled={loading || !text.trim()}
+                    onClick={handleSubmit}
+                    startIcon={loading ? null : <AutoAwesome />}
+                    sx={{
+                      borderRadius: '50px', px: 5, py: 1.5, fontWeight: 900,
+                      background: G, boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 40px rgba(139,92,246,0.5)' },
+                      '&.Mui-disabled': { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)' }
+                    }}
+                  >
+                    {loading ? 'Processing Studio Synthesis...' : 'INITIATE CLONING'}
+                  </Button>
+                </Box>
+              </Paper>
+
+              <Box sx={{ mt: 3, ...GLASS, p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ p: 1, borderRadius: '8px', background: 'rgba(139,92,246,0.1)' }}>
+                  <GraphicEq sx={{ color: '#8b5cf6' }} />
+                </Box>
+                <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem italic' }}>
+                  "Neural voice cloning achieves peak fidelity when the reference audio is clean and the target text matches the speaker's natural rhythm."
+                </Typography>
+              </Box>
+            </Box>
+          </Fade>
+        </Grid>
+      </Grid>
+
+      {/* Result Drawer (Voicify / ElevenLabs Elite Style) */}
+      <Drawer
+        anchor="right"
+        open={showResult}
+        onClose={() => setShowResult(false)}
+        sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: '550px' }, background: '#0a0b10', borderLeft: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ p: 4, background: G, position: 'relative', textAlign: 'center' }}>
+            <MuiIconButton onClick={() => setShowResult(false)} sx={{ position: 'absolute', right: 16, top: 16, color: '#fff' }}><Close /></MuiIconButton>
+            <Box sx={{ width: 64, height: 64, borderRadius: '20px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <Star sx={{ color: '#fff', fontSize: 32 }} />
+            </Box>
+            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 900, mb: 1 }}>Premium Clone Ready</Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>High-Fidelity Vocal Reconstruction Complete</Typography>
+          </Box>
+
+          <Box sx={{ p: 4, flex: 1, overflowY: 'auto' }}>
+            <Paper sx={{ ...GLASS, p: 3, mb: 4, background: 'rgba(255,255,255,0.02)' }}>
+              <Typography sx={{ color: '#0ea5e9', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', mb: 3 }}>Neural Synthesis Output</Typography>
+              <AudioPlayer
+                src={audioUrl}
+                autoPlay={false}
+                showJumpControls={false}
+                customAdditionalControls={[]}
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '14px', boxShadow: 'none' }}
               />
-            )}
-          </Stack>
-        )}
-      </Box>
+              <Button
+                fullWidth variant="contained"
+                startIcon={<Download />}
+                href={audioUrl} download="neural_clone.wav"
+                sx={{ mt: 3, py: 2, borderRadius: '14px', background: 'rgba(255,255,255,0.05)', fontWeight: 800, '&:hover': { background: 'rgba(14,165,233,0.1)' } }}
+              >
+                Download Master WAV
+              </Button>
+            </Paper>
 
-      {/* Language */}
-      <FormControl size="small" fullWidth sx={{ mb: 2.5 }}>
-        <InputLabel sx={LABEL_SX}>Language</InputLabel>
-        <Select value={language} label="Language" onChange={e => setLanguage(e.target.value)} sx={SELECT_SX}>
-          {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
-        </Select>
-      </FormControl>
+            <Box sx={{ p: 3, borderRadius: '20px', background: 'linear-gradient(rgba(14,165,233,0.05), rgba(139,92,246,0.05))', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <Typography sx={{ color: '#f8fafc', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <History sx={{ color: '#38bdf8' }} /> Studio Persistence
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: 1.6, mb: 2 }}>
+                This synthesis has been indexed in your private studio library. You can re-access or re-narrate your script variations at any time.
+              </Typography>
+              <Button component={Link} to="/dashboard/history" sx={{ color: '#0ea5e9', textTransform: 'none', fontWeight: 800, p: 0 }}>Access Studio Library →</Button>
+            </Box>
+          </Box>
+        </Box>
+      </Drawer>
 
-      {/* Text */}
-      <TextField
-        multiline rows={4}
-        label="Text to synthesize"
-        placeholder="Enter the text you want to convert to speech in your cloned voice…"
-        value={text}
-        onChange={e => setText(e.target.value)}
-        fullWidth
-        inputProps={{ maxLength: 2000 }}
-        helperText={`${text.length} / 2000`}
-        sx={{
-          mb: 2.5,
-          '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
-          '& .MuiInputLabel-root': LABEL_SX,
-          '& .MuiFormHelperText-root': { color: '#64748b' },
-        }}
-      />
-
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)}
-          sx={{ mb: 2, borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
-
-      {/* Submit */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-        <Button
-          variant="contained" size="large"
-          startIcon={<AutoAwesome />}
-          onClick={handleSubmit}
-          disabled={loading || !text.trim()}
-          sx={{
-            borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-            background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
-            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
-            '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+      <Fade in={showLongRequestAlert}>
+        <Alert 
+          severity="info" 
+          icon={<Bolt sx={{ color: '#0ea5e9' }} />}
+          sx={{ 
+            position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', 
+            borderRadius: '12px', background: '#0f172a', border: '1px solid #1e293b', color: '#f8fafc',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 9999, minWidth: 320,
+            '& .MuiAlert-icon': { color: '#0ea5e9' }
           }}
         >
-          {loading ? 'Generating…' : 'Generate Cloned Voice'}
-        </Button>
-      </Box>
+          High-fidelity neural synthesis typically takes a few moments to propagate...
+        </Alert>
+      </Fade>
 
-      {/* Result */}
-      {audioUrl && (
-        <Box sx={{
-          ...GLASS, p: 3,
-          background: 'rgba(14,165,233,0.06)',
-          borderColor: 'rgba(14,165,233,0.25)',
-        }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={1.5}>
-              <Box sx={{
-                width: 40, height: 40, borderRadius: '50%',
-                background: G,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <GraphicEq sx={{ color: '#fff', fontSize: 20 }} />
-              </Box>
-              <Box>
-                <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.9rem' }}>Cloned voice ready</Typography>
-                <Typography sx={{ color: '#64748b', fontSize: '0.78rem' }}>Click play to listen</Typography>
-              </Box>
-            </Stack>
-            <Button
-              variant="contained"
-              startIcon={isPlaying ? <Pause /> : <PlayArrow />}
-              onClick={togglePlay}
-              sx={{
-                borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 3,
-                background: G,
-                '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)' },
-              }}
-            >
-              {isPlaying ? 'Pause' : 'Play'}
-            </Button>
-          </Stack>
-          <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} style={{ display: 'none' }} />
-        </Box>
+      {error && (
+        <Alert severity="error" sx={{ position: 'fixed', bottom: 24, right: 24, borderRadius: '12px', background: '#450a0a', border: '1px solid #991b1b', color: '#fca5a5' }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
       )}
     </Box>
   );

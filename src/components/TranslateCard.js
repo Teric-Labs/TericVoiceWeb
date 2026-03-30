@@ -21,14 +21,14 @@ const TranslateCard = ({ title, language, translation }) => {
           px: 2, 
           py: 1,  
         }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 ,fontFamily:'Poppins'}}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 ,fontFamily:'Inter'}}>
             <TranslateIcon color="action" /> {title} 
           </Typography>
         </Box>
-        <Typography sx={{ mt: 2, mb: 1, fontFamily:'Poppins' }}>
+        <Typography sx={{ mt: 2, mb: 1, fontFamily:'Inter' }}>
           Language: {language}
         </Typography>
-        <Typography sx={{ fontStyle: 'italic' , fontFamily:'Poppins'}}>
+        <Typography sx={{ fontStyle: 'italic' , fontFamily:'Inter'}}>
           {translation}
         </Typography>
       </CardContent>

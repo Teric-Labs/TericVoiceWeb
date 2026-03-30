@@ -61,6 +61,7 @@ const SummarizationCard = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [wordCount, setWordCount] = useState('250'); // Default to Standard Analysis
   const [translationId, setTranslationId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: '', sev: 'success' });
@@ -123,22 +124,23 @@ const SummarizationCard = () => {
         return;
       }
       let response;
+      const count = wordCount || '250';
       switch (activeTab) {
         case 0:
           if (!textContent.trim()) throw new Error('Text content is required');
-          response = await summarizationAPI.summarizeText(textContent, userId);
+          response = await summarizationAPI.summarizeText(textContent, sourceLanguage, userId, count);
           break;
         case 1:
           if (!uploadedFile) throw new Error('Please select a document to upload');
-          response = await summarizationAPI.summarizeDocument(uploadedFile, sourceLanguage, userId);
+          response = await summarizationAPI.summarizeDocument(uploadedFile, sourceLanguage, userId, count);
           break;
         case 2:
           if (!uploadedFile) throw new Error('Please select an audio file to upload');
-          response = await summarizationAPI.summarizeUpload(uploadedFile, sourceLanguage, userId);
+          response = await summarizationAPI.summarizeUpload(uploadedFile, sourceLanguage, userId, count);
           break;
         case 3:
           if (!uploadedFile) throw new Error('Please select a video file to upload');
-          response = await summarizationAPI.summarizeAudioFromVideo(uploadedFile, sourceLanguage, userId);
+          response = await summarizationAPI.summarizeAudioFromVideo(uploadedFile, sourceLanguage, userId, count);
           break;
         default:
           throw new Error('Invalid tab selection');
@@ -199,76 +201,131 @@ const SummarizationCard = () => {
 
   return (
     <>
-      <Box>
-        {/* Tabs */}
-        <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <Box sx={{ p: 0.5 }}>
+        {/* Tabs Control */}
+        <Box sx={{ mb: 3, background: 'rgba(255,255,255,0.03)', borderRadius: '16px', p: 0.5, border: '1px solid rgba(255,255,255,0.05)' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 }, '& .MuiTabs-scrollButtons': { color: 'rgba(255,255,255,0.4)' } }}
+            variant="fullWidth"
+            sx={{
+                minHeight: 44,
+                '& .MuiTabs-indicator': { display: 'none' },
+                '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    borderRadius: '12px',
+                    minHeight: 40,
+                    color: 'rgba(255,255,255,0.5)',
+                    transition: 'all 0.2s ease',
+                    '&.Mui-selected': {
+                        color: '#fff',
+                        background: G,
+                        boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)'
+                    }
+                }
+            }}
           >
             {TAB_LABELS.map((label, i) => (
-              <Tab key={i} label={label} icon={TAB_ICONS[i]} iconPosition="start"
-                sx={{
-                  textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
-                  color: activeTab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
-                  '&.Mui-selected': { color: '#38bdf8' },
-                }}
-              />
+              <Tab key={i} label={label} icon={TAB_ICONS[i]} iconPosition="start" />
             ))}
           </Tabs>
         </Box>
 
-        {/* Language */}
-        <Box sx={{ mb: 3, maxWidth: 320 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
-            <Select value={sourceLanguage} label="Source Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
-              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#0f172a' }}>{o.label}</MenuItem>)}
+        {/* Configuration Row */}
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
+            <Select value={sourceLanguage} label="Target Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
+              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: 'rgba(255,255,255,0.8)' }}>{o.label}</MenuItem>)}
             </Select>
           </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <TextField
+              size="small"
+              label="Target Word Count"
+              type="number"
+              value={wordCount}
+              onChange={e => setWordCount(e.target.value)}
+              InputProps={{ inputProps: { min: 10, max: 2000 } }}
+              sx={{
+                ...SELECT_SX,
+                '& .MuiInputLabel-root': LABEL_SX,
+                '& .MuiOutlinedInput-root': {
+                   borderRadius: '12px',
+                   '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                   '&:hover fieldset': { borderColor: '#0ea5e9' },
+                   '&.Mui-focused fieldset': { borderColor: '#0ea5e9' }
+                }
+              }}
+            />
+          </FormControl>
+          
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500, display: { xs: 'none', lg: 'block' } }}>
+            Summary will be optimized for this region's context and length.
+          </Typography>
         </Box>
 
-        {/* Content */}
+        {/* Input Area */}
         <Box sx={{ mb: 3 }}>
           {activeTab === 0 ? (
             <TextField
-              fullWidth multiline rows={6}
-              placeholder="Paste your text here…"
+              fullWidth multiline rows={8}
+              placeholder="Paste the transcription or text you want to condense into an ethical, meaningful summary..."
               value={textContent}
               onChange={e => setTextContent(e.target.value)}
               sx={{
-                '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
-                '& .MuiInputBase-input::placeholder': { color: '#475569' },
+                '& .MuiOutlinedInput-root': { 
+                    borderRadius: '20px', 
+                    color: '#f8fafc', 
+                    background: 'rgba(255,255,255,0.02)',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' }, 
+                    '&:hover fieldset': { borderColor: '#0ea5e9' }, 
+                    '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } 
+                },
+                '& .MuiInputBase-input::placeholder': { color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' },
               }}
             />
-          ) : renderFileUpload()}
+          ) : (
+            <Box sx={{ ...GLASS, overflow: 'hidden' }}>
+                {renderFileUpload()}
+            </Box>
+          )}
         </Box>
 
         {error && (
           <Alert severity="error" onClose={() => setError(null)}
-            sx={{ mb: 2.5, borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+            sx={{ mb: 2.5, borderRadius: '16px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
             {typeof error === 'string' ? error : error?.message || 'An error occurred'}
           </Alert>
         )}
 
-        {isProcessing && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+        {isProcessing && (
+            <Box sx={{ mb: 3 }}>
+                <LinearProgress sx={{ borderRadius: 4, height: 6, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />
+                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#0ea5e9', textAlign: 'center', fontWeight: 600 }}>
+                    AI NARRATOR IS ANALYZING CONTENT...
+                </Typography>
+            </Box>
+        )}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="contained" size="large" onClick={handleSubmit}
             disabled={isProcessing || !sourceLanguage || (activeTab === 0 && !textContent.trim()) || (activeTab !== 0 && !uploadedFile)}
-            startIcon={<SendIcon />}
+            startIcon={<ArticleIcon />}
             sx={{
-              borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-              background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
-              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
-              '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+              borderRadius: '50px', textTransform: 'none', fontWeight: 800, px: 6, py: 1.8,
+              fontSize: '1rem',
+              background: G, boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': { background: 'linear-gradient(135deg,#0ea5e9,#8b5cf6)', boxShadow: '0 12px 40px rgba(139,92,246,0.5)', transform: 'translateY(-2px)' },
+              '&.Mui-disabled': { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)', boxShadow: 'none' },
             }}
           >
-            {isProcessing ? 'Processing…' : 'Generate Summary'}
+            {isProcessing ? 'DEEP ANALYSIS IN PROGRESS...' : 'GENERATE AI SUMMARY'}
           </Button>
         </Box>
       </Box>

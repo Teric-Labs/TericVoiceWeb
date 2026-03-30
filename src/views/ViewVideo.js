@@ -5,7 +5,6 @@ import { useParams } from 'react-router-dom';
 
 const ViewVideo =()=>{
     const { id } = useParams();
-    console.log(id);
     return(
         <Box>
             <ViewVideoComponent audioId={id}/>

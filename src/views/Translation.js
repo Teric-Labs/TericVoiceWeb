@@ -1,8 +1,8 @@
 import React from "react";
-import TranslationCard from "../components/TranslationCard";
+import TranslationStudio from "../components/TranslationStudio";
 
 const Translation = () => {
-    return <TranslationCard />;
+    return <TranslationStudio />;
 }
 
 export default Translation;

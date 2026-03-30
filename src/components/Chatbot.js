@@ -1,31 +1,30 @@
-// src/components/Chatbot.js
-
 import React, { useEffect } from 'react';
 
-const Chatbot = () => {
-    useEffect(() => {
-        const script = document.createElement("script");
-        script.innerHTML = `
-          setTimeout(() => {
-            if (window.initAIChatPlugin) {
-              window.initAIChatPlugin({
-                agentId: '67d28c82-35d1-4eb1-870b-f86b546bf562',  // Get this from your Agents Dashboard
-                targetLang: 'en',          // Use language code from the table above
-                botName: 'AVOICE AI ',
-                containerId: 'ai-chat-root'
-              });
-            }
-          }, 3000);
-        `;
-        document.body.appendChild(script);
-    
-        // Clean up the script on component unmount
-        return () => {
-          document.body.removeChild(script);
-        };
-      }, []);
+const AGENT_ID = process.env.REACT_APP_CHATBOT_AGENT_ID || '67d28c82-35d1-4eb1-870b-f86b546bf562';
 
-  return <div id="ai-chat-root" style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999 }}></div>;
-};
+export default function Chatbot() {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.innerHTML = `
+      setTimeout(() => {
+        if (window.initAIChatPlugin) {
+          window.initAIChatPlugin({
+            agentId: '${AGENT_ID}',
+            targetLang: 'en',
+            botName: 'AVOICE AI',
+            containerId: 'ai-chat-root'
+          });
+        }
+      }, 2000);
+    `;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
 
-export default Chatbot;
+  return (
+    <div
+      id="ai-chat-root"
+      style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}
+    />
+  );
+}

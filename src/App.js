@@ -22,6 +22,7 @@ import ViewChat from "./views/ViewChat";
 import Home from "./views/Home";
 import GetStarted from "./views/GetStarted";
 import ContactSupport from "./views/ContactSupport";
+import VoiceCloning from "./views/VoiceCloning";
 import { AuthProvider,useAuth } from "./components/AuthContext";
 import Pricing from "./views/Pricing";
 import Subscription from "./views/Subscription";
@@ -34,6 +35,8 @@ import ChatbotGuideView from "./views/ChatbotGuideView";
 import ProfileView from "./views/ProfileView";
 import Chatbot from "./components/Chatbot";
 import UpgradePromptModal from "./components/UpgradePromptModal";
+import GlobalSnackbar from "./components/GlobalSnackbar";
+import GlobalProgressIndicator from "./components/GlobalProgressIndicator";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -57,33 +60,36 @@ function App() {
           <Route path="/documentation" element={<PublicRoute><APis /></PublicRoute>} />
           <Route path="/language-support" element={<PublicRoute><LanguageView /></PublicRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Sidenav /></PrivateRoute>}>
-            <Route index element={<Dashboard />} />
-            <Route path="agents" element={<LiveStream />} />
-            <Route path="conversational-ai" element={<VideoStream />} />
-            <Route path="history" element={<History />} />
-            <Route path="transcribe" element={<Transcribe />} />
-            <Route path="video-transcribe" element={<VideoStream />} />
-            <Route path="profile" element={<ProfileView />} />
-            <Route path="synthesize" element={<Text2Speech />} />
-            <Route path="summarize" element={<Summarization />} />
-            <Route path="translate" element={<Translation />} />
-            <Route path="voxtrans" element={<VoiceLingo />} />
-            <Route path="audio/:id" element={<ViewAudio />} />
-            <Route path="chats/:id" element={<ViewChat />} />
-            <Route path="aivoice/:id" element={<ViewAIVoice />} />
-            <Route path="voice/:id" element={<ViewVoxTrans />} />
-            <Route path="tts/:id" element={<ViewttsAudio />} />
-            <Route path="ttdata/:id" element={<ViewTranslations />} />
-            <Route path="summarydata/:id" element={<ViewSummary />} />
-            <Route path="video/:id" element={<ViewVideo />} />
-            <Route path="voice" element={<Voice2Voice />} />
-            <Route path="chat-guide" element={<ChatbotGuideView />} />
-            <Route path="subscription" element={<Subscription />} />
-            <Route path="api-reference" element={<APIReference />} />
-            <Route path="lang-support" element={<LanguageSupport />} />
-            <Route path="contact-support" element={<ContactSupport />} />
+            <Route index element={<Navigate replace to="transcribe" />} />
+            <Route path="agents" element={<ErrorBoundary><LiveStream /></ErrorBoundary>} />
+            <Route path="conversational-ai" element={<ErrorBoundary><VideoStream /></ErrorBoundary>} />
+            <Route path="history" element={<ErrorBoundary><History /></ErrorBoundary>} />
+            <Route path="transcribe" element={<ErrorBoundary><Transcribe /></ErrorBoundary>} />
+            <Route path="video-transcribe" element={<ErrorBoundary><VideoStream /></ErrorBoundary>} />
+            <Route path="profile" element={<ErrorBoundary><ProfileView /></ErrorBoundary>} />
+            <Route path="synthesize" element={<ErrorBoundary><Text2Speech /></ErrorBoundary>} />
+            <Route path="summarize" element={<ErrorBoundary><Summarization /></ErrorBoundary>} />
+            <Route path="translate" element={<ErrorBoundary><Translation /></ErrorBoundary>} />
+            <Route path="voxtrans" element={<ErrorBoundary><VoiceLingo /></ErrorBoundary>} />
+            <Route path="audio/:id" element={<ErrorBoundary><ViewAudio /></ErrorBoundary>} />
+            <Route path="chats/:id" element={<ErrorBoundary><ViewChat /></ErrorBoundary>} />
+            <Route path="aivoice/:id" element={<ErrorBoundary><ViewAIVoice /></ErrorBoundary>} />
+            <Route path="voice/:id" element={<ErrorBoundary><ViewVoxTrans /></ErrorBoundary>} />
+            <Route path="tts/:id" element={<ErrorBoundary><ViewttsAudio /></ErrorBoundary>} />
+            <Route path="ttdata/:id" element={<ErrorBoundary><ViewTranslations /></ErrorBoundary>} />
+            <Route path="summarydata/:id" element={<ErrorBoundary><ViewSummary /></ErrorBoundary>} />
+            <Route path="video/:id" element={<ErrorBoundary><ViewVideo /></ErrorBoundary>} />
+            <Route path="voice" element={<ErrorBoundary><Voice2Voice /></ErrorBoundary>} />
+            <Route path="chat-guide" element={<ErrorBoundary><ChatbotGuideView /></ErrorBoundary>} />
+            <Route path="subscription" element={<ErrorBoundary><Subscription /></ErrorBoundary>} />
+            <Route path="api-reference" element={<ErrorBoundary><APIReference /></ErrorBoundary>} />
+            <Route path="lang-support" element={<ErrorBoundary><LanguageSupport /></ErrorBoundary>} />
+            <Route path="contact-support" element={<ErrorBoundary><ContactSupport /></ErrorBoundary>} />
+            <Route path="voice-clone" element={<ErrorBoundary><VoiceCloning /></ErrorBoundary>} />
           </Route>
         </Routes>
+        <GlobalProgressIndicator />
+        <GlobalSnackbar />
         <Chatbot/>
         <UpgradePromptModal />
       </Router>

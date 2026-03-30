@@ -110,6 +110,8 @@ const SignInComponent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const AUTH_API = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -122,7 +124,6 @@ const SignInComponent = () => {
         await handleSignIn();
       }
     } catch (error) {
-      console.error(`Error ${authMode === 'signUp' ? 'registering' : 'logging in'} the user:`, error);
       setSnackbar({
         open: true,
         message: `${authMode === 'signUp' ? 'Registration' : 'Login'} failed. Please try again.`,
@@ -134,20 +135,20 @@ const SignInComponent = () => {
   };
 
   const handleSignUp = async () => {
-    const response = await axios.post('http://127.0.0.1:8000/register', {
+    await axios.post(`${AUTH_API}/register`, {
       email,
       password,
       confirm_password: confirmPassword
     });
-    console.log(response.data);
     setSnackbar({ open: true, message: 'Registration successful! Please sign in.', severity: 'success' });
     toggleAuthMode();
   };
 
   const handleSignIn = async () => {
-    const response = await axios.post('http://127.0.0.1:8000/login', { email, password });
-    setUser({ username: response.data[0].username, userId: response.data[0].user_id });
-    localStorage.setItem('user', JSON.stringify({ username: response.data[0].username, userId: response.data[0].user_id }));
+    const response = await axios.post(`${AUTH_API}/login`, { email, password });
+    const userData = { username: response.data[0].username, userId: response.data[0].user_id };
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
     setIsAuthenticated(true);
     navigate('/dashboard');
   };

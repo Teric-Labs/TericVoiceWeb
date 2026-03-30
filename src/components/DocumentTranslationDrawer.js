@@ -34,79 +34,110 @@ import { styled } from '@mui/material/styles';
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: '100%',
-    maxWidth: '600px',
-    backgroundColor: '#ffffff',
-    boxShadow: '0 0 40px rgba(0, 0, 0, 0.15)',
-    borderLeft: '1px solid #e2e8f0',
+    maxWidth: '650px',
+    backgroundColor: '#09090b', // Zinc 950
+    color: '#fafafa',
+    boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.5)',
+    borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
     [theme.breakpoints.down('md')]: {
       width: '100%',
       maxWidth: '100%',
     },
   },
   '& .MuiBackdrop-root': {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    backdropFilter: 'blur(2px)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backdropFilter: 'blur(8px)',
   },
 }));
 
 const HeaderBox = styled(Box)(({ theme }) => ({
-  padding: '24px',
-  backgroundColor: '#f8fafc',
-  borderBottom: '1px solid #e2e8f0',
+  padding: '32px 24px',
+  background: 'linear-gradient(to bottom, #18181b, #09090b)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  minHeight: '80px',
+  minHeight: '100px',
 }));
 
 const ContentBox = styled(Box)(({ theme }) => ({
-  padding: '24px',
-  height: 'calc(100vh - 80px)',
+  padding: '32px 24px',
+  height: 'calc(100vh - 100px)',
   overflow: 'auto',
-  backgroundColor: '#ffffff',
+  backgroundColor: '#09090b',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '10px',
+  },
+  '&::-webkit-scrollbar-thumb:hover': {
+    background: 'rgba(255, 255, 255, 0.2)',
+  },
 }));
 
 const ResultPaper = styled(Paper)(({ theme }) => ({
-  padding: '20px',
-  marginBottom: '16px',
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
-  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+  padding: '24px',
+  marginBottom: '20px',
+  backgroundColor: '#18181b', // Zinc 900
+  borderRadius: '16px',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+  transition: 'transform 0.2s ease, border-color 0.2s ease',
+  '&:hover': {
+    borderColor: 'rgba(139, 92, 246, 0.3)', // Purple secondary
+  }
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
+    backgroundColor: '#09090b',
+    borderRadius: '12px',
+    color: '#f8fafc',
+    fontSize: '0.95rem',
+    lineHeight: 1.6,
     '& fieldset': {
-      borderColor: '#e2e8f0',
+      borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     '&:hover fieldset': {
-      borderColor: '#cbd5e1',
+      borderColor: 'rgba(139, 92, 246, 0.4)',
     },
     '&.Mui-focused fieldset': {
-      borderColor: '#1976d2',
+      borderColor: '#8b5cf6',
+      borderWidth: '2px',
     },
   },
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: '8px',
+  borderRadius: '50px',
   textTransform: 'none',
-  fontWeight: 500,
-  padding: '8px 16px',
+  fontWeight: 600,
+  padding: '10px 20px',
+  fontSize: '0.85rem',
+  transition: 'all 0.2s ease',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  color: '#e2e8f0',
   '&:hover': {
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderColor: '#8b5cf6',
+    color: '#a78bfa',
     transform: 'translateY(-1px)',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
   },
 }));
 
 const LanguageChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: '#e3f2fd',
-  color: '#1976d2',
-  fontWeight: 500,
-  borderRadius: '6px',
+  backgroundColor: 'rgba(139, 92, 246, 0.15)',
+  color: '#a78bfa',
+  fontWeight: 600,
+  borderRadius: '8px',
+  border: '1px solid rgba(139, 92, 246, 0.3)',
+  height: '24px',
+  fontSize: '0.7rem',
 }));
 
 const DocumentTranslationDrawer = ({ 
@@ -165,7 +196,6 @@ const DocumentTranslationDrawer = ({
         setCopySuccess({ ...copySuccess, [key]: false });
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy text:', err);
     }
   };
 
@@ -229,26 +259,27 @@ const DocumentTranslationDrawer = ({
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            width: 48,
-            height: 48,
-            borderRadius: '12px',
-            backgroundColor: '#e3f2fd',
-            color: '#1976d2'
+            width: 52,
+            height: 52,
+            borderRadius: '16px',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            color: '#8b5cf6'
           }}>
             <Translate fontSize="medium" />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a' }}>
-              Document Translation
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#fafafa', letterSpacing: '-0.01em' }}>
+              Translation Workspace
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b' }}>
-              {fileName || 'Translation Results'}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>
-              Use close button below or press ESC
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              {fileName || 'Processing Results'}
             </Typography>
           </Box>
         </Box>
+        <IconButton onClick={onClose} sx={{ color: '#64748b', '&:hover': { color: '#fafafa', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+          <Close />
+        </IconButton>
       </HeaderBox>
 
       {/* Content */}
@@ -260,12 +291,12 @@ const DocumentTranslationDrawer = ({
             flexDirection: 'column', 
             alignItems: 'center', 
             justifyContent: 'center',
-            height: '200px',
-            gap: 2
+            height: '300px',
+            gap: 3
           }}>
-            <CircularProgress size={40} sx={{ color: '#1976d2' }} />
-            <Typography variant="body1" sx={{ color: '#64748b' }}>
-              Processing document translation...
+            <CircularProgress size={48} thickness={4} sx={{ color: '#8b5cf6' }} />
+            <Typography variant="body1" sx={{ color: '#94a3b8', fontWeight: 500 }}>
+              Refining your translation...
             </Typography>
           </Box>
         )}
@@ -274,12 +305,14 @@ const DocumentTranslationDrawer = ({
         {error && (
           <Alert 
             severity="error" 
+            variant="outlined"
             sx={{ 
               mb: 3, 
-              borderRadius: '8px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626'
+              borderRadius: '12px',
+              backgroundColor: 'rgba(239, 68, 68, 0.05)',
+              borderColor: 'rgba(239, 68, 68, 0.2)',
+              color: '#f87171',
+              '& .MuiAlert-icon': { color: '#f87171' }
             }}
           >
             {error}
@@ -294,15 +327,15 @@ const DocumentTranslationDrawer = ({
               display: 'flex', 
               alignItems: 'center', 
               gap: 2, 
-              mb: 3,
-              p: 2,
-              backgroundColor: '#f0fdf4',
-              borderRadius: '8px',
-              border: '1px solid #bbf7d0'
+              mb: 4,
+              p: 2.5,
+              backgroundColor: 'rgba(16, 185, 129, 0.05)',
+              borderRadius: '14px',
+              border: '1px solid rgba(16, 185, 129, 0.15)'
             }}>
-              <CheckCircle sx={{ color: '#16a34a' }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#166534' }}>
-                Translation Completed Successfully
+              <CheckCircle sx={{ color: '#10b981' }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#34d399' }}>
+                Translation Ready
               </Typography>
             </Box>
 
@@ -315,23 +348,23 @@ const DocumentTranslationDrawer = ({
                   justifyContent: 'space-between',
                   mb: 2
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Description sx={{ color: '#64748b', fontSize: 20 }} />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        Original Document
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Description sx={{ color: '#94a3b8', fontSize: 22 }} />
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f1f5f9' }}>
+                        Source Text
                       </Typography>
                     </Box>
                   <IconButton
                     size="small"
                     onClick={() => toggleSection('original')}
-                    sx={{ color: '#64748b' }}
+                    sx={{ color: '#64748b', '&:hover': { color: '#8b5cf6' } }}
                   >
                     {expandedSections.original ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
                 </Box>
                 
-                {expandedSections.original && (
-                  <Fade in={expandedSections.original}>
+                {(!expandedSections.hasOwnProperty('original') || expandedSections.original) && (
+                  <Fade in={true}>
                     <Box>
                       <StyledTextField
                         multiline
@@ -340,16 +373,16 @@ const DocumentTranslationDrawer = ({
                         value={formatText(translationData.original)}
                         variant="outlined"
                         InputProps={{ readOnly: true }}
-                        sx={{ mb: 2 }}
+                        sx={{ mb: 2.5 }}
                       />
-                      <Stack direction="row" spacing={1}>
+                      <Stack direction="row" spacing={1.5}>
                         <ActionButton
                           variant="outlined"
                           startIcon={<ContentCopy />}
                           onClick={() => handleCopy(translationData.original, 'original')}
                           size="small"
                         >
-                          {copySuccess.original ? 'Copied!' : 'Copy'}
+                          {copySuccess.original ? 'Copied to Clipboard' : 'Copy Source'}
                         </ActionButton>
                       </Stack>
                     </Box>
@@ -360,22 +393,24 @@ const DocumentTranslationDrawer = ({
 
             {/* Translations */}
             {translationData.translations && Object.keys(translationData.translations).length > 0 && (
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#0f172a' }}>
-                  Translations
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#f8fafc', fontSize: '1.1rem' }}>
+                  Target Translations
                 </Typography>
                 
                 {Object.entries(translationData.translations).map(([language, content], index) => (
-                  <ResultPaper key={language}>
+                  <ResultPaper key={language} sx={{ borderColor: 'rgba(139, 92, 246, 0.15)' }}>
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'space-between',
-                      mb: 2
+                      mb: 2.5
                     }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Language sx={{ color: '#1976d2', fontSize: 20 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ color: '#8b5cf6', display: 'flex' }}>
+                          <Language sx={{ fontSize: 24 }} />
+                        </Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f1f5f9' }}>
                           {getLanguageName(language)}
                         </Typography>
                         <LanguageChip 
@@ -386,32 +421,32 @@ const DocumentTranslationDrawer = ({
                       <IconButton
                         size="small"
                         onClick={() => toggleSection(language)}
-                        sx={{ color: '#64748b' }}
+                        sx={{ color: '#64748b', '&:hover': { color: '#8b5cf6' } }}
                       >
-                        {expandedSections[language] ? <ExpandLess /> : <ExpandMore />}
+                        {expandedSections[language] !== false ? <ExpandLess /> : <ExpandMore />}
                       </IconButton>
                     </Box>
                     
-                    {expandedSections[language] && (
-                      <Fade in={expandedSections[language]}>
+                    {expandedSections[language] !== false && (
+                      <Fade in={true}>
                         <Box>
                           <StyledTextField
                             multiline
-                            rows={8}
+                            rows={10}
                             fullWidth
                             value={formatText(content)}
                             variant="outlined"
                             InputProps={{ readOnly: true }}
-                            sx={{ mb: 2 }}
+                            sx={{ mb: 2.5 }}
                           />
-                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                          <Stack direction="row" spacing={1.5} flexWrap="wrap">
                             <ActionButton
                               variant="outlined"
                               startIcon={<ContentCopy />}
                               onClick={() => handleCopy(content, language)}
                               size="small"
                             >
-                              {copySuccess[language] ? 'Copied!' : 'Copy'}
+                              {copySuccess[language] ? 'Copied!' : 'Copy Translation'}
                             </ActionButton>
                             <ActionButton
                               variant="outlined"
@@ -419,7 +454,7 @@ const DocumentTranslationDrawer = ({
                               onClick={() => handleDownloadDocx(content, language)}
                               size="small"
                             >
-                              Download
+                              Download Results
                             </ActionButton>
                           </Stack>
                         </Box>
@@ -521,20 +556,20 @@ const DocumentTranslationDrawer = ({
             minWidth: '140px',
             height: '48px',
             fontSize: '16px',
-            background: 'linear-gradient(45deg, #1976d2, #1565c0)',
-            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+            background: 'linear-gradient(45deg, #0ea5e9, #0284c7)',
+            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
             transition: 'all 0.3s ease-in-out',
             pointerEvents: 'auto', // Ensure it's clickable
             cursor: 'pointer',
             zIndex: 1001, // Ensure it's above everything
             '&:hover': {
-              background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+              background: 'linear-gradient(45deg, #0284c7, #0ea5e9)',
               transform: 'translateY(-2px)',
-              boxShadow: '0 6px 16px rgba(25, 118, 210, 0.4)',
+              boxShadow: '0 6px 16px rgba(14, 165, 233, 0.4)',
             },
             '&:active': {
               transform: 'translateY(0px)',
-              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
+              boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)',
             },
           }}
         >

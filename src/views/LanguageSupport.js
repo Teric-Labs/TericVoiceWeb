@@ -64,7 +64,7 @@ const slideUp = keyframes`
 `;
 
 // Floating background elements
-const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
+const FloatingElement = ({ size, position, delay, color = '#0ea5e9' }) => (
   <Box
     sx={{
       position: 'absolute',
@@ -82,7 +82,7 @@ const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
 );
 
 // Enhanced Stats Card
-const StatsCard = ({ icon: Icon, title, value, description, color = '#1976d2', trend, index }) => (
+const StatsCard = ({ icon: Icon, title, value, description, color = '#0ea5e9', trend, index }) => (
   <Card 
     sx={{ 
       height: '100%',
@@ -149,7 +149,7 @@ const LanguageFeatureCard = ({ feature, languages, index }) => (
       borderRadius: '16px',
       background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(25, 118, 210, 0.1)',
+      border: '1px solid rgba(14, 165, 233, 0.1)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       animation: `${slideUp} 0.6s ease-out forwards`,
       animationDelay: `${0.1 * index}s`,
@@ -157,8 +157,8 @@ const LanguageFeatureCard = ({ feature, languages, index }) => (
       transform: 'translateY(30px)',
       '&:hover': {
         transform: 'translateY(-5px)',
-        boxShadow: '0 8px 32px rgba(25, 118, 210, 0.15)',
-        border: '1px solid rgba(25, 118, 210, 0.3)',
+        boxShadow: '0 8px 32px rgba(14, 165, 233, 0.15)',
+        border: '1px solid rgba(14, 165, 233, 0.3)',
       },
     }}
   >
@@ -168,13 +168,13 @@ const LanguageFeatureCard = ({ feature, languages, index }) => (
           sx={{
             width: 48,
             height: 48,
-            background: 'linear-gradient(135deg, #1976d2, #64b5f6)',
+            background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
           }}
         >
           <TranslateIcon sx={{ color: 'white' }} />
         </Avatar>
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 0.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#0ea5e9', mb: 0.5 }}>
             {feature}
           </Typography>
           <Typography variant="body2" sx={{ color: '#666666' }}>
@@ -190,8 +190,8 @@ const LanguageFeatureCard = ({ feature, languages, index }) => (
             label={lang}
             size="small"
             sx={{
-              backgroundColor: alpha('#1976d2', 0.1),
-              color: '#1976d2',
+              backgroundColor: alpha('#0ea5e9', 0.1),
+              color: '#0ea5e9',
               fontWeight: 500,
               fontSize: '0.75rem',
             }}
@@ -202,8 +202,8 @@ const LanguageFeatureCard = ({ feature, languages, index }) => (
             label={`+${languages.length - 4} more`}
             size="small"
             sx={{
-              backgroundColor: alpha('#1976d2', 0.05),
-              color: '#1976d2',
+              backgroundColor: alpha('#0ea5e9', 0.05),
+              color: '#0ea5e9',
               fontWeight: 500,
               fontSize: '0.75rem',
             }}
@@ -307,7 +307,7 @@ const LanguageSupport = () => {
         background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)',
       }}>
         <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress size={60} sx={{ color: '#1976d2', mb: 3 }} />
+          <CircularProgress size={60} sx={{ color: '#0ea5e9', mb: 3 }} />
           <Typography variant="h6" sx={{ color: 'white', fontWeight: 500 }}>
             Loading Language Support...
           </Typography>
@@ -325,9 +325,9 @@ const LanguageSupport = () => {
     }}>
       {/* Floating background elements */}
       <FloatingElement size="120px" position={{ top: '10%', left: '5%' }} delay="0s" />
-      <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#64b5f6" />
+      <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#8b5cf6" />
       <FloatingElement size="100px" position={{ top: '20%', right: '15%' }} delay="0.5s" />
-      <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#42a5f5" />
+      <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#38bdf8" />
       <FloatingElement size="140px" position={{ bottom: '10%', left: '20%' }} delay="2s" />
 
       {/* Main gradient overlay */}
@@ -338,7 +338,7 @@ const LanguageSupport = () => {
           left: 0,
           right: 0,
           height: '100%',
-          background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.02) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(14, 165, 233, 0.02) 0%, transparent 70%)',
           zIndex: 1,
         }}
       />
@@ -361,10 +361,10 @@ const LanguageSupport = () => {
             borderRadius: '3px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(25, 118, 210, 0.5)',
+            background: 'rgba(14, 165, 233, 0.5)',
             borderRadius: '3px',
             '&:hover': {
-              background: 'rgba(25, 118, 210, 0.7)',
+              background: 'rgba(14, 165, 233, 0.7)',
             },
           },
         }}
@@ -376,7 +376,7 @@ const LanguageSupport = () => {
               variant="h3"
               sx={{
                 fontWeight: 700,
-                color: '#1976d2',
+                color: '#0ea5e9',
                 mb: 2,
                 fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
               }}
@@ -415,7 +415,7 @@ const LanguageSupport = () => {
               title="Total Languages"
               value="15"
               description="Supported languages across our platform"
-              color="#1976d2"
+              color="#0ea5e9"
               trend="+2 this month"
               index={0}
             />
@@ -461,7 +461,7 @@ const LanguageSupport = () => {
             variant="h5"
             sx={{
               fontWeight: 600,
-              color: '#1976d2',
+              color: '#0ea5e9',
               mb: 2,
               textAlign: 'center',
               fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
@@ -497,7 +497,7 @@ const LanguageSupport = () => {
             variant="h5"
             sx={{
               fontWeight: 600,
-              color: '#1976d2',
+              color: '#0ea5e9',
               mb: 2,
               textAlign: 'center',
               fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
@@ -536,10 +536,10 @@ const LanguageSupport = () => {
               borderRadius: '16px',
               background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(25, 118, 210, 0.2)',
+              border: '1px solid rgba(14, 165, 233, 0.2)',
             }}
           >
-            <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, color: '#0ea5e9', fontWeight: 600 }}>
               Need a Language Not Listed?
             </Typography>
             <Typography variant="body2" sx={{ mb: 3, color: '#666666' }}>
@@ -553,9 +553,9 @@ const LanguageSupport = () => {
                   borderRadius: '12px',
                   px: 3,
                   py: 1,
-                  background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+                  background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+                    background: 'linear-gradient(45deg, #0284c7, #38bdf8)',
                   },
                 }}
               >
@@ -568,10 +568,10 @@ const LanguageSupport = () => {
                   borderRadius: '12px',
                   px: 3,
                   py: 1,
-                  borderColor: '#1976d2',
-                  color: '#1976d2',
+                  borderColor: '#0ea5e9',
+                  color: '#0ea5e9',
                   '&:hover': {
-                    backgroundColor: alpha('#1976d2', 0.1),
+                    backgroundColor: alpha('#0ea5e9', 0.1),
                   },
                 }}
               >

@@ -1,6 +1,6 @@
 import React from "react";
 import {Box} from '@mui/material'
-import PricingComponet from "../components/PricingComponet.js";
+import PricingComponet from "../components/PricingComponent.js";
 import AppBarComponent from "../components/AppBarComponent.js";
 import FooterComponent from '../components/FooterComponent.js'
 const Pricing =()=>{

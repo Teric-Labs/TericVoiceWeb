@@ -88,15 +88,6 @@ useEffect(() => {
     try {
       // Get user ID (support both uid and userId)
       const userId = user.userId || user.uid;
-      
-      console.log('Creating agent with:', {
-        files: newAgent.documents.map(f => f.name),
-        title: newAgent.title,
-        description: newAgent.description,
-        sourceLang: newAgent.sourceLanguage,
-        userId: userId,
-        userObject: user
-      });
 
       if (!userId) {
         throw new Error('User ID is required. Please log in again.');
@@ -110,7 +101,6 @@ useEffect(() => {
         userId
       );
 
-      console.log('Agent created successfully:', result);
 
       // Refresh agents list
       const response = await agentsAPI.getUserAgents(userId);
@@ -118,7 +108,6 @@ useEffect(() => {
       handleDialogClose();
       showSnackbar('AI agent created successfully!', 'success');
     } catch (err) {
-      console.error('Error creating agent:', err);
       const errorMessage = err.response?.data?.detail || err.message || 'Failed to create AI agent. Please try again.';
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
@@ -140,13 +129,13 @@ useEffect(() => {
   const EmptyState = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', p: 4, background: 'rgba(255, 255, 255, 0.8)', borderRadius: '24px', backdropFilter: 'blur(10px)' }}>
       <EmptyStateIcon sx={{ fontSize: 80, color: 'primary.main', mb: 3, opacity: 0.8 }} />
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, background: 'linear-gradient(45deg, #1976d2, #64b5f6)', backgroundClip: 'text', textFillColor: 'transparent' }}>
+      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)', backgroundClip: 'text', textFillColor: 'transparent' }}>
         No AI Agents Yet
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: '600px' }}>
         Create your first AI agent to start analyzing documents and chatting with your data
       </Typography>
-      <Button variant="contained" onClick={handleDialogOpen} startIcon={<AddIcon />} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #1976d2, #64b5f6)', px: 4, py: 1.5, '&:hover': { transform: 'translateY(-2px)', boxShadow: theme.shadows[4] } }}>
+      <Button variant="contained" onClick={handleDialogOpen} startIcon={<AddIcon />} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)', px: 4, py: 1.5, '&:hover': { transform: 'translateY(-2px)', boxShadow: theme.shadows[4] } }}>
         Create AI Agent
       </Button>
     </Box>
@@ -154,80 +143,100 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'linear-gradient(145deg, rgba(25, 118, 210, 0.05), rgba(100, 181, 246, 0.05))' }}>
-        <CircularProgress size={48} sx={{ color: '#1976d2' }} />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0a0a0f' }}>
+        <CircularProgress size={48} sx={{ color: '#0ea5e9' }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(145deg, rgba(25, 118, 210, 0.05), rgba(100, 181, 246, 0.05))', py: 4 }}>
-      <Container maxWidth="xl">
+    <Box sx={{ minHeight: '100vh', background: '#0a0a0f', py: 4, position: 'relative', overflow: 'hidden' }}>
+      {/* Aesthetic Background Elements */}
+      <Box sx={{ position: 'absolute', top: '-10%', right: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(14,165,233,0.05) 0%, transparent 70%)', zIndex: 0 }} />
+      <Box sx={{ position: 'absolute', bottom: '-10%', left: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)', zIndex: 0 }} />
+
+      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
+        <Alert 
+          severity="info" 
+          icon={<InfoIcon sx={{ color: '#0ea5e9' }} />}
+          sx={{ 
+            mb: 4, borderRadius: '16px', background: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.1)', color: '#f8fafc',
+            '& .MuiAlert-icon': { color: '#0ea5e9' }
+          }}
+        >
+          <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.02em' }}>
+            AI AGENTS SUITE • PRE-RELEASE ACCESS
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Our neural agent infrastructure is currently undergoing high-fidelity optimization. Full integration with the ASRVoices Studio is coming soon.
+          </Typography>
+        </Alert>
+
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Typography variant="h4" sx={{ fontWeight: 700, background: 'linear-gradient(45deg, #1976d2, #64b5f6)', backgroundClip: 'text', textFillColor: 'transparent' }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.04em' }}>
               AI Agents Dashboard
             </Typography>
-            <Tooltip title="Create AI agents to analyze your documents and chat with your data">
-              <IconButton size="small" sx={{ color: 'primary.main' }}>
-                <InfoIcon />
-              </IconButton>
-            </Tooltip>
           </Stack>
-          <Button variant="contained" onClick={handleDialogOpen} startIcon={<AddIcon />} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #1976d2, #64b5f6)', px: 3, py: 1, '&:hover': { transform: 'translateY(-2px)', boxShadow: theme.shadows[4] } }}>
+          <Button variant="contained" onClick={handleDialogOpen} startIcon={<AddIcon />} sx={{ borderRadius: '28px', textTransform: 'none', fontWeight: 800, background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)', px: 3, py: 1, boxShadow: '0 4px 20px rgba(139,92,246,0.3)', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 28px rgba(139,92,246,0.45)' } }}>
             Create New Agent
           </Button>
         </Stack>
-        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+
+        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>{error}</Alert>}
         {agents.length === 0 ? <EmptyState /> : (
           <Grid container spacing={3}>
             {agents.map((agent) => (
               <Grid item xs={12} sm={6} md={4} key={agent.id}>
-                <Card elevation={0} sx={{ borderRadius: '16px', border: '1px solid rgba(25, 118, 210, 0.1)', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease-in-out', '&:hover': { transform: 'translateY(-4px)', boxShadow: theme.shadows[4] } }}>
-                  <CardContent>
+                <Card elevation={0} sx={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease-in-out', '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(14,165,233,0.3)', background: 'rgba(255,255,255,0.03)' } }}>
+                  <CardContent sx={{ p: 4 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc' }}>
                         {agent.title}
                       </Typography>
-                      <Chip icon={<LanguageIcon sx={{ fontSize: 16 }} />} label={agent.sourceLanguage} size="small" sx={{ backgroundColor: 'rgba(25, 118, 210, 0.1)', color: '#1976d2', fontWeight: 500 }} />
+                      <Chip label={agent.sourceLanguage.toUpperCase()} size="small" sx={{ backgroundColor: 'rgba(14, 165, 233, 0.1)', color: '#0ea5e9', fontWeight: 800, fontSize: '0.65rem' }} />
                     </Stack>
-                    <Typography variant="h6" sx={{ fontWeight: 100,fontSize: 10, color: '#1976d2' }}>
-                        AgentID: {agent.agent_id}
-                      </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: '48px', lineHeight: 1.6 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'rgba(255,255,255,0.3)', display: 'block', mb: 2 }}>
+                        ID: {agent.agent_id}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 3, minHeight: '48px', lineHeight: 1.6 }}>
                       {agent.description}
                     </Typography>
                   </CardContent>
-                  <Divider sx={{ mx: 2, opacity: 0.1 }} />
-                  <CardActions sx={{ p: 2 }}>
-                    <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+                  <Divider sx={{ mx: 2, opacity: 0.05 }} />
+                  <CardActions sx={{ p: 3 }}>
+                    <Stack direction="row" spacing={1.5} sx={{ width: '100%' }}>
                       <Button 
+                        fullWidth
                         variant="contained" 
                         startIcon={<ChatIcon />} 
                         onClick={() => handleTextChat(agent.agent_id)} 
                         sx={{ 
-                          flex: 1,
-                          borderRadius: '28px', 
+                          borderRadius: '14px', 
                           textTransform: 'none', 
-                          background: 'linear-gradient(45deg, #1976d2, #64b5f6)', 
-                          '&:hover': { transform: 'translateY(-2px)' } 
+                          fontWeight: 800,
+                          background: 'rgba(255,255,255,0.05)', 
+                          color: '#f8fafc',
+                          '&:hover': { background: 'rgba(14,165,233,0.1)', transform: 'translateY(-2px)' } 
                         }}
                       >
-                        Text Chat
+                        Chat
                       </Button>
                       <Button 
+                        fullWidth
                         variant="contained" 
                         startIcon={<MicIcon />} 
                         onClick={() => handleVoiceChat(agent.agent_id)} 
                         sx={{ 
-                          flex: 1,
-                          borderRadius: '28px', 
+                          borderRadius: '14px', 
                           textTransform: 'none', 
-                          background: 'linear-gradient(45deg, #64b5f6, #1976d2)', 
-                          '&:hover': { transform: 'translateY(-2px)' } 
+                          fontWeight: 800,
+                          background: 'rgba(255,255,255,0.05)', 
+                          color: '#f8fafc',
+                          '&:hover': { background: 'rgba(139,92,246,0.1)', transform: 'translateY(-2px)' } 
                         }}
                       >
-                        Voice Chat
+                        Voice
                       </Button>
                     </Stack>
                   </CardActions>
@@ -236,42 +245,51 @@ useEffect(() => {
             ))}
           </Grid>
         )}
-        <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', p: 2 } }}>
+        <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '24px', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', p: 2 } }}>
           <DialogTitle sx={{ pb: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>Create New AI Agent</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 900, color: '#f8fafc' }}>Initialize Neural Agent</Typography>
           </DialogTitle>
           <DialogContent>
-            {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              <TextField label="Title" fullWidth value={newAgent.title} onChange={(e) => setNewAgent(prev => ({ ...prev, title: e.target.value }))} />
-              <TextField label="Description" fullWidth multiline rows={3} value={newAgent.description} onChange={(e) => setNewAgent(prev => ({ ...prev, description: e.target.value }))} />
+            {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
+            <Stack spacing={3} sx={{ mt: 2 }}>
+              <TextField 
+                label="Agent Title" fullWidth value={newAgent.title} onChange={(e) => setNewAgent(prev => ({ ...prev, title: e.target.value }))}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } } }}
+              />
+              <TextField 
+                label="Primary Objective" fullWidth multiline rows={3} value={newAgent.description} onChange={(e) => setNewAgent(prev => ({ ...prev, description: e.target.value }))} 
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } } }}
+              />
               <FormControl fullWidth>
-                <InputLabel>Source Language</InputLabel>
-                <Select value={newAgent.sourceLanguage} label="Source Language" onChange={(e) => setNewAgent(prev => ({ ...prev, sourceLanguage: e.target.value }))}>
+                <InputLabel sx={{ color: 'rgba(255,255,255,0.5)' }}>Base Intelligence Language</InputLabel>
+                <Select 
+                  value={newAgent.sourceLanguage} label="Base Intelligence Language" onChange={(e) => setNewAgent(prev => ({ ...prev, sourceLanguage: e.target.value }))}
+                  sx={{ borderRadius: '14px', color: '#fff', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}
+                >
                   {supportedLanguages.map((lang) => (
-                    <MenuItem key={lang} value={lang}>{lang}</MenuItem>
+                    <MenuItem key={lang} value={lang} sx={{ color: '#0f172a' }}>{lang.toUpperCase()}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
               <Box>
-                <Button component="label" variant="outlined" startIcon={<UploadIcon />} sx={{ borderRadius: '28px', textTransform: 'none', mb: 2 }}>
-                  Upload Documents
+                <Button component="label" variant="outlined" startIcon={<UploadIcon />} sx={{ borderRadius: '14px', textTransform: 'none', fontWeight: 800, borderColor: 'rgba(255,255,255,0.1)', color: '#f8fafc', mb: 2 }}>
+                  Ingest Neural Data
                   <input type="file" hidden multiple onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.csv" />
                 </Button>
-                <Stack spacing={1}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                   {newAgent.documents.map((file, index) => (
-                    <Chip key={index} label={file.name} onDelete={() => setNewAgent(prev => ({ ...prev, documents: prev.documents.filter((_, i) => i !== index) }))} sx={{ borderRadius: '16px' }} />
+                    <Chip key={index} label={file.name} onDelete={() => setNewAgent(prev => ({ ...prev, documents: prev.documents.filter((_, i) => i !== index) }))} sx={{ borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#f8fafc' }} />
                   ))}
                 </Stack>
               </Box>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={handleDialogClose} sx={{ borderRadius: '28px', textTransform: 'none' }}>
+            <Button onClick={handleDialogClose} sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 800 }}>
               Cancel
             </Button>
-            <Button variant="contained" onClick={handleCreateAgent} disabled={createLoading} sx={{ borderRadius: '28px', textTransform: 'none', background: 'linear-gradient(45deg, #1976d2, #64b5f6)', px: 3 }}>
-              {createLoading ? <CircularProgress size={24} /> : 'Create Agent'}
+            <Button variant="contained" onClick={handleCreateAgent} disabled={createLoading} sx={{ borderRadius: '14px', fontWeight: 800, background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)', px: 4 }}>
+              {createLoading ? <CircularProgress size={24} /> : 'Initialize Agent'}
             </Button>
           </DialogActions>
         </Dialog>

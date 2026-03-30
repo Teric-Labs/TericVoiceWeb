@@ -115,7 +115,7 @@ const ChatGuide = () => {
             External Website Integration Guide
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Follow these steps to embed your AI chatbot into any external website. This guide provides the necessary scripts and configuration details for successful integration.
+            Follow these steps to embed your AI agent into any external website. This guide provides the necessary scripts and configuration details for successful integration.
           </Typography>
           <Divider />
         </Grid>
@@ -216,7 +216,7 @@ const ChatGuide = () => {
       window.initAIChatPlugin({
         agentId: 'YOUR_AGENT_ID',  // Get this from your Agents Dashboard
         targetLang: 'en',          // Use language code from the table above
-        botName: 'My AI Chatbot',
+        botName: 'My AI Agent',
         containerId: 'ai-chat-root'
       });
     }

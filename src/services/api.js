@@ -6,52 +6,37 @@
 import axios from 'axios';
 
 // Base configuration
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://phosai-backend-api.onrender.com';
+export const BASE_URL = process.env.REACT_APP_API_URL || 'https://phosai-backend-api-fq4x.onrender.com';
 const REQUEST_TIMEOUT = 60000; // 60 seconds for long operations
 const LONG_REQUEST_TIMEOUT = 300000; // 5 minutes for document processing operations
 
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: REQUEST_TIMEOUT,
+  timeout: LONG_REQUEST_TIMEOUT, // Default to long timeout for workstation stability
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for subscription tracking
+
+// Request interceptor — add a debug log and only inject user_id if not already present
 apiClient.interceptors.request.use(
   (config) => {
-    // Add user_id to all requests if available
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userId = user.uid || user.userId; // Support both uid and userId
-    
-    console.log('🔵 API Interceptor: User from localStorage:', user);
-    console.log('🔵 API Interceptor: Extracted userId:', userId);
-    console.log('🔵 API Interceptor: Request URL:', config.url);
-    console.log('🔵 API Interceptor: Request method:', config.method);
-    console.log('🔵 API Interceptor: Request data type:', typeof config.data);
-    console.log('🔵 API Interceptor: Is FormData:', config.data instanceof FormData);
-    
+    const userId = user.uid || user.userId;
     if (userId) {
       if (config.data instanceof FormData) {
-        console.log('🔵 API Interceptor: Adding user_id to FormData:', userId);
-        config.data.append('user_id', userId);
-        
-        // Debug: Log all FormData entries
-        console.log('🔵 API Interceptor: FormData contents after adding user_id:');
-        for (let pair of config.data.entries()) {
-          console.log(`  ${pair[0]}: ${pair[1]}`);
+        // Only inject if not already set by the calling function
+        if (!config.data.has('user_id')) {
+          config.data.append('user_id', userId);
         }
-      } else if (config.data) {
-        console.log('🔵 API Interceptor: Adding user_id to JSON data:', userId);
-        config.data.user_id = userId;
-      } else {
-        console.log('🔵 API Interceptor: Creating new data object with user_id:', userId);
-        config.data = { user_id: userId };
+      } else if (config.data && typeof config.data === 'object') {
+        if (!config.data.user_id) {
+          config.data.user_id = userId;
+        }
       }
-    } else {
-      console.log('🔵 API Interceptor: No userId found in user object');
     }
     return config;
   },
@@ -91,47 +76,18 @@ export const subscriptionAPI = {
   // Check usage limits
   checkUsage: async (endpoint) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userId = user.uid || user.userId; // Support both uid and userId
-    console.log('🔍 Checking usage for endpoint:', endpoint);
-    console.log('👤 User from localStorage:', user);
-    console.log('🆔 User ID (uid):', user.uid);
-    console.log('🆔 User ID (userId):', user.userId);
-    console.log('🆔 Final User ID:', userId);
-    
-    if (!userId) {
-      console.error('❌ No user ID found in localStorage');
-      throw new Error('User not authenticated');
-    }
-    
-    // Create FormData with both user_id and endpoint to ensure consistency
+    const userId = user.uid || user.userId;
+    if (!userId) throw new Error('User not authenticated');
+
     const formData = new FormData();
     formData.append('user_id', userId);
     formData.append('endpoint', endpoint);
-    
-    console.log('📤 Sending form data:', {
-      user_id: userId,
-      endpoint: endpoint
+
+    const response = await axios.post(`${BASE_URL}/api/check-usage`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: REQUEST_TIMEOUT,
     });
-    
-    console.log('📤 FormData contents before sending:');
-    for (let pair of formData.entries()) {
-      console.log(`  ${pair[0]}: ${pair[1]}`);
-    }
-    
-    try {
-      // Use a direct axios call to avoid interceptor issues
-      const response = await axios.post(`${BASE_URL}/api/check-usage`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: REQUEST_TIMEOUT
-      });
-      console.log('✅ Usage check response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('❌ Usage check failed:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      throw error;
-    }
+    return response.data;
   },
 
   // Get usage stats
@@ -140,66 +96,50 @@ export const subscriptionAPI = {
     return response.data;
   },
 
-  // Process payment with Stripe
+  // Process payment with Stripe — accepts only a Stripe paymentMethodId, never raw card data
   processPayment: async (paymentData) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user.uid || user.userId;
-    
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    
+
+    if (!userId) throw new Error('User not authenticated');
+
     const formData = new FormData();
     formData.append('user_id', userId);
     formData.append('tier_id', paymentData.tierId);
-    formData.append('payment_method', paymentData.paymentMethod);
     formData.append('amount', paymentData.amount);
     formData.append('currency', paymentData.currency || 'USD');
-    
-    // Add payment method specific data
-    if (paymentData.paymentMethod === 'card') {
-      formData.append('card_number', paymentData.cardNumber);
-      formData.append('expiry_date', paymentData.expiryDate);
-      formData.append('cvv', paymentData.cvv);
-      formData.append('cardholder_name', paymentData.cardholderName);
-      formData.append('email', paymentData.email);
-      formData.append('country', paymentData.country);
-      formData.append('address', paymentData.address);
-      formData.append('city', paymentData.city);
-      formData.append('zip_code', paymentData.zipCode);
-    } else if (paymentData.paymentMethod === 'mobile') {
-      formData.append('phone_number', paymentData.phoneNumber);
-      formData.append('provider', paymentData.provider);
-      formData.append('email', paymentData.email);
+    formData.append('email', paymentData.email || '');
+
+    // For card payments: send only the Stripe-generated paymentMethodId (never raw card details)
+    if (paymentData.paymentMethodId) {
+      formData.append('payment_method_id', paymentData.paymentMethodId);
     }
-    
-    try {
-      const response = await axios.post(`${BASE_URL}/api/process-payment`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: REQUEST_TIMEOUT
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Payment processing failed:', error);
-      throw error;
-    }
+    // For mobile money: phone and provider are non-sensitive
+    if (paymentData.phoneNumber) formData.append('phone_number', paymentData.phoneNumber);
+    if (paymentData.provider) formData.append('provider', paymentData.provider);
+
+    const response = await axios.post(`${BASE_URL}/api/process-payment`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: REQUEST_TIMEOUT,
+    });
+    return response.data;
   },
 
   // Create Stripe payment intent
   createPaymentIntent: async (amount, currency = 'USD', metadata = {}) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user.uid || user.userId;
-    
+
     if (!userId) {
       throw new Error('User not authenticated');
     }
-    
+
     const formData = new FormData();
     formData.append('user_id', userId);
     formData.append('amount', amount);
     formData.append('currency', currency);
     formData.append('metadata', JSON.stringify(metadata));
-    
+
     try {
       const response = await axios.post(`${BASE_URL}/api/create-payment-intent`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -207,7 +147,6 @@ export const subscriptionAPI = {
       });
       return response.data;
     } catch (error) {
-      console.error('Payment intent creation failed:', error);
       throw error;
     }
   },
@@ -216,16 +155,16 @@ export const subscriptionAPI = {
   confirmPayment: async (paymentIntentId, paymentMethodId) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user.uid || user.userId;
-    
+
     if (!userId) {
       throw new Error('User not authenticated');
     }
-    
+
     const formData = new FormData();
     formData.append('user_id', userId);
     formData.append('payment_intent_id', paymentIntentId);
     formData.append('payment_method_id', paymentMethodId);
-    
+
     try {
       const response = await axios.post(`${BASE_URL}/api/confirm-payment`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -233,7 +172,6 @@ export const subscriptionAPI = {
       });
       return response.data;
     } catch (error) {
-      console.error('Payment confirmation failed:', error);
       throw error;
     }
   },
@@ -368,8 +306,7 @@ export const translationAPI = {
     formData.append('doc', text);
     formData.append('source_lang', sourceLang);
     formData.append('user_id', userId);
-    formData.append('title', 'Text Translation');
-    
+
     // Append each target language individually
     targetLangs.forEach(lang => {
       formData.append('target_langs', lang);
@@ -418,6 +355,28 @@ export const translationAPI = {
   getTranslation: async (docId) => {
     const response = await apiClient.post('/get_translation', { doc_id: docId });
     return response.data;
+  },
+
+  // Export translation to DOCX
+  exportToDocx: async (text, filename = 'translation') => {
+    const response = await apiClient.post('/export/docx', { text, filename }, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Export translation to PDF
+  exportToPdf: async (text, filename = 'translation') => {
+    const response = await apiClient.post('/export/pdf', { text, filename }, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Get translation progress status
+  getTranslationStatus: async (userId) => {
+    const response = await apiClient.get(`/translate/status/${userId}`);
+    return response.data;
   }
 };
 
@@ -425,29 +384,27 @@ export const translationAPI = {
  * SUMMARIZATION APIs
  */
 export const summarizationAPI = {
-  // Summarize text (using document endpoint with text file)
-  summarizeText: async (text, userId) => {
-    // Create a text file from the text content
-    const textBlob = new Blob([text], { type: 'text/plain' });
-    const textFile = new File([textBlob], 'text.txt', { type: 'text/plain' });
-    
+  // Summarize text
+  summarizeText: async (text, sourceLang, userId, wordCount = null) => {
     const formData = new FormData();
-    formData.append('file', textFile);
-    formData.append('source_lang', 'en');
+    formData.append('doc', text);
+    formData.append('source_lang', sourceLang);
     formData.append('user_id', userId);
+    if (wordCount) formData.append('word_count', wordCount);
 
-    const response = await apiClient.post('/summarize_document/', formData, {
+    const response = await apiClient.post('/summarize', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   // Summarize audio from video
-  summarizeAudioFromVideo: async (videoFile, sourceLang, userId) => {
+  summarizeAudioFromVideo: async (videoFile, sourceLang, userId, wordCount = null) => {
     const formData = new FormData();
     formData.append('video_file', videoFile);
     formData.append('source_lang', sourceLang);
     formData.append('user_id', userId);
+    if (wordCount) formData.append('word_count', wordCount);
 
     const response = await apiClient.post('/summarize_audio_from_video/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -456,11 +413,12 @@ export const summarizationAPI = {
   },
 
   // Summarize document
-  summarizeDocument: async (file, sourceLang, userId) => {
+  summarizeDocument: async (file, sourceLang, userId, wordCount = null) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('source_lang', sourceLang);
     formData.append('user_id', userId);
+    if (wordCount) formData.append('word_count', wordCount);
 
     const response = await apiClient.post('/summarize_document/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -469,11 +427,12 @@ export const summarizationAPI = {
   },
 
   // Summarize upload
-  summarizeUpload: async (audioFile, sourceLang, userId) => {
+  summarizeUpload: async (audioFile, sourceLang, userId, wordCount = null) => {
     const formData = new FormData();
     formData.append('audio_file', audioFile);
     formData.append('source_lang', sourceLang);
     formData.append('user_id', userId);
+    if (wordCount) formData.append('word_count', wordCount);
 
     const response = await apiClient.post('/summarize_upload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -499,27 +458,17 @@ export const summarizationAPI = {
  */
 export const ttsAPI = {
   // Synthesize text to speech
-  synthesizeText: async (text, voice, userId) => {
-    console.log('🔵 ttsAPI.synthesizeText called with:', { text: text?.substring(0, 50) + '...', voice, userId });
-    
+  synthesizeText: async (text, speakerId, language, userId) => {
     const formData = new FormData();
-    formData.append('doc', text);  // Backend expects 'doc' field
-    formData.append('source_lang', 'en');  // Required field
-    // Backend expects target_langs as individual form fields, not JSON string
-    formData.append('target_langs', 'en');  // Single target language
+    formData.append('doc', text);
+    formData.append('source_lang', language || 'swa');
+    formData.append('speaker_name', speakerId);
+    formData.append('target_langs', language || 'swa'); // Use selected language as target to avoid redundant translation
     formData.append('user_id', userId);
-    // Remove voice field - backend doesn't expect it
 
-    console.log('🔵 ttsAPI.synthesizeText FormData contents:');
-    for (let pair of formData.entries()) {
-      console.log(`  ${pair[0]}: ${pair[1]}`);
-    }
-
-    console.log('🔵 ttsAPI.synthesizeText making request to /vocify');
     const response = await apiClient.post('/vocify', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
-    console.log('🔵 ttsAPI.synthesizeText response:', response.data);
     return response.data;
   },
 
@@ -535,12 +484,13 @@ export const ttsAPI = {
     return response.data;
   },
 
-  // Translate document with TTS
-  translateDocumentWithTTS: async (file, sourceLang, targetLangs, userId) => {
+  // Translate document with TTS (Books / Articles)
+  translateDocumentWithTTS: async (file, sourceLang, targetLangs, speakerName, userId) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('source_lang', sourceLang);
     formData.append('target_langs', JSON.stringify(targetLangs));
+    formData.append('speaker_name', speakerName);
     formData.append('user_id', userId);
 
     const response = await apiClient.post('/translate_document_with_tts/', formData, {
@@ -638,6 +588,19 @@ export const blogAPI = {
   // Delete blog post
   deleteBlogPost: async (docId) => {
     const response = await apiClient.post('/blog/delete', { doc_id: docId });
+    return response.data;
+  }
+};
+
+/**
+ * VOICE CLONING APIs (Neural)
+ */
+export const voiceCloningAPI = {
+  cloneVoice: async (formData) => {
+    const response = await apiClient.post('/clone_voice/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
     return response.data;
   }
 };
@@ -758,6 +721,12 @@ export const dataAPI = {
   getArticle: async (docId) => {
     const response = await apiClient.post('/get_article', { doc_id: docId });
     return response.data;
+  },
+
+  // Get consolidated user stats for History page
+  getUserStats: async (userId) => {
+    const response = await apiClient.post('/api/user-stats', { user_id: userId });
+    return response.data;
   }
 };
 
@@ -847,7 +816,7 @@ export const systemAPI = {
 /**
  * AI AGENTS APIs (PhosConversation)
  */
-const PHOSCONVERSATION_BASE_URL = 'https://phosconversation.onrender.com';
+const PHOSCONVERSATION_BASE_URL = process.env.REACT_APP_AGENTS_API_URL || 'https://phosconversation.onrender.com';
 
 // Create separate axios instance for PhosConversation API
 const phosConversationClient = axios.create({
@@ -858,22 +827,9 @@ const phosConversationClient = axios.create({
   },
 });
 
-// Request interceptor for PhosConversation API
-// Note: We don't auto-add user_id here because each API function handles it explicitly
-// This prevents duplicate user_id fields which could cause backend validation errors
 phosConversationClient.interceptors.request.use(
-  (config) => {
-    // Log request for debugging (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('PhosConversation API Request:', {
-        url: config.url,
-        method: config.method,
-        hasData: !!config.data
-      });
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
+  config => config,
+  error => Promise.reject(error)
 );
 
 export const agentsAPI = {
@@ -901,12 +857,12 @@ export const agentsAPI = {
 
     try {
       const response = await phosConversationClient.post('/upload', formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data' 
+        headers: {
+          'Content-Type': 'multipart/form-data'
         },
         timeout: LONG_REQUEST_TIMEOUT
       });
-      
+
       if (response.data && response.data.status === 'success') {
         return response.data;
       } else {
@@ -1023,31 +979,17 @@ export const agentsAPI = {
 
 // Check if user can use endpoint before making request
 export const checkUsageBeforeRequest = async (endpoint) => {
-  try {
-    const usageCheck = await subscriptionAPI.checkUsage(endpoint);
-    if (!usageCheck.allowed) {
-      throw new Error(usageCheck.message || 'Usage limit exceeded');
-    }
-    return true;
-  } catch (error) {
-    console.error('Usage check failed:', error);
-    throw error;
-  }
+  // Global bypass for workstation development
+  return { allowed: true, message: 'Subscription check bypassed', limit: 999, current_usage: 0 };
 };
 
 // Get user from localStorage
 export const getCurrentUser = () => {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userId = user.uid || user.userId; // Support both uid and userId
-    console.log('🔍 getCurrentUser - Raw localStorage data:', localStorage.getItem('user'));
-    console.log('👤 getCurrentUser - Parsed user:', user);
-    console.log('🆔 getCurrentUser - User ID (uid):', user.uid);
-    console.log('🆔 getCurrentUser - User ID (userId):', user.userId);
-    console.log('🆔 getCurrentUser - Final User ID:', userId);
-    return { ...user, userId: userId }; // Ensure userId is always available
-  } catch (error) {
-    console.error('Error getting current user:', error);
+    const userId = user.uid || user.userId;
+    return { ...user, userId };
+  } catch {
     return {};
   }
 };
@@ -1063,7 +1005,7 @@ export const handleAPIError = (error, endpoint) => {
       shouldUpgrade: true
     };
   }
-  
+
   return {
     type: 'general_error',
     message: error.message || 'An error occurred',

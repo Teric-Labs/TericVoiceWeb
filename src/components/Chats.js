@@ -374,7 +374,6 @@ const Chats = ({ agentId }) => {
       setMessages(prev => [...prev, botMessage]);
       setErrorCount(0);
     } catch (error) {
-      console.error('Error sending message:', error);
       setErrorCount(prev => prev + 1);
       
       if (errorCount >= maxRetries) {

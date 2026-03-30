@@ -78,7 +78,7 @@ const rotate = keyframes`
 `;
 
 // Floating background elements
-const FloatingElement = ({ size, position, delay, color = '#1976d2' }) => (
+const FloatingElement = ({ size, position, delay, color = '#0ea5e9' }) => (
   <Box
     sx={{
       position: 'absolute',
@@ -239,66 +239,52 @@ const categorizedEndpoints = {
       parameters: {
         type: "multipart/form-data",
         fields: {
-          user_id: {
-            type: "string",
-            required: true,
-            description: "Unique identifier for the user"
-          },
-          source_lang: {
-            type: "string",
-            required: true,
-            description: "Source language of the text"
-          },
-          target_langs: {
-            type: "array",
-            required: true,
-            description: "Target languages for speech synthesis"
-          },
-          doc: {
-            type: "string",
-            required: true,
-            description: "Text content to convert to speech"
-          },
-          title: {
-            type: "string",
-            required: true,
-            description: "Title for the synthesis"
-          }
+          user_id: { type: "string", required: true, description: "Unique identifier for the user" },
+          source_lang: { type: "string", required: true, description: "Source language of the text" },
+          target_langs: { type: "array", required: true, description: "Target languages for speech synthesis" },
+          doc: { type: "string", required: true, description: "Text content to convert to speech" },
+          title: { type: "string", required: true, description: "Title for the synthesis" }
         }
       }
     },
     {
       method: "POST",
-      path: "/synthesize_document",
-      description: "Convert document content to speech.",
+      path: "/v1/audio/speech/stream",
+      description: "Stream HTTP audio synthesis with ultra-low latency.",
       parameters: {
-        type: "multipart/form-data",
+        type: "application/json",
         fields: {
-          user_id: {
-            type: "string",
-            required: true,
-            description: "Unique identifier for the user"
-          },
-          source_lang: {
-            type: "string",
-            required: true,
-            description: "Source language of the document"
-          },
-          target_langs: {
-            type: "array",
-            required: true,
-            description: "Target languages for speech synthesis"
-          },
-          file: {
-            type: "file",
-            required: true,
-            description: "Document file to convert to speech"
-          },
-          title: {
-            type: "string",
-            required: true,
-            description: "Title for the document synthesis"
-          }
+          text: { type: "string", required: true, description: "Text content to convert to speech (e.g. 'Ugandan Jacob...')" },
+          speaker_id: { type: "string", required: true, description: "The underlying speaker ID (e.g. 'pcm_female_4')" },
+          temperature: { type: "float", required: false, description: "Generation randomness (default: 0.1)" }
+        }
+      }
+    },
+    {
+      method: "WS",
+      path: "/v1/audio/speech/stream/ws",
+      description: "Real-time full-duplex WebSocket TTS generation.",
+      parameters: {
+        type: "websocket",
+        fields: {
+          input: { type: "string", required: true, description: "Text chunk to stream" },
+          voice: { type: "string", required: true, description: "The underlying speaker ID" },
+          temperature: { type: "float", required: false, description: "Algorithm variability" },
+          segment_id: { type: "string", required: true, description: "Unique segment correlation ID" }
+        }
+      }
+    },
+    {
+      method: "POST",
+      path: "/v1/audio/speech/clone/upload",
+      description: "Generate ad-hoc voice cloned audio from a reference audio file.",
+      parameters: {
+        type: "multipart/form-data-clone",
+        fields: {
+          reference_audio: { type: "file", required: true, description: "Clean audio recording of the speaker to clone" },
+          text: { type: "string", required: true, description: "The target text to synthesize using the voice" },
+          reference_text: { type: "string", required: false, description: "Transcript of the reference audio" },
+          temperature: { type: "float", required: false, description: "Randomness (default 0.7)" }
         }
       }
     }
@@ -425,53 +411,56 @@ const categorizedEndpoints = {
 
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
-      main: '#1976d2',
-      light: '#64b5f6',
-      dark: '#1565c0',
+      main: '#0ea5e9',
+      light: '#38bdf8',
+      dark: '#0284c7',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#64b5f6',
-      light: '#90caf9',
-      dark: '#42a5f5',
-      contrastText: '#000000',
+      main: '#8b5cf6',
+      light: '#a78bfa',
+      dark: '#6d28d9',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#f8fafc',
-      paper: '#ffffff',
+      default: '#09090b',
+      paper: 'rgba(15, 23, 42, 0.4)',
     },
     text: {
-      primary: '#000000',
-      secondary: '#666666',
+      primary: '#f8fafc',
+      secondary: '#94a3b8',
     },
   },
   typography: {
-    fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"General Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
       fontWeight: 700,
-      color: '#1976d2',
+      color: '#0ea5e9',
     },
     h5: {
       fontWeight: 600,
-      color: '#1976d2',
+      color: '#0ea5e9',
     },
     h6: {
       fontWeight: 600,
-      color: '#1976d2',
+      color: '#0ea5e9',
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 16,
   },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           borderRadius: '16px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          border: '1px solid rgba(25, 118, 210, 0.1)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
         },
       },
     },
@@ -480,8 +469,10 @@ const theme = createTheme({
         paper: {
           width: 320,
           padding: '24px',
-          backgroundColor: '#ffffff',
-          borderLeft: '1px solid rgba(25, 118, 210, 0.1)',
+          backgroundColor: 'rgba(9, 9, 11, 0.8)',
+          backdropFilter: 'blur(20px)',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
         },
       },
     },
@@ -491,13 +482,16 @@ const theme = createTheme({
           '&:before': {
             display: 'none',
           },
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(8px)',
           boxShadow: 'none',
-          border: '1px solid rgba(25, 118, 210, 0.1)',
-          borderRadius: '12px',
-          marginBottom: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          marginBottom: '12px',
           '&:hover': {
-            borderColor: '#1976d2',
-            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.1)',
+            borderColor: 'rgba(14, 165, 233, 0.4)',
+            boxShadow: '0 0 16px rgba(14, 165, 233, 0.1)',
+            transition: 'all 0.3s ease-in-out',
           },
         },
       },
@@ -506,9 +500,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '8px',
-          backgroundColor: 'rgba(25, 118, 210, 0.1)',
-          color: '#1976d2',
+          backgroundColor: 'rgba(14, 165, 233, 0.15)',
+          color: '#38bdf8',
           fontWeight: 600,
+          border: '1px solid rgba(14, 165, 233, 0.3)',
         },
       },
     },
@@ -518,15 +513,17 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 600,
           borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)',
+          boxShadow: '0 4px 14px 0 rgba(14, 165, 233, 0.3)',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.25)',
+            boxShadow: '0 6px 20px rgba(14, 165, 233, 0.4)',
+            transform: 'translateY(-1px)',
           },
+          transition: 'all 0.2s',
         },
         contained: {
-          background: 'linear-gradient(45deg, #1976d2, #64b5f6)',
+          background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
           '&:hover': {
-            background: 'linear-gradient(45deg, #1565c0, #42a5f5)',
+            background: 'linear-gradient(135deg, #0284c7, #7c3aed)',
           },
         },
       },
@@ -541,17 +538,17 @@ const ParameterCard = ({ name, details, theme }) => (
       mb: 2,
       position: 'relative',
       '&:hover': {
-        borderColor: '#1976d2',
-        backgroundColor: alpha('#1976d2', 0.02),
+        borderColor: '#0ea5e9',
+        backgroundColor: alpha('#0ea5e9', 0.02),
       },
       transition: 'all 0.2s ease-in-out',
       borderRadius: '12px',
-      border: '1px solid rgba(25, 118, 210, 0.1)',
+      border: '1px solid rgba(14, 165, 233, 0.1)',
     }}
   >
     <CardContent>
       <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold" color="#1976d2">
+        <Typography variant="subtitle1" fontWeight="bold" color="#0ea5e9">
           {name}
         </Typography>
         <Chip
@@ -560,8 +557,8 @@ const ParameterCard = ({ name, details, theme }) => (
           size="small"
           sx={{ 
             fontWeight: 500,
-            backgroundColor: details.required ? alpha('#1976d2', 0.1) : alpha('#666666', 0.1),
-            color: details.required ? '#1976d2' : '#666666',
+            backgroundColor: details.required ? alpha('#0ea5e9', 0.1) : alpha('#666666', 0.1),
+            color: details.required ? '#0ea5e9' : '#666666',
           }}
         />
         <Chip
@@ -569,8 +566,8 @@ const ParameterCard = ({ name, details, theme }) => (
           variant="outlined"
           size="small"
           sx={{ 
-            borderColor: '#1976d2',
-            color: '#1976d2',
+            borderColor: '#0ea5e9',
+            color: '#0ea5e9',
           }}
         />
       </Stack>
@@ -591,7 +588,24 @@ const ParameterCard = ({ name, details, theme }) => (
 const ParametersSection = ({ parameters }) => {
   if (!parameters) return null;
 
-  if (parameters.type === "multipart/form-data" && parameters.fields) {
+  if (parameters.type && parameters.type.includes("multipart") && parameters.fields) {
+    return (
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Content-Type: {parameters.type}
+        </Typography>
+        {Object.entries(parameters.fields).map(([fieldName, fieldDetails]) => (
+          <ParameterCard
+            key={fieldName}
+            name={fieldName}
+            details={fieldDetails}
+          />
+        ))}
+      </Box>
+    );
+  }
+
+  if (parameters.type === "application/json" || parameters.type === "websocket") {
     return (
       <Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -622,16 +636,133 @@ const ParametersSection = ({ parameters }) => {
 };
 
 const generateCodeSnippets = (endpoint) => {
-  const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
-  
-  const curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
+  const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
+  const isJson = endpoint.parameters?.type === "application/json";
+  const isWs = endpoint.parameters?.type === "websocket";
+  const isClone = endpoint.parameters?.type === "multipart/form-data-clone";
+
+  let curlExample, pythonExample, javascriptExample;
+
+  if (isWs) {
+    const wsUrl = baseUrl.replace('http', 'ws');
+    curlExample = `# Not supported natively via cURL
+# Try using wscat:
+wscat -c "${wsUrl}${endpoint.path}"`;
+
+    pythonExample = `import asyncio
+import websockets
+import json
+import wave
+
+async def generate_speech():
+    uri = "${wsUrl}${endpoint.path}"
+    async with websockets.connect(uri) as ws:
+        await ws.send(json.dumps({
+            "input": "Your target text",
+            "voice": "lug_female_8",
+            "temperature": 0.1,
+            "segment_id": "test_ws"
+        }))
+        audio_data = bytearray()
+        while True:
+            message = await ws.recv()
+            if isinstance(message, bytes):
+                audio_data.extend(message)
+            else:
+                data = json.loads(message)
+                if data.get("type") == "end": break
+        with wave.open("out.wav", "wb") as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+            w.writeframes(bytes(audio_data))
+
+asyncio.run(generate_speech())`;
+
+    javascriptExample = `const socket = new WebSocket("${wsUrl}${endpoint.path}");
+socket.onopen = () => {
+    socket.send(JSON.stringify({
+        input: "Target text", voice: "lug_female_8", temperature: 0.1, segment_id: "test"
+    }));
+};
+socket.onmessage = async (e) => {
+    if (e.data instanceof Blob) {
+        console.log("Received audio chunk:", e.data.size);
+    } else {
+        const ctl = JSON.parse(await e.data);
+        if(ctl.type === 'end') console.log('Finished streaming');
+    }
+};`;
+
+  } else if (isJson) {
+    curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text":"Hello World","speaker_id":"pcm_female_4","temperature":0.1}' \\
+  --output test_output.wav`;
+
+    pythonExample = `import requests
+
+url = "${baseUrl}${endpoint.path}"
+payload = {
+    "text": "Hello World",
+    "speaker_id": "pcm_female_4",
+    "temperature": 0.1
+}
+with requests.post(url, json=payload, stream=True) as response:
+    with open("test.wav", "wb") as f:
+        for chunk in response.iter_content(8192):
+            f.write(chunk)`;
+
+    javascriptExample = `fetch("${baseUrl}${endpoint.path}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({text: "Hello World", speaker_id: "pcm_female_4", temperature: 0.1})
+})
+.then(res => res.blob())
+.then(blob => {
+  const audioUrl = URL.createObjectURL(blob);
+  new Audio(audioUrl).play();
+});`;
+
+  } else if (isClone) {
+    curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
+  -H "Content-Type: multipart/form-data" \\
+  -F "reference_audio=@audio_sample.wav" \\
+  -F "text=Hello World" \\
+  -F "temperature=0.8" \\
+  --output clone.wav`;
+
+    pythonExample = `import requests
+
+url = "${baseUrl}${endpoint.path}"
+files = {'reference_audio': open('audio_sample.wav', 'rb')}
+data = {'text': 'Hello World', 'temperature': 0.8}
+
+response = requests.post(url, files=files, data=data, stream=True)
+with open("clone.wav", "wb") as f:
+    for chunk in response.iter_content(8192):
+        f.write(chunk)`;
+
+    javascriptExample = `const formData = new FormData();
+formData.append('reference_audio', fileInput.files[0]);
+formData.append('text', 'Hello World');
+formData.append('temperature', 0.8);
+
+fetch('${baseUrl}${endpoint.path}', {
+  method: 'POST',
+  body: formData
+})
+.then(res => res.blob())
+.then(blob => console.log('Received audio blob:', blob));`;
+
+  } else {
+    // Default form data
+    curlExample = `curl -X POST "${baseUrl}${endpoint.path}" \\
   -H "Content-Type: multipart/form-data" \\
   -F "user_id=your_user_id" \\
   -F "source_lang=en" \\
   -F "target_langs=lg" \\
   -F "doc=Hello World"`;
 
-  const pythonExample = `import requests
+    pythonExample = `import requests
 
 url = "${baseUrl}${endpoint.path}"
 files = {
@@ -644,7 +775,7 @@ files = {
 response = requests.post(url, files=files)
 print(response.json())`;
 
-  const javascriptExample = `const formData = new FormData();
+    javascriptExample = `const formData = new FormData();
 formData.append('user_id', 'your_user_id');
 formData.append('source_lang', 'en');
 formData.append('target_langs', 'lg');
@@ -654,14 +785,11 @@ fetch('${baseUrl}${endpoint.path}', {
   method: 'POST',
   body: formData
 })
-.then(response => response.json())
+.then(res => res.json())
 .then(data => console.log(data));`;
+  }
 
-  return {
-    curl: curlExample,
-    python: pythonExample,
-    javascript: javascriptExample
-  };
+  return { curl: curlExample, python: pythonExample, javascript: javascriptExample };
 };
 
 const TabPanel = ({ children, value, index, ...other }) => (
@@ -705,9 +833,9 @@ const CodeBlock = ({ code, language }) => {
             right: 8,
             top: 8,
             color: 'white',
-            backgroundColor: 'rgba(25, 118, 210, 0.8)',
+            backgroundColor: 'rgba(14, 165, 233, 0.8)',
             '&:hover': {
-              backgroundColor: '#1976d2',
+              backgroundColor: '#0ea5e9',
             },
           }}
         >
@@ -749,7 +877,7 @@ const Documentation = () => {
 
   const NavigationContent = () => (
     <Box sx={{ height: '100%', overflowY: 'auto' }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
         API Services
       </Typography>
       <List sx={{ py: 0 }}>
@@ -757,9 +885,9 @@ const Documentation = () => {
           <React.Fragment key={category}>
             <ListSubheader
               sx={{
-                bgcolor: 'rgba(25, 118, 210, 0.05)',
+                bgcolor: 'rgba(14, 165, 233, 0.05)',
                 fontWeight: 'bold',
-                color: '#1976d2',
+                color: '#0ea5e9',
                 borderRadius: '8px',
                 mb: 1,
               }}
@@ -776,11 +904,11 @@ const Documentation = () => {
                   borderRadius: 1,
                   mb: 0.5,
                   '&.Mui-selected': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                    color: '#1976d2',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    color: '#0ea5e9',
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                    backgroundColor: 'rgba(14, 165, 233, 0.05)',
                   },
                 }}
               >
@@ -798,7 +926,7 @@ const Documentation = () => {
                 />
               </ListItem>
             ))}
-            <Divider sx={{ my: 2, borderColor: 'rgba(25, 118, 210, 0.1)' }} />
+            <Divider sx={{ my: 2, borderColor: 'rgba(14, 165, 233, 0.1)' }} />
           </React.Fragment>
         ))}
       </List>
@@ -816,9 +944,9 @@ const Documentation = () => {
       }}>
         {/* Floating background elements */}
         <FloatingElement size="120px" position={{ top: '10%', left: '5%' }} delay="0s" />
-        <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#64b5f6" />
+        <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#8b5cf6" />
         <FloatingElement size="100px" position={{ top: '20%', right: '15%' }} delay="0.5s" />
-        <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#42a5f5" />
+        <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#38bdf8" />
         <FloatingElement size="140px" position={{ bottom: '10%', left: '20%' }} delay="2s" />
         
         {/* Main gradient overlay */}
@@ -829,7 +957,7 @@ const Documentation = () => {
             left: 0,
             right: 0,
             height: '100%',
-            background: 'radial-gradient(ellipse at center, rgba(25, 118, 210, 0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at center, rgba(14, 165, 233, 0.1) 0%, transparent 70%)',
             zIndex: 1,
           }}
         />
@@ -844,9 +972,9 @@ const Documentation = () => {
                       variant="h4" 
                       sx={{ 
                         fontWeight: 700, 
-                        color: '#1976d2', 
+                        color: '#0ea5e9', 
                         mb: 2,
-                        background: 'linear-gradient(135deg, #64b5f6 0%, #1976d2 50%, #0d47a1 100%)',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #0ea5e9 50%, #0d47a1 100%)',
                         backgroundSize: '200% 200%',
                         WebkitBackgroundClip: 'text',
                         backgroundClip: 'text',
@@ -874,7 +1002,7 @@ const Documentation = () => {
                     </Typography>
                     
                     <Stack sx={{ mb: 6 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#0ea5e9', mb: 2 }}>
                         Core Features
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -883,8 +1011,8 @@ const Documentation = () => {
                             key={feature}
                             label={feature} 
                             sx={{ 
-                              backgroundColor: 'rgba(25, 118, 210, 0.1)', 
-                              color: '#1976d2',
+                              backgroundColor: 'rgba(14, 165, 233, 0.1)', 
+                              color: '#0ea5e9',
                               animation: `${slideUp} 0.6s ease-out forwards`,
                               animationDelay: `${index * 0.1}s`,
                               opacity: 0,
@@ -898,7 +1026,7 @@ const Documentation = () => {
                 
                 {Object.entries(categorizedEndpoints).map(([category, endpoints]) => (
                   <Box key={category} sx={{ mb: 4 }}>
-                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
                       {category}
                     </Typography>
                     <List sx={{ py: 0 }}>
@@ -909,12 +1037,12 @@ const Documentation = () => {
                           sx={{ mb: 2, borderRadius: '12px !important' }}
                         >
                           <AccordionSummary 
-                            expandIcon={<ExpandMoreIcon sx={{ color: '#1976d2' }} />}
+                            expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />}
                             sx={{
-                              backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                              backgroundColor: 'rgba(14, 165, 233, 0.02)',
                               borderRadius: '12px',
                               '&:hover': {
-                                backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                                backgroundColor: 'rgba(14, 165, 233, 0.05)',
                               },
                             }}
                           >
@@ -923,9 +1051,9 @@ const Documentation = () => {
                                 label={endpoint.method}
                                 color="primary"
                                 size="small"
-                                sx={{ mr: 2, fontWeight: 'bold', backgroundColor: '#1976d2' }}
+                                sx={{ mr: 2, fontWeight: 'bold', backgroundColor: '#0ea5e9' }}
                               />
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#1976d2' }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#0ea5e9' }}>
                                 {endpoint.path}
                               </Typography>
                             </Box>
@@ -935,15 +1063,15 @@ const Documentation = () => {
                               {endpoint.description}
                             </Typography>
                             
-                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
                               Parameters
                             </Typography>
                             <ParametersSection parameters={endpoint.parameters} />
 
-                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold', color: '#1976d2' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold', color: '#0ea5e9' }}>
                               Code Examples
                             </Typography>
-                            <Box sx={{ borderBottom: 1, borderColor: 'rgba(25, 118, 210, 0.1)', mb: 2 }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'rgba(14, 165, 233, 0.1)', mb: 2 }}>
                               <Tabs 
                                 value={selectedTab}
                                 onChange={handleTabChange}
@@ -954,11 +1082,11 @@ const Documentation = () => {
                                     color: '#666666',
                                     fontWeight: 600,
                                     '&.Mui-selected': {
-                                      color: '#1976d2',
+                                      color: '#0ea5e9',
                                     },
                                   },
                                   '& .MuiTabs-indicator': {
-                                    backgroundColor: '#1976d2',
+                                    backgroundColor: '#0ea5e9',
                                   },
                                 }}
                               >
@@ -1003,7 +1131,7 @@ const Documentation = () => {
                     overflowY: 'auto',
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(25, 118, 210, 0.1)',
+                    border: '1px solid rgba(14, 165, 233, 0.1)',
                   }}
                 >
                   <NavigationContent />
@@ -1023,9 +1151,9 @@ const Documentation = () => {
                   position: 'fixed',
                   bottom: 16,
                   right: 16,
-                  backgroundColor: '#1976d2',
+                  backgroundColor: '#0ea5e9',
                   '&:hover': {
-                    backgroundColor: '#1565c0',
+                    backgroundColor: '#0284c7',
                   },
                 }}
               >

@@ -78,8 +78,8 @@ export default function SynthesizeComponent() {
           ].map(({ label, icon }, i) => (
             <Tab key={i} label={label} icon={icon} iconPosition="start" sx={{
               textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
-              color: tab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
-              '&.Mui-selected': { color: '#38bdf8' },
+              color: tab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)',
+              '&.Mui-selected': { color: '#0ea5e9' },
             }} />
           ))}
         </Tabs>
@@ -110,7 +110,7 @@ export default function SynthesizeComponent() {
               renderValue={sel => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {sel.map(v => <Chip key={v} label={LANGUAGES.find(l => l.value === v)?.label || v} size="small"
-                    sx={{ background: 'rgba(14,165,233,0.2)', color: '#38bdf8', fontSize: '0.72rem', borderRadius: '50px' }} />)}
+                    sx={{ background: 'rgba(14,165,233,0.2)', color: '#0ea5e9', fontSize: '0.72rem', borderRadius: '50px' }} />)}
                 </Box>
               )}>
               {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
@@ -143,15 +143,15 @@ export default function SynthesizeComponent() {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               ...GLASS, p: 4, cursor: 'pointer',
               borderStyle: 'dashed',
-              borderColor: file ? '#10b981' : 'rgba(255,255,255,0.08)',
-              background: file ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+              borderColor: file ? '#0ea5e9' : 'rgba(255,255,255,0.08)',
+              background: file ? 'rgba(14,165,233,0.05)' : 'rgba(255,255,255,0.02)',
               transition: 'all 0.25s ease',
               '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
             }}>
               {file ? (
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
-                  <Box sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Box>
+                  <CheckCircle sx={{ color: '#0ea5e9', fontSize: 22 }} />
+                  <Box sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Box>
                 </Stack>
               ) : (
                 <>
@@ -175,8 +175,8 @@ export default function SynthesizeComponent() {
           startIcon={<VolumeUp />}
           sx={{
             borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-            background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
-            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
+            background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.2)',
+            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#8b5cf6)', boxShadow: '0 6px 28px rgba(139,92,246,0.35)', transform: 'translateY(-1px)' },
             '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
           }}>
           {loading ? 'Generating…' : 'Generate Speech'}
@@ -184,7 +184,7 @@ export default function SynthesizeComponent() {
       </Box>
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
+        PaperProps={{ sx: { width: { xs: '100%', sm: '92vw', md: 600, lg: 640 }, background: '#0a0a0f', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
         {docId && <ViewttsAudioComponent audioId={docId} />}
       </Drawer>
     </Box>

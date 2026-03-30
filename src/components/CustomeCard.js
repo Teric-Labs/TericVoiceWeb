@@ -43,7 +43,7 @@ const CustomCard = ({ heading, value, imageUrl, to }) => {
             marginBottom: 2,
             textAlign: 'center',
             fontSize: '14px',
-            fontFamily: 'Poppins'
+            fontFamily: 'Inter'
           }}
         >
           {heading}
@@ -54,7 +54,7 @@ const CustomCard = ({ heading, value, imageUrl, to }) => {
             textAlign: 'center',
             opacity: 0.8,
             fontSize: '12px',
-            fontFamily: 'Poppins'
+            fontFamily: 'Inter'
           }}
         >
           {value}

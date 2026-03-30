@@ -1,32 +1,14 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { styled, useTheme, alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import {
-  Box,
-  Avatar,
-  CssBaseline,
-  Divider,
-  Drawer as MuiDrawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Tooltip,
-  Menu,
-  MenuItem,
-  Badge,
-  Chip,
-  Fade,
-  ListItemSecondaryAction,
-  Collapse,
+  Box, Avatar, CssBaseline, Divider, Drawer as MuiDrawer,
+  IconButton, List, ListItem, ListItemButton, ListItemIcon,
+  ListItemText, Typography, Tooltip, Chip, Collapse, useMediaQuery, useTheme,
+  Badge, Popover, Paper, Stack,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
+  ChevronLeft, ChevronRight,
   Translate as TranslateIcon,
   History as HistoryIcon,
   Api as ApiIcon,
@@ -37,815 +19,346 @@ import {
   AccountCircle as AccountCircleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon,
-  Mic as MicIcon,
-  VolumeUp as VolumeUpIcon,
-  Summarize as SummarizeIcon,
-  VideoLibrary as VideoLibraryIcon,
-  RecordVoiceOver as RecordVoiceOverIcon,
-  Assessment as AssessmentIcon,
-  ExpandLess,
-  ExpandMore,
+  GraphicEq as VoiceCloneIcon,
   Person as PersonIcon,
+  ExpandLess, ExpandMore,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  Notifications as NotificationsIcon,
+  NotificationsNone as NotificationsNoneIcon,
+  SettingsVoice as TranscribeIcon,
+  Notes as SummarizeIcon,
+  RecordVoiceOver as SynthIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../components/AuthContext';
-import { useAppSelector } from '../store/hooks';
+import { useDispatch, useSelector } from 'react-redux';
+import { setTheme, removeNotification } from '../store/slices/uiSlice';
+import { useAuth } from './AuthContext';
 import { useSidebar } from '../hooks/useSidebar';
 import mvetlogo from '../assets/livestock.png';
 
-const drawerWidth = 280;
+const W = 260;
 
-// Enhanced styled components with professional design - Blue gradient background
+const sidebarBg = '#0a0a0f'; // Elite Deep Slate
+
 const openedMixin = (theme) => ({
-  width: drawerWidth,
+  width: W, overflowX: 'hidden',
+  background: sidebarBg,
+  borderRight: '1px solid rgba(255,255,255,0.08)',
+  boxShadow: '4px 0 20px rgba(0,0,0,0.18)',
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.easeOut,
     duration: theme.transitions.duration.enteringScreen,
   }),
-  overflowX: 'hidden',
-  background: 'linear-gradient(180deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%)',
-  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-  boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
-  backdropFilter: 'blur(20px)',
-  position: 'relative',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'radial-gradient(ellipse 60% 40% at 20% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
-    pointerEvents: 'none',
-  },
 });
 
 const closedMixin = (theme) => ({
+  overflowX: 'hidden',
+  background: sidebarBg,
+  borderRight: '1px solid rgba(255,255,255,0.08)',
+  boxShadow: 'none',
+  width: `calc(${theme.spacing(7)} + 1px)`,
+  [theme.breakpoints.up('sm')]: { width: `calc(${theme.spacing(8)} + 1px)` },
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.easeOut,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  overflowX: 'hidden',
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up('sm')]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
-  background: 'linear-gradient(180deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%)',
-  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-  boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
-  backdropFilter: 'blur(20px)',
-  position: 'relative',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'radial-gradient(ellipse 60% 40% at 20% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
-    pointerEvents: 'none',
-  },
 });
 
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(2.5, 3),
-  justifyContent: 'space-between',
-  background: 'linear-gradient(180deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-  minHeight: '96px !important',
-  height: '96px',
-  boxShadow: 'inset 0 -1px 0 rgba(255, 255, 255, 0.08)',
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 70%)',
-    pointerEvents: 'none',
-  },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '1px',
-    background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%)',
-  },
-}));
-
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  whiteSpace: 'nowrap',
-  boxSizing: 'border-box',
-  '& .MuiDrawer-paper': {
-    borderRight: 'none',
-  },
-  ...(open && {
-    ...openedMixin(theme),
-    '& .MuiDrawer-paper': openedMixin(theme),
-  }),
-  ...(!open && {
-    ...closedMixin(theme),
-    '& .MuiDrawer-paper': closedMixin(theme),
-  }),
+  width: W, flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box',
+  '& .MuiDrawer-paper': { borderRight: 'none' },
+  ...(open ? { ...openedMixin(theme), '& .MuiDrawer-paper': openedMixin(theme) }
+           : { ...closedMixin(theme), '& .MuiDrawer-paper': closedMixin(theme) }),
 }));
 
-const MainContent = styled('main')(({ theme, open }) => ({
-  flexGrow: 1,
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  marginLeft: 0,
-  backgroundColor: '#f8fafc',
-  minHeight: '100vh',
-  backgroundImage: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-}));
-
-const StyledListItemButton = styled(ListItemButton)(({ theme, active }) => ({
-  minHeight: 44,
-  borderRadius: 10,
-  margin: '2px 10px',
-  padding: '10px 14px',
+const NavItem = styled(ListItemButton)(({ active }) => ({
+  minHeight: 42, borderRadius: 10, margin: '2px 10px',
+  padding: '8px 12px',
+  backgroundColor: active ? 'rgba(14, 165, 233, 0.1)' : 'transparent',
+  color: active ? '#0ea5e9' : '#94a3b8',
   position: 'relative',
-  backgroundColor: active 
-    ? 'rgba(255, 255, 255, 0.15)' 
-    : 'transparent',
-  color: '#ffffff',
-  '&::before': active ? {
-    content: '""',
-    position: 'absolute',
-    left: 0,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: 3,
-    height: '60%',
-    backgroundColor: '#ffffff',
-    borderRadius: '0 2px 2px 0',
-    boxShadow: '0 0 8px rgba(255, 255, 255, 0.5)',
-  } : {},
   '&:hover': {
-    backgroundColor: active 
-      ? 'rgba(255, 255, 255, 0.2)' 
-      : 'rgba(255, 255, 255, 0.1)',
-    transform: 'translateX(2px)',
-    '& .MuiListItemIcon-root': {
-      color: '#ffffff',
-      transform: 'scale(1.05)',
-    },
+    backgroundColor: active ? 'rgba(14, 165, 233, 0.15)' : 'rgba(255,255,255,0.04)',
+    color: active ? '#0ea5e9' : '#f8fafc',
   },
-  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  transition: 'all 0.2s ease',
   '& .MuiListItemIcon-root': {
-    color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.8)',
-    transition: 'all 0.2s ease',
-    minWidth: 24,
+    color: active ? '#0ea5e9' : '#94a3b8',
+    minWidth: 32,
+    transition: 'color 0.2s',
+  },
+  '&:hover .MuiListItemIcon-root': {
+    color: active ? '#0ea5e9' : '#f8fafc',
   },
   '& .MuiListItemText-primary': {
-    fontWeight: active ? 600 : 500,
-    fontSize: '0.875rem',
+    fontWeight: active ? 800 : 500,
+    fontSize: '0.85rem',
     letterSpacing: '-0.01em',
-    transition: 'all 0.2s ease',
-    color: '#ffffff',
   },
 }));
 
-const CategoryHeader = styled(Typography)(({ theme }) => ({
-  fontSize: '0.6875rem',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color: 'rgba(255, 255, 255, 0.6)',
-  marginBottom: '10px',
-  marginTop: '20px',
-  paddingLeft: '20px',
-  paddingRight: '20px',
-  position: 'relative',
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    bottom: -6,
-    left: 20,
-    right: 20,
-    height: '1px',
-    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+const SectionLabel = ({ label, open }) => open ? (
+  <Typography sx={{
+    fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase',
+    letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)',
+    px: 3, mt: 3, mb: 1,
+  }}>
+    {label}
+  </Typography>
+) : <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mx: 2, my: 2 }} />;
+
+const MENU = [
+  {
+    section: 'Tools Studio',
+    items: [
+      { label: 'Transcribe', icon: <TranscribeIcon fontSize="small" />, path: '/dashboard/transcribe' },
+      { label: 'Translate', icon: <TranslateIcon fontSize="small" />, path: '/dashboard/translate' },
+      { label: 'Synthesize', icon: <SynthIcon fontSize="small" />, path: '/dashboard/synthesize' },
+      { label: 'Voice Cloning', icon: <VoiceCloneIcon fontSize="small" />, path: '/dashboard/voice-clone', badge: 'New', badgeColor: 'blue' },
+      { label: 'Summarize', icon: <SummarizeIcon fontSize="small" />, path: '/dashboard/summarize' },
+      { label: 'AI Agents', icon: <SmartToyIcon fontSize="small" />, path: '/dashboard/agents', badge: 'Soon', badgeColor: 'amber' },
+    ],
   },
-}));
+  {
+    section: 'Library',
+    items: [
+      { label: 'History', icon: <HistoryIcon fontSize="small" />, path: '/dashboard/history' },
+    ],
+  },
+  {
+    section: 'Developer',
+    items: [
+      { label: 'API Reference', icon: <ApiIcon fontSize="small" />, path: '/dashboard/api-reference' },
+      { label: 'Languages', icon: <LanguageIcon fontSize="small" />, path: '/dashboard/lang-support' },
+    ],
+  },
+  {
+    section: 'Account',
+    items: [
+      { label: 'Upgrade Plan', icon: <UpgradeIcon fontSize="small" />, path: '/dashboard/subscription', badge: 'Pro' },
+      { label: 'Help Center', icon: <SupportIcon fontSize="small" />, path: '/dashboard/contact-support' },
+    ],
+  },
+];
 
 export default function Sidenav() {
   const theme = useTheme();
-  const { open, isSmallScreen, toggleDrawer } = useSidebar();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { open, toggleDrawer } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const { logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
-  const { logout, user } = useAuth();
-  const { notifications } = useAppSelector((state) => state.ui);
+  const dispatch = useDispatch();
+  const themeMode = useSelector(state => state.ui.theme.mode);
+  const isDark = themeMode === 'dark';
+  const notifications = useSelector(state => state.ui.notifications);
+  const [notifAnchor, setNotifAnchor] = useState(null);
 
-  // Reorganized menu items for better UX and to avoid repetition
-  const menuItems = [
-    {
-      category: 'Main',
-      items: [
-        { 
-          text: 'Translations', 
-          icon: <TranslateIcon />, 
-          path: '/dashboard',
-          badge: null
-        },
-        { 
-          text: 'AI Agents', 
-          icon: <SmartToyIcon />, 
-          path: '/dashboard/agents',
-          badge: 'New'
-        },
-        { 
-          text: 'Library', 
-          icon: <VideoLibraryIcon />, 
-          path: '/dashboard/history',
-          badge: null
-        },
-      ],
-    },
-    {
-      category: 'Resources',
-      items: [
-        { 
-          text: 'API Reference', 
-          icon: <ApiIcon />, 
-          path: '/dashboard/api-reference',
-          badge: null
-        },
-        { 
-          text: 'Language Support', 
-          icon: <LanguageIcon />, 
-          path: '/dashboard/lang-support',
-          badge: null
-        },
-        { 
-          text: 'Documentation', 
-          icon: <AssessmentIcon />, 
-          path: '/dashboard/chat-guide',
-          badge: null
-        },
-      ],
-    },
-    {
-      category: 'Support',
-      items: [
-        { 
-          text: 'Help Center', 
-          icon: <SupportIcon />, 
-          path: '/dashboard/contact-support',
-          badge: null
-        },
-        { 
-          text: 'Upgrade Plan', 
-          icon: <UpgradeIcon />, 
-          path: '/dashboard/subscription',
-          badge: 'Pro'
-        },
-      ],
-    },
-  ];
+  const toggleDarkMode = () => dispatch(setTheme({ mode: isDark ? 'light' : 'dark' }));
 
-  const isActive = (path) => {
-    // Handle nested routes and exact matches
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
-    }
-    return location.pathname.startsWith(path);
-  };
+  const isActive = (path, exact) =>
+    exact ? location.pathname === path : location.pathname.startsWith(path);
 
-  const handleProfileMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/get-started');
-    handleMenuClose();
-  };
-
-  const handleAccountToggle = () => {
-    setAccountOpen(!accountOpen);
-  };
-
-  const accountItems = [
-    { 
-      text: 'Profile', 
-      icon: <PersonIcon />, 
-      path: '/dashboard/profile'
-    },
-    { 
-      text: 'Settings', 
-      icon: <SettingsIcon />, 
-      path: '/dashboard/settings'
-    },
-  ];
+  const handleLogout = () => { logout(); navigate('/get-started'); };
+  const handleNavClick = (path) => { navigate(path); if (isMobile) toggleDrawer(); };
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
 
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        sx={{ 
-          mt: 1.5,
-          '& .MuiPaper-root': {
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            minWidth: 200,
-            padding: '8px',
-            backdropFilter: 'blur(20px)',
-            background: 'linear-gradient(180deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%)',
-          }
-        }}
+      <Drawer
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={open}
+        onClose={isMobile ? toggleDrawer : undefined}
+        ModalProps={{ keepMounted: true }}
       >
-        <MenuItem 
-          onClick={() => { navigate('/dashboard/profile'); handleMenuClose(); }} 
-          sx={{ 
-            borderRadius: '8px', 
-            mx: 0.5, 
-            my: 0.25,
-            px: 1.5,
-            py: 1,
-            transition: 'all 0.2s ease',
-            color: '#ffffff',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              transform: 'translateX(2px)',
-            },
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <AccountCircleIcon fontSize="small" sx={{ color: '#ffffff' }} />
-          </ListItemIcon>
-          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#ffffff' }}>Profile</Typography>
-        </MenuItem>
-        <MenuItem 
-          onClick={() => { navigate('/dashboard/settings'); handleMenuClose(); }} 
-          sx={{ 
-            borderRadius: '8px', 
-            mx: 0.5, 
-            my: 0.25,
-            px: 1.5,
-            py: 1,
-            transition: 'all 0.2s ease',
-            color: '#ffffff',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              transform: 'translateX(2px)',
-            },
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <SettingsIcon fontSize="small" sx={{ color: '#ffffff' }} />
-          </ListItemIcon>
-          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#ffffff' }}>Settings</Typography>
-        </MenuItem>
-        <Divider sx={{ my: 0.75, mx: 0.5, borderColor: 'rgba(255, 255, 255, 0.15)' }} />
-        <MenuItem 
-          onClick={handleLogout} 
-          sx={{ 
-            borderRadius: '8px', 
-            mx: 0.5, 
-            my: 0.25,
-            px: 1.5,
-            py: 1,
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              transform: 'translateX(2px)',
-            },
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <LogoutIcon fontSize="small" sx={{ color: '#fecaca' }} />
-          </ListItemIcon>
-          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#fecaca' }}>Logout</Typography>
-        </MenuItem>
-      </Menu>
-
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2.5, 
-            flexGrow: 1, 
-            position: 'relative', 
-            zIndex: 1,
-            minWidth: 0, // Allow text truncation
-          }}>
-            {/* Logo Container */}
-            <Box sx={{ 
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Box sx={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 56,
-                height: 56,
-                borderRadius: 2.5,
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                border: '1.5px solid rgba(255, 255, 255, 0.25)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
-                  borderColor: 'rgba(255, 255, 255, 0.35)',
-                },
-              }}>
-            <Avatar
-              src={mvetlogo}
-                  alt="A-Voices Logo"
-              sx={{
-                    width: 48,
-                    height: 48,
-                borderRadius: 2,
-                    border: 'none',
-                    boxShadow: 'none',
-                    background: 'transparent',
-                  }}
-                />
-                {/* Status Indicator */}
-                <Box sx={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  border: '2.5px solid #1e40af',
-                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.1)',
-                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': {
-                      opacity: 1,
-                    },
-                    '50%': {
-                      opacity: 0.8,
-                    },
-                  },
-                }} />
-              </Box>
+        {/* Header */}
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1.5,
+          px: 2, py: 1.5, minHeight: 72,
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <Avatar
+            src={mvetlogo}
+            alt="A-Voices"
+            sx={{
+              width: 40, height: 40, borderRadius: 1.5, flexShrink: 0,
+              bgcolor: 'rgba(255,255,255,0.15)',
+              border: '1.5px solid rgba(255,255,255,0.2)',
+            }}
+          />
+          {open && (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#fff', lineHeight: 1.2 }}>
+                A-Voices
+              </Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                AI Platform
+              </Typography>
             </Box>
-            
-            {/* Brand Text Container */}
-            {open && (
-              <Fade in={open} timeout={400}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: 0.5,
-                  minWidth: 0,
-                  flex: 1,
-                }}>
-                <Typography 
-                  variant="h6" 
-                  noWrap 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: '#ffffff',
-                      fontSize: '1.25rem',
-                      lineHeight: 1.2,
-                      letterSpacing: '-0.02em',
-                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                  }}
-                >
-                  A-Voices
-                </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: 'rgba(255, 255, 255, 0.75)',
-                      fontSize: '0.6875rem',
-                      fontWeight: 500,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      lineHeight: 1.2,
-                      opacity: 0.9,
-                    }}
-                  >
-                    AI Platform
-                  </Typography>
-                </Box>
-              </Fade>
-            )}
-          </Box>
-          
-          {/* Toggle Button */}
-          <IconButton 
-            onClick={toggleDrawer}
-            size="small"
-            sx={{ 
-              color: '#ffffff',
-              backgroundColor: 'rgba(255, 255, 255, 0.12)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              position: 'relative',
-              zIndex: 1,
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                borderColor: 'rgba(255, 255, 255, 0.3)',
-                transform: 'scale(1.05)',
-              },
+          )}
+          <IconButton
+            onClick={toggleDrawer} size="small"
+            sx={{
+              color: '#fff', bgcolor: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              width: 30, height: 30, flexShrink: 0,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
             }}
           >
-            {open ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+            {open ? <ChevronLeft fontSize="small" /> : <ChevronRight fontSize="small" />}
           </IconButton>
-        </DrawerHeader>
+        </Box>
 
-        <Box sx={{ 
-          px: open ? 2.5 : 1, 
-          py: 2.5,
-          height: 'calc(100vh - 96px)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          '&::-webkit-scrollbar': {
-            width: '6px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: 'transparent',
-            margin: '8px 0',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '10px',
-            border: '2px solid transparent',
-            backgroundClip: 'padding-box',
-            transition: 'background 0.2s ease',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: 'rgba(255, 255, 255, 0.35)',
-            backgroundClip: 'padding-box',
-          },
+        {/* Nav */}
+        <Box sx={{
+          flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 1,
+          '&::-webkit-scrollbar': { width: 4 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
         }}>
-          {/* Menu Items - Scrollable */}
-          <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          {menuItems.map((category) => (
-            <Box key={category.category} sx={{ mb: 2 }}>
-              {open && (
-                <CategoryHeader>
-                  {category.category}
-                </CategoryHeader>
-              )}
-              <List sx={{ p: 0 }}>
-                {category.items.map((item) => (
-                  <ListItem
-                    key={item.text}
-                    disablePadding
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    <StyledListItemButton
-                      active={isActive(item.path) ? 1 : 0}
-                      onClick={() => navigate(item.path)}
-                      sx={{
-                        justifyContent: open ? 'initial' : 'center',
-                        px: open ? 2 : 1,
-                      }}
-                    >
-                      <Tooltip title={open ? '' : item.text} placement="right">
-                        <ListItemIcon
-                          sx={{
-                            minWidth: 0,
-                            mr: open ? 2 : 'auto',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {item.icon}
+          {MENU.map(({ section, items }) => (
+            <Box key={section}>
+              <SectionLabel label={section} open={open} />
+              <List disablePadding>
+                {items.map(({ label, icon, path, exact, badge, badgeColor }) => (
+                  <ListItem key={path} disablePadding sx={{ display: 'block' }}>
+                    <Tooltip title={open ? '' : label} placement="right" arrow>
+                      <NavItem
+                        active={isActive(path, exact) ? 1 : 0}
+                        onClick={() => handleNavClick(path)}
+                        sx={{ justifyContent: open ? 'initial' : 'center' }}
+                      >
+                        <ListItemIcon sx={{ mr: open ? 1.5 : 'auto', justifyContent: 'center' }}>
+                          {icon}
                         </ListItemIcon>
-                      </Tooltip>
-                      {open && (
-                        <ListItemText
-                          primary={item.text}
-                          sx={{
-                            '& .MuiTypography-root': {
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                        />
-                      )}
-                      {open && item.badge && (
-                        <ListItemSecondaryAction>
+                        {open && <ListItemText primary={label} />}
+                        {open && badge && (
                           <Chip
-                            label={item.badge}
-                            size="small"
+                            label={badge} size="small"
                             sx={{
-                              height: 20,
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              letterSpacing: '0.02em',
-                              backgroundColor: item.badge === 'New' 
-                                ? '#10b981'
-                                : '#fbbf24',
-                              color: '#ffffff',
-                              boxShadow: item.badge === 'New'
-                                ? '0 2px 8px rgba(16, 185, 129, 0.4)'
-                                : '0 2px 8px rgba(251, 191, 36, 0.4)',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              '& .MuiChip-label': {
-                                px: 1,
-                                py: 0.25,
-                              },
+                              height: 18, fontSize: '0.6rem', fontWeight: 700,
+                              ...(badgeColor === 'amber'
+                                ? { bgcolor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }
+                                : { bgcolor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }
+                              ),
+                              ml: 0.5,
+                              '& .MuiChip-label': { px: 0.75 },
                             }}
                           />
-                        </ListItemSecondaryAction>
-                      )}
-                    </StyledListItemButton>
+                        )}
+                      </NavItem>
+                    </Tooltip>
                   </ListItem>
                 ))}
               </List>
             </Box>
           ))}
-          </Box>
+        </Box>
 
-          {/* Account Section - Collapsible */}
-          <Box sx={{ 
-            mt: 'auto', 
-            pt: 2.5, 
-            pb: 2,
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            background: 'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.1) 100%)',
-          }}>
-            {open ? (
-              <>
-                <StyledListItemButton
-                  active={0}
-                  onClick={handleAccountToggle}
-                  sx={{
-                    justifyContent: 'flex-start',
-                    px: 2,
-                    mb: accountOpen ? 0.5 : 0,
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 24, mr: 2 }}>
-                    <AccountCircleIcon sx={{ 
-                      color: '#ffffff',
-                      fontSize: 22,
-                    }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Account"
-                    sx={{
-                      '& .MuiTypography-root': {
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: '#ffffff',
-                      },
-                    }}
-                  />
-                  {accountOpen ? (
-                    <ExpandLess sx={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                  ) : (
-                    <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                  )}
-                </StyledListItemButton>
-                
-                <Collapse in={accountOpen} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding sx={{ pl: 2.5, pr: 1 }}>
-                    {accountItems.map((item) => (
-                      <ListItem key={item.text} disablePadding sx={{ mb: 0.25 }}>
-                        <StyledListItemButton
-                          active={isActive(item.path) ? 1 : 0}
-                          onClick={() => navigate(item.path)}
-                          sx={{
-                            justifyContent: 'flex-start',
-                            px: 2,
-                            minHeight: 36,
-                            borderRadius: 1.5,
-                          }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 28, mr: 1.5 }}>
-                            {React.cloneElement(item.icon, {
-                              sx: {
-                                fontSize: 18,
-                                color: isActive(item.path) 
-                                  ? '#ffffff' 
-                                  : 'rgba(255, 255, 255, 0.8)',
-                              },
-                            })}
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={item.text}
-                            sx={{
-                              '& .MuiTypography-root': {
-                                fontSize: '0.8125rem',
-                                fontWeight: isActive(item.path) ? 600 : 500,
-                                color: '#ffffff',
-                              },
-                            }}
-                          />
-                        </StyledListItemButton>
-                      </ListItem>
-                    ))}
-                    <ListItem disablePadding sx={{ mt: 0.5 }}>
-                      <StyledListItemButton
-                        active={0}
-                        onClick={handleLogout}
-                        sx={{
-                          justifyContent: 'flex-start',
-                          px: 2,
-                          minHeight: 36,
-                          borderRadius: 1.5,
-                          '&:hover': {
-                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                            '& .MuiListItemIcon-root': {
-                              color: '#fecaca',
-                            },
-                            '& .MuiListItemText-primary': {
-                              color: '#fecaca',
-                            },
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 28, mr: 1.5 }}>
-                          <LogoutIcon sx={{ fontSize: 18, color: '#fecaca' }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Logout"
-                          sx={{
-                            '& .MuiTypography-root': {
-                              fontSize: '0.8125rem',
-                              fontWeight: 500,
-                              color: '#fecaca',
-                            },
-                          }}
-                        />
-                      </StyledListItemButton>
+        {/* Bottom account section */}
+        <Box sx={{
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          pb: 1,
+        }}>
+          {open ? (
+            <>
+              <NavItem active={0} onClick={() => setAccountOpen(v => !v)} sx={{ mx: 1, mt: 0.5 }}>
+                <ListItemIcon sx={{ mr: 1.5 }}>
+                  <AccountCircleIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                </ListItemIcon>
+                <ListItemText primary="Account" />
+                {accountOpen ? <ExpandLess sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 18 }} />
+                             : <ExpandMore sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 18 }} />}
+              </NavItem>
+              <Collapse in={accountOpen} unmountOnExit>
+                <List disablePadding sx={{ pl: 1 }}>
+                  {[
+                    { label: 'Profile', icon: <PersonIcon fontSize="small" />, path: '/dashboard/profile' },
+                    { label: 'Settings', icon: <SettingsIcon fontSize="small" />, path: '/dashboard/settings' },
+                  ].map(({ label, icon, path }) => (
+                    <ListItem key={path} disablePadding>
+                      <NavItem active={isActive(path) ? 1 : 0} onClick={() => handleNavClick(path)} sx={{ mx: 1, minHeight: 38 }}>
+                        <ListItemIcon sx={{ mr: 1.5, minWidth: 20 }}>{icon}</ListItemIcon>
+                        <ListItemText primary={label} sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
+                      </NavItem>
                     </ListItem>
-                  </List>
-                </Collapse>
-              </>
-            ) : (
-              <Tooltip title="Account" placement="right" arrow>
-                <IconButton 
-                  onClick={handleAccountToggle}
-                  sx={{ 
-                    width: 42,
-                    height: 42,
-                    borderRadius: 2.5,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                    },
-                  }}
-                >
-                  <AccountCircleIcon sx={{ color: '#ffffff', fontSize: 22 }} />
+                  ))}
+                  <ListItem disablePadding>
+                    <NavItem active={0} onClick={handleLogout} sx={{
+                      mx: 1, minHeight: 38,
+                      '&:hover': { bgcolor: 'rgba(239,68,68,0.2)' },
+                    }}>
+                      <ListItemIcon sx={{ mr: 1.5, minWidth: 20 }}>
+                        <LogoutIcon fontSize="small" sx={{ color: '#fca5a5' }} />
+                      </ListItemIcon>
+                      <ListItemText primary="Logout" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem', color: '#fca5a5' } }} />
+                    </NavItem>
+                  </ListItem>
+                </List>
+              </Collapse>
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, py: 0.5 }}>
+              <Tooltip title="Profile" placement="right" arrow>
+                <IconButton onClick={() => navigate('/dashboard/profile')} size="small"
+                  sx={{ color: 'rgba(255,255,255,0.8)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <AccountCircleIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-            )}
-          </Box>
+              <Tooltip title="Logout" placement="right" arrow>
+                <IconButton onClick={handleLogout} size="small"
+                  sx={{ color: '#fca5a5', '&:hover': { bgcolor: 'rgba(239,68,68,0.15)' } }}>
+                  <LogoutIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
         </Box>
       </Drawer>
 
-      <MainContent open={open}>
-        <Box sx={{ 
-          p: 3,
-          backgroundColor: 'transparent',
-          minHeight: '100vh',
+      {/* Main */}
+      <Box component="main" sx={{
+        flexGrow: 1, minHeight: '100vh',
+        bgcolor: 'background.default',
+        width: { xs: '100%', md: `calc(100% - ${open ? W : 65}px)` },
+      }}>
+        {/* Page Title Bar */}
+        <Box sx={{
+          display: 'flex', alignItems: 'center',
+          px: { xs: 2, md: 3 }, pt: 2, pb: 0,
+          minHeight: 52,
         }}>
+          {isMobile && (
+            <IconButton
+              onClick={toggleDrawer}
+              sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1.5, mr: 1.5, border: '1px solid rgba(255,255,255,0.08)' }}
+              size="small"
+              aria-label="Open menu"
+            >
+              <ChevronRight fontSize="small" sx={{ color: '#f8fafc' }} />
+            </IconButton>
+          )}
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{
+              fontWeight: 800,
+              fontSize: '1.1rem',
+              color: '#f8fafc',
+              letterSpacing: '-0.02em',
+              textTransform: 'capitalize',
+            }}>
+              {(() => {
+                const seg = location.pathname.split('/').pop();
+                const labels = { transcribe: 'Transcribe Studio', translate: 'Translation Lab', synthesize: 'Speech Synthesis', 'voice-clone': 'Voice Cloning', summarize: 'Summarization', agents: 'AI Agents', history: 'History & Analytics', 'api-reference': 'API Reference', 'lang-support': 'Language Support', subscription: 'Upgrade Plan', profile: 'My Profile', settings: 'Settings', 'contact-support': 'Help Center' };
+                return labels[seg] || 'Dashboard';
+              })()}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
           <Outlet />
         </Box>
-      </MainContent>
+      </Box>
     </Box>
   );
 }

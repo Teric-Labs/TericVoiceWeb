@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Typography, Button, Grid, Snackbar, Alert,
   FormControl, Select, MenuItem, IconButton, Tab, Tabs,
-  Chip, Drawer, LinearProgress, InputLabel, Stack,
+  Chip, Drawer, LinearProgress, InputLabel, Stack, TextField,
 } from '@mui/material';
 import {
   CloudUpload, Mic, Stop, PlayArrow, Pause,
@@ -30,6 +30,7 @@ export default function TranscribeComponent() {
   const [targetLangs, setTargetLangs] = useState([]);
   const [file, setFile] = useState(null);
   const [blob, setBlob] = useState(null);
+  const [videoUrl, setVideoUrl] = useState('');
   const [audioURL, setAudioURL] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -95,9 +96,11 @@ export default function TranscribeComponent() {
     if (!targetLangs.length) { notify('Select at least one target language', 'error'); return; }
     if (tab === 0 && !file) { notify('Please select a file', 'error'); return; }
     if (tab === 1 && !blob) { notify('Please record audio first', 'error'); return; }
+    if (tab === 2 && !videoUrl.trim()) { notify('Please enter a video URL', 'error'); return; }
+    
     setLoading(true); setDocId(null);
     try {
-      const usage = await checkUsageBeforeRequest('upload');
+      const usage = await checkUsageBeforeRequest(tab === 2 ? 'videoUpload' : 'upload');
       if (!usage.allowed) {
         setUpgradeModal({ open: true, data: { currentUsage: usage.current_usage, limit: usage.limit, tier: usage.tier } });
         return;
@@ -105,16 +108,24 @@ export default function TranscribeComponent() {
       const { uid, userId } = getUser();
       const id = uid || userId;
       if (!id) { notify('Please log in again', 'error'); return; }
-      const res = tab === 0
-        ? await transcriptionAPI.uploadAudio(file, sourceLang, targetLangs, id)
-        : await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, targetLangs, id);
+      
+      let res;
+      if (tab === 0) {
+        res = await transcriptionAPI.uploadAudio(file, sourceLang, targetLangs, id);
+      } else if (tab === 1) {
+        res = await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, targetLangs, id);
+      } else {
+        const { videoAPI } = await import('../services/api');
+        res = await videoAPI.uploadVideo(videoUrl.trim(), sourceLang, targetLangs, id);
+      }
+      
       setDocId(res.doc_id);
       setDrawerOpen(true);
       notify('Transcription submitted!');
     } catch (e) {
-      const info = handleAPIError(e, 'upload');
+      const info = handleAPIError(e, tab === 2 ? 'videoUpload' : 'upload');
       if (info.shouldUpgrade) window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: info }));
-      else notify(info.message || 'Upload failed. Please try again.', 'error');
+      else notify(info.message || 'Submission failed. Please try again.', 'error');
     } finally { setLoading(false); }
   };
 
@@ -128,12 +139,12 @@ export default function TranscribeComponent() {
             '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 },
           }}
         >
-          {['Upload File', 'Record Audio'].map((label, i) => (
+          {['Upload File', 'Record Audio', 'Video Transcribe'].map((label, i) => (
             <Tab key={i} label={label} sx={{
               textTransform: 'none', fontWeight: 600, fontSize: '0.85rem',
-              color: tab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+              color: tab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)',
               minHeight: 40,
-              '&.Mui-selected': { color: '#38bdf8' },
+              '&.Mui-selected': { color: '#0ea5e9' },
             }} />
           ))}
         </Tabs>
@@ -159,7 +170,7 @@ export default function TranscribeComponent() {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {sel.map(v => (
                     <Chip key={v} label={LANGUAGES.find(l => l.value === v)?.label || v} size="small"
-                      sx={{ background: 'rgba(14,165,233,0.2)', color: '#38bdf8', fontSize: '0.72rem', borderRadius: '50px' }} />
+                      sx={{ background: 'rgba(14,165,233,0.2)', color: '#0ea5e9', fontSize: '0.72rem', borderRadius: '50px' }} />
                   ))}
                 </Box>
               )}
@@ -178,15 +189,15 @@ export default function TranscribeComponent() {
             ...GLASS,
             p: 4, textAlign: 'center', cursor: 'pointer', mb: 3,
             borderStyle: 'dashed',
-            borderColor: file ? '#10b981' : 'rgba(255,255,255,0.08)',
-            background: file ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+            borderColor: file ? '#0ea5e9' : 'rgba(255,255,255,0.08)',
+            background: file ? 'rgba(14,165,233,0.05)' : 'rgba(255,255,255,0.02)',
             transition: 'all 0.25s ease',
             '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)', transform: 'scale(1.005)' },
           }}>
             {file ? (
               <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
-                <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
-                <Typography sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Typography>
+                <CheckCircle sx={{ color: '#0ea5e9', fontSize: 22 }} />
+                <Typography sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Typography>
               </Stack>
             ) : (
               <>
@@ -201,6 +212,33 @@ export default function TranscribeComponent() {
         </>
       )}
 
+      {/* Video URL zone */}
+      {tab === 2 && (
+        <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Paste YouTube or Video URL here..."
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                color: '#fff',
+                bgcolor: 'rgba(255,255,255,0.02)',
+                '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                '&:hover fieldset': { borderColor: '#0ea5e9' },
+                '&.Mui-focused fieldset': { borderColor: '#0ea5e9' },
+              }
+            }}
+          />
+          <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+            Supported formats: YouTube, Vimeo, Direct MP4 links
+          </Typography>
+        </Box>
+      )}
+
+
       {/* Record zone */}
       {tab === 1 && (
         <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
@@ -212,8 +250,8 @@ export default function TranscribeComponent() {
               sx={{
                 borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 2.5,
                 ...(isRecording
-                  ? { background: 'rgba(239,68,68,0.8)', color: '#fff', borderColor: 'transparent', '&:hover': { background: 'rgba(220,38,38,0.9)' } }
-                  : { borderColor: '#0ea5e9', color: '#38bdf8', '&:hover': { background: 'rgba(14,165,233,0.08)' } }),
+                   ? { background: 'rgba(239,68,68,0.8)', color: '#fff', borderColor: 'transparent', '&:hover': { background: 'rgba(220,38,38,0.9)' } }
+                   : { borderColor: '#0ea5e9', color: '#0ea5e9', '&:hover': { background: 'rgba(14,165,233,0.08)' } }),
               }}
             >
               {isRecording ? 'Stop Recording' : 'Start Recording'}
@@ -227,7 +265,7 @@ export default function TranscribeComponent() {
             {audioURL && !isRecording && (
               <>
                 <Button variant="outlined" size="small" startIcon={isPlaying ? <Pause /> : <PlayArrow />} onClick={togglePlay}
-                  sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', '&:hover': { borderColor: '#8b5cf6', color: '#a78bfa' } }}>
+                  sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', '&:hover': { borderColor: '#8b5cf6', color: '#8b5cf6' } }}>
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
                 <IconButton onClick={discardRecording} size="small" sx={{ color: '#ef4444', '&:hover': { background: 'rgba(239,68,68,0.1)' } }}>
@@ -248,8 +286,8 @@ export default function TranscribeComponent() {
         startIcon={<Send />}
         sx={{
           borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-          background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.35)',
-          '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(14,165,233,0.5)', transform: 'translateY(-1px)' },
+          background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.2)',
+          '&:hover': { background: 'linear-gradient(135deg,#0284c7,#8b5cf6)', boxShadow: '0 6px 28px rgba(14,165,233,0.35)', transform: 'translateY(-1px)' },
           '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
         }}
       >
