@@ -1,6 +1,6 @@
 import React from 'react';
-import { Stack, Typography, Chip, Box } from '@mui/material';
-import { Translate, ArrowRightAlt } from '@mui/icons-material';
+import { Stack, Chip } from '@mui/material';
+import { ArrowRightAlt } from '@mui/icons-material';
 import ResultsTable from './ResultsTable';
 import { dataAPI } from '../services/api';
 

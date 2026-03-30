@@ -9,31 +9,18 @@ import {
   Stack,
   Chip,
   Avatar,
-  Divider,
-  Alert,
   Fade,
-  Zoom,
-  Slide,
   alpha,
-  IconButton,
-  Tooltip,
-  Badge,
-  LinearProgress,
   CircularProgress
 } from "@mui/material";
-import { styled, keyframes } from '@mui/material/styles';
+import { keyframes } from '@mui/material/styles';
 import LanguageMatrix from "../components/LanguageMatrix";
 import LanguageIcon from '@mui/icons-material/Language';
 import TranslateIcon from '@mui/icons-material/Translate';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import UpdateIcon from '@mui/icons-material/Update';
-import PublicIcon from '@mui/icons-material/Public';
-import StarIcon from '@mui/icons-material/Star';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import InfoIcon from '@mui/icons-material/Info';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ScheduleIcon from '@mui/icons-material/Schedule';
-import FlagIcon from '@mui/icons-material/Flag';
 
 // Enhanced animations
 const float = keyframes`
@@ -45,11 +32,6 @@ const float = keyframes`
 const pulse = keyframes`
   0%, 100% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.1); opacity: 1; }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 `;
 
 const slideUp = keyframes`

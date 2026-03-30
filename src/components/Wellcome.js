@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import {
-  Box, Typography, Button, Alert, Chip,
+  Box, Typography, Button, Alert,
 } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { Google as GoogleIcon, GraphicEq } from '@mui/icons-material';
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { GraphicEq } from '@mui/icons-material';
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { useAuth } from './AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from './firebaseConfig';

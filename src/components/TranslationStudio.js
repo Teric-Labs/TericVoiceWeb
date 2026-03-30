@@ -7,7 +7,7 @@ import {
 import {
   Translate, CloudUpload, SwapHoriz, 
   ContentCopy, GetApp, CheckCircle, 
-  Description, PictureAsPdf, Article,
+  Description, PictureAsPdf,
   AutoAwesome, History, Storage
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
@@ -38,7 +38,7 @@ const TranslationStudio = () => {
   const dispatch = useAppDispatch();
   const {
     sourceLanguage, targetLanguage, inputText, translatedText,
-    selectedFile, isLoading, error
+    selectedFile, isLoading
   } = useAppSelector(state => state.translation);
   const { user } = useAppSelector(state => state.auth);
 

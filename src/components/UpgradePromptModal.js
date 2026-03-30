@@ -30,7 +30,6 @@ import {
   Rocket as RocketIcon,
   Diamond as DiamondIcon,
   CheckCircle as CheckIcon,
-  TrendingUp as TrendingUpIcon,
   Security as SecurityIcon,
   Speed as SpeedIcon,
   Support as SupportIcon,
@@ -129,17 +128,16 @@ const FloatingIcon = styled(Box)(({ theme }) => ({
 
 const UpgradePromptModal = () => {
   const [open, setOpen] = useState(false);
-  const [currentUsage, setCurrentUsage] = useState(0);
-  const [limit, setLimit] = useState(0);
+  const [currentUsage] = useState(0);
+  const [limit] = useState(0);
   const [endpoint, setEndpoint] = useState('');
-  const [tier, setTier] = useState('free_trial');
+  const [tier] = useState('free_trial');
 
   const [pricingTiers, setPricingTiers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [successSnack, setSuccessSnack] = useState({ open: false, message: '' });
-  const [successState, setSuccessState] = useState(false);
 
   const onClose = () => setOpen(false);
 
@@ -189,7 +187,6 @@ const UpgradePromptModal = () => {
 
   const handlePaymentSuccess = (upgradedTier) => {
     setShowPaymentModal(false);
-    setSuccessState(true);
     setSuccessSnack({
       open: true,
       message: `Successfully upgraded to ${upgradedTier?.title || 'new plan'}! Your subscription is now active.`,

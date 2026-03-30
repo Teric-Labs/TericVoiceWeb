@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Typography, Button, TextField, FormControl, Select,
-  MenuItem, Alert, Stack, Chip, LinearProgress, InputLabel,
+  MenuItem, Alert, Stack, Chip, InputLabel,
   Paper, Slider, Drawer, IconButton as MuiIconButton, Grid,
   Fade, Zoom
 } from '@mui/material';
 import {
-  GraphicEq, CloudUpload, PlayArrow,
+  GraphicEq, CloudUpload,
   Mic, Stop, CheckCircle,
   Close, Download, Bolt, Star,
   Settings, TextFields, History, AutoAwesome
@@ -49,9 +49,8 @@ export default function VoiceCloningComponent() {
   const [audioUrl, setAudioUrl] = useState(null);
   const [error, setError] = useState(null);
   const [temperature, setTemperature] = useState(0.7);
-  const [referenceText, setReferenceText] = useState('');
+  const [referenceText] = useState('');
   const [showResult, setShowResult] = useState(false);
-  const [clonedData, setClonedData] = useState(null);
   const [showLongRequestAlert, setShowLongRequestAlert] = useState(false);
 
   const fileRef = useRef(null);
@@ -129,7 +128,6 @@ export default function VoiceCloningComponent() {
       const finalUrl = typeof res.audio_url === 'string' ? res.audio_url : (res.audio_url?.[0]?.audio_file_url || res.audio_url);
       
       if (finalUrl) {
-        setClonedData(res);
         setAudioUrl(finalUrl);
         setShowResult(true);
       } else {

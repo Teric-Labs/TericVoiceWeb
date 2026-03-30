@@ -1015,7 +1015,7 @@ export const handleAPIError = (error, endpoint) => {
 };
 
 // Export all APIs as a single object
-export default {
+const api = {
   subscription: subscriptionAPI,
   transcription: transcriptionAPI,
   video: videoAPI,
@@ -1032,3 +1032,5 @@ export default {
     handleAPIError
   }
 };
+
+export default api;

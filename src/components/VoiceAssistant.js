@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Box, Container, Typography, Paper, Fade, Alert, Snackbar, 
+import { Box, Typography, Fade, Alert, Snackbar, 
   CircularProgress, ButtonBase, Tooltip, IconButton, Menu, MenuItem } from '@mui/material';
 import { Mic, MicOff, Language as LanguageIcon, VolumeUp } from '@mui/icons-material';
 import { agentsAPI } from '../services/api';

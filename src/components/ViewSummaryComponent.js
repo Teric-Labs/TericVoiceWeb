@@ -22,7 +22,6 @@ const ViewSummaryComponent = ({ translationId, showBack = true }) => {
   const [scriptDate, setScriptDate] = useState("");
   const [scriptTitle, setScriptTitle] = useState("");
   const [summary, setSummary] = useState("");
-  const [language, setLanguage] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -36,7 +35,6 @@ const ViewSummaryComponent = ({ translationId, showBack = true }) => {
           setScriptDate(entry.Date || entry.date || new Date().toISOString());
           setScriptTitle(entry.title || "AI Summary Analysis");
           setSummary(entry.Summary || entry.summary || "No summary available.");
-          setLanguage(entry.source_lang || "en");
         }
       } catch (error) {
         showNotification("Failed to fetch summary data");

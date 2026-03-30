@@ -6,13 +6,13 @@ import {
 } from '@mui/material';
 import {
   Translate, CloudUpload, SwapHoriz, Language,
-  PictureAsPdf, Description, Article,
-  ContentCopy, Download, CheckCircle,
+  PictureAsPdf, Description,
+  CheckCircle,
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
-  setSourceLanguage, setTargetLanguage, setInputText, setTranslatedText,
-  setSelectedFile, setActiveTab, clearError, clearTranslation,
+  setSourceLanguage, setTargetLanguage, setInputText,
+  setSelectedFile, setActiveTab, clearError,
   translateText, translateDocument,
 } from '../store/slices/translationSlice';
 import DocumentTranslationDrawer from './DocumentTranslationDrawer';
@@ -74,7 +74,7 @@ const TranslationCard = () => {
         setDrawerOpen(true);
       }, 200);
     }
-  }, [translatedText, loading, error, targetLanguage, activeTab, inputText, selectedFile]);
+  }, [translatedText, loading, error, targetLanguage, activeTab, inputText, selectedFile, drawerOpen, userClosedDrawer]);
 
   const handleTranslate = async () => {
     if (!user?.userId) return;
@@ -105,18 +105,7 @@ const TranslationCard = () => {
     event.target.value = null;
   };
 
-  const handleCopy = async () => {
-    try { await navigator.clipboard.writeText(translatedText); } catch {}
-  };
 
-  const handleDownload = () => {
-    const el = document.createElement('a');
-    el.href = URL.createObjectURL(new Blob([translatedText], { type: 'text/plain' }));
-    el.download = 'translation.txt';
-    document.body.appendChild(el);
-    el.click();
-    document.body.removeChild(el);
-  };
 
   const handleSwapLanguages = () => {
     dispatch(setSourceLanguage(targetLanguage));

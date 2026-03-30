@@ -1,6 +1,5 @@
 import React from 'react';
-import { Stack, Typography, Chip } from '@mui/material';
-import { VideoFile } from '@mui/icons-material';
+import { Chip } from '@mui/material';
 import ResultsTable from './ResultsTable';
 import { dataAPI } from '../services/api';
 

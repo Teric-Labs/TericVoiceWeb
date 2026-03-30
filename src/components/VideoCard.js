@@ -10,7 +10,6 @@ import { videoAPI, checkUsageBeforeRequest, handleAPIError } from '../services/a
 import UpgradePromptModal from './UpgradePromptModal';
 
 const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
 const SELECT_SX = {
   borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
   '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
