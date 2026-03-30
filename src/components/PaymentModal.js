@@ -40,7 +40,7 @@ import { subscriptionAPI } from '../services/api';
 // Lazy-loaded stripe promise to prevent top-level load errors
 let stripePromise = null;
 const getStripe = () => {
-  const key = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+  const key = "pk_test_51OoNCdDqmFs47Ob6SjZEbrwKYGtagQUoqytYuGG6wkQRy0VFvZVqduRtCVx9WH1HpXo8b8Tbx7QSnfcOyhKQea4T000RTDwWLA";
   if (!key) return Promise.resolve(null);
   
   if (!stripePromise) {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-const AGENT_ID = process.env.REACT_APP_CHATBOT_AGENT_ID || '67d28c82-35d1-4eb1-870b-f86b546bf562';
+const AGENT_ID = '67d28c82-35d1-4eb1-870b-f86b546bf562';
 
 export default function Chatbot() {
   useEffect(() => {

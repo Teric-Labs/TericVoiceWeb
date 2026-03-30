@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 // Base configuration
-export const BASE_URL = process.env.REACT_APP_API_URL || 'https://phosai-backend-api-fq4x.onrender.com';
+export const BASE_URL = 'https://phosai-backend-api-fq4x.onrender.com';
 const REQUEST_TIMEOUT = 60000; // 60 seconds for long operations
 const LONG_REQUEST_TIMEOUT = 300000; // 5 minutes for document processing operations
 

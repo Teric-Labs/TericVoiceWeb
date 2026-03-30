@@ -110,7 +110,7 @@ const SignInComponent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const AUTH_API = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+  const AUTH_API = 'https://phosai-backend-api-fq4x.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

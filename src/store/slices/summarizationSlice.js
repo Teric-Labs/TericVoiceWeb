@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+const BASE_URL = 'https://phosai-backend-api-fq4x.onrender.com';
 
 export const summarizeText = createAsyncThunk(
   'summarization/summarizeText',
