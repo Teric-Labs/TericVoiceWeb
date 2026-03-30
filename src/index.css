@@ -68,3 +68,13 @@ code {
   transform: translateY(-2px);
   box-shadow: 0 12px 35px rgba(139, 92, 246, 0.5);
 }
+
+/* Suppress Webpack Dev Server Error Overlay (Nuclear Option) */
+#webpack-dev-server-client-overlay,
+#webpack-dev-server-client-overlay-div,
+[id^='webpack-dev-server-client-overlay'] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

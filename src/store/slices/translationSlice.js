@@ -21,6 +21,25 @@ export const translateText = createAsyncThunk(
         };
       }
       
+      // If it's not "started", check if it's an immediate translation result
+      // The backend returns a dictionary of langCode -> translatedText (which can be a list of segments)
+      const targetLang = translationData.targetLang;
+      if (response && response[targetLang]) {
+        const result = response[targetLang];
+        const text = Array.isArray(result) 
+          ? result.map(s => typeof s === 'string' ? s : s.text).join(' ') 
+          : result;
+          
+        return {
+          status: 'completed',
+          translatedText: text,
+          originalText: translationData.text,
+          sourceText: translationData.text,
+          sourceLang: translationData.sourceLang,
+          targetLang: translationData.targetLang
+        };
+      }
+      
       return rejectWithValue(response.msg || 'Failed to start text translation');
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Text translation failed');

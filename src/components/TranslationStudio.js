@@ -142,7 +142,14 @@ const TranslationStudio = () => {
         const result = await dispatch(translateText({ 
           userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, text: inputText 
         })).unwrap();
-        if (result.status === 'started') setStreamingActive(true);
+        if (result.status === 'started') {
+          setStreamingActive(true);
+        } else if (result.status === 'completed') {
+          setStreamInfo('Translation Complete');
+          setSuccessMsg('Translation loaded successfully');
+          // Clear any success message after a few seconds
+          setTimeout(() => setSuccessMsg(''), 5000);
+        }
       }
     } catch (e) { 
         console.error("Translation fail:", e); 
