@@ -147,7 +147,7 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                   <MetricsIcon sx={{ color: '#8b5cf6' }} />
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
-                      This summary has been optimized for professional executive review using ASRVoices Neural Engine V4.
+                      This summary has been optimized for professional executive review using Avoices Neural Engine V4.
                   </Typography>
               </Box>
           </Box>

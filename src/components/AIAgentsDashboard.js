@@ -168,7 +168,7 @@ useEffect(() => {
             AI AGENTS SUITE • PRE-RELEASE ACCESS
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8 }}>
-            Our neural agent infrastructure is currently undergoing high-fidelity optimization. Full integration with the ASRVoices Studio is coming soon.
+            Our neural agent infrastructure is currently undergoing high-fidelity optimization. Full integration with the Avoices Studio is coming soon.
           </Typography>
         </Alert>
 
