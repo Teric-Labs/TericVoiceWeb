@@ -152,43 +152,77 @@ const ViewAudioComponent = ({ audioId }) => {
               </Typography>
             </Box>
 
-            {/* All Translations */}
-            <Box sx={{ mb: 3 }}>
-              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2, px: 1 }}>
-                <LanguageIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
-                <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>
-                  Translations ({availableLanguages.length})
-                </Typography>
-              </Stack>
-              {availableLanguages.map((langCode, i) => (
-                <Accordion
-                  key={langCode}
-                  expanded={activeTab === i}
-                  onChange={() => setActiveTab(i)}
-                  sx={{ mb: 2, borderRadius: '16px !important', '&:before': { display: 'none' }, background: 'rgba(255,255,255,0.02)', border: langCode === selectedLanguage ? '1px solid rgba(14,165,233,0.3)' : '1px solid rgba(255,255,255,0.07)', boxShadow: 'none' }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />} sx={{ borderRadius: '16px' }}>
-                    <Stack direction="row" alignItems="center" gap={2} sx={{ width: '100%' }}>
-                      <Chip label={langCode.toUpperCase()} size="small" sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', fontWeight: 800, fontSize: '0.7rem' }} />
-                      <Typography sx={{ fontWeight: 700, color: '#f8fafc' }}>{getLangName(langCode)}</Typography>
-                      <Typography variant="caption" sx={{ ml: 'auto', color: 'rgba(255,255,255,0.3)' }}>
-                        {entries[0].Translations[langCode]?.length || 0} chars
-                      </Typography>
-                    </Stack>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ px: 3, pb: 3 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={2}>
-                      <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, flex: 1, whiteSpace: 'pre-wrap' }}>
-                        {renderTranslationContent(entries[0].Translations[langCode])}
-                      </Typography>
-                      <IconButton size="small" onClick={() => handleCopy(renderTranslationContent(entries[0].Translations[langCode]))} sx={{ flexShrink: 0, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}>
-                        <CopyIcon fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
-            </Box>
+            {/* Formatted Transcript (SRT, VTT, etc.) */}
+            {entries[0]?.formatted_transcript && (
+              <Box sx={{ ...GLASS, p: { xs: 3, md: 4 }, mb: 3, border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+                  <CopyIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                    Formatted Output ({entries[0].response_format?.toUpperCase() || 'RAW'})
+                  </Typography>
+                  <IconButton size="small" onClick={() => handleCopy(entries[0].formatted_transcript)} sx={{ ml: 'auto', color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#8b5cf6' } }}>
+                    <CopyIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+                <Box sx={{ 
+                  background: 'rgba(0,0,0,0.3)', 
+                  p: 2, 
+                  borderRadius: '12px', 
+                  fontFamily: "'Fira Code', monospace", 
+                  fontSize: '0.85rem',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  color: '#94a3b8',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}>
+                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {typeof entries[0].formatted_transcript === 'string' 
+                      ? entries[0].formatted_transcript 
+                      : JSON.stringify(entries[0].formatted_transcript, null, 2)}
+                  </pre>
+                </Box>
+              </Box>
+            )}
+
+            {/* Translations section - Only show if languages available */}
+            {availableLanguages.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2, px: 1 }}>
+                  <LanguageIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                    Translations ({availableLanguages.length})
+                  </Typography>
+                </Stack>
+                {availableLanguages.map((langCode, i) => (
+                  <Accordion
+                    key={langCode}
+                    expanded={activeTab === i}
+                    onChange={() => setActiveTab(i)}
+                    sx={{ mb: 2, borderRadius: '16px !important', '&:before': { display: 'none' }, background: 'rgba(255,255,255,0.02)', border: langCode === selectedLanguage ? '1px solid rgba(14,165,233,0.3)' : '1px solid rgba(255,255,255,0.07)', boxShadow: 'none' }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />} sx={{ borderRadius: '16px' }}>
+                      <Stack direction="row" alignItems="center" gap={2} sx={{ width: '100%' }}>
+                        <Chip label={langCode.toUpperCase()} size="small" sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', fontWeight: 800, fontSize: '0.7rem' }} />
+                        <Typography sx={{ fontWeight: 700, color: '#f8fafc' }}>{getLangName(langCode)}</Typography>
+                        <Typography variant="caption" sx={{ ml: 'auto', color: 'rgba(255,255,255,0.3)' }}>
+                          {entries[0].Translations[langCode]?.length || 0} chars
+                        </Typography>
+                      </Stack>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={2}>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, flex: 1, whiteSpace: 'pre-wrap' }}>
+                          {renderTranslationContent(entries[0].Translations[langCode])}
+                        </Typography>
+                        <IconButton size="small" onClick={() => handleCopy(renderTranslationContent(entries[0].Translations[langCode]))} sx={{ flexShrink: 0, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}>
+                          <CopyIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            )}
 
             {/* Current Segment */}
             {selectedLanguage && currentSegment && (

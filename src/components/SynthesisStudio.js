@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
+import { 
   Box, Button, Grid, TextField, Typography, IconButton, 
   Card, Chip, Stack, LinearProgress, Avatar, Tooltip, Zoom, Fade, Alert, Badge,
-  FormControl, Select, MenuItem, Divider
+  FormControl, Select, MenuItem, Divider, useMediaQuery
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { 
   VolumeUp, CloudDownload, DeleteSweep, GraphicEq, Verified, 
   FiberManualRecord, MusicNote, Description, CloudUpload, TaskAlt, 
@@ -138,36 +139,48 @@ const RAW_SPEAKERS = [
   { id: "pcm_female_3", lang: "pcm", gender: "female" },
   { id: "pcm_female_1", lang: "pcm", gender: "female" },
   { id: "pcm_male_2", lang: "pcm", gender: "male" },
-  { id: "pcm_female_2", lang: "pcm", gender: "female" },
+  { id: "pcm_female_6", lang: "pcm", gender: "female" },
   { id: "pcm_male_3", lang: "pcm", gender: "male" },
   { id: "pcm_male_5", lang: "pcm", gender: "male" }
 ];
 
 const NATIVE_NAMES = {
-  ach: { male: ['Okwera', 'Otim', 'Opio', 'Obol', 'Ocan'], female: ['Akello', 'Apiyo', 'Adong', 'Lara', 'Aber'] },
-  teo: { male: ['Omeda', 'Okurut', 'Odongo', 'Okello'], female: ['Akiror', 'Aipo', 'Amuria', 'Teres', 'Asio'] },
-  fat: { male: ['Kwame', 'Kofi', 'Kojo', 'Kweku'], female: ['Ama', 'Akosua', 'Abena', 'Adjoa'] },
-  hau: { male: ['Musa', 'Ibrahim', 'Abubakar', 'Umar', 'Sani'], female: ['Aisha', 'Fatima', 'Amina', 'Zainab', 'Mariam'] },
-  ibo: { male: ['Chinedu', 'Emeka', 'Obinna', 'Kelechi'], female: ['Nneka', 'Chioma', 'Ifeoma', 'Amaka', 'Ada'] },
-  kik: { male: ['Kamau', 'Maina', 'Mwangi', 'Njoroge'], female: ['Wanjiru', 'Nyambura', 'Muthoni', 'Wangari'] },
-  kin: { male: ['Kagabo', 'Bizimana', 'Uwimana', 'Jean'], female: ['Mukamanzi', 'Uwase', 'Mutoni', 'Alice', 'Beata'] },
-  lug: { male: ['Musa', 'Ssemulu', 'Kato', 'Zolo'], female: ['Namubiru', 'Nakato', 'Babirye', 'Nantongo'] },
-  lgg: { male: ['Drani', 'Onzima', 'Bello'], female: ['Akello', 'Adokorac', 'Ayikoru'] },
-  luo: { male: ['Otieno', 'Onyango', 'Ochieng', 'Odhiambo'], female: ['Atieno', 'Anyango', 'Adhiambo', 'Achieng'] },
-  pcm: { male: ['Chief', 'Bobo', 'Presido', 'Uche'], female: ['Sisi', 'Queen', 'Faith', 'Blessing'] },
-  nyn: { male: ['Mugisha', 'Tumusiime', 'Karyeiju'], female: ['Mbabazi', 'Kansime', 'Rose', 'Kyomugisha'] },
-  swa: { male: ['Bakari', 'Juma', 'Hassan', 'Saidi'], female: ['Fatuma', 'Amina', 'Neema', 'Rehema'] },
-  twi: { male: ['Kwesi', 'Yaw', 'Kofi', 'Mensah'], female: ['Esi', 'Adwoa', 'Abena', 'Afia'] },
-  wol: { male: ['Moussa', 'Modou', 'Cheikh', 'Abdou'], female: ['Fatou', 'Mariama', 'Awa', 'Khady'] },
-  yor: { male: ['Olu', 'Ade', 'Babatunde', 'Segun'], female: ['Bisi', 'Adeoro', 'Funke', 'Yinka'] },
+  ach: { male: ['Okwera', 'Otim', 'Opio', 'Obol', 'Ocan', 'Okello', 'Oryem', 'Odong', 'Okot', 'Olara'], female: ['Akello', 'Apiyo', 'Adong', 'Lara', 'Aber', 'Akot', 'Anyango', 'Atim', 'Adengo', 'Amito'] },
+  teo: { male: ['Omeda', 'Okurut', 'Odongo', 'Okello', 'Emuria', 'Ilungat', 'Etyang', 'Agaba'], female: ['Akiror', 'Aipo', 'Amuria', 'Teres', 'Asio', 'Apio', 'Akello', 'Aber'] },
+  fat: { male: ['Kwame', 'Kofi', 'Kojo', 'Kweku', 'Kobina', 'Kwesi', 'Kwabena'], female: ['Ama', 'Akosua', 'Abena', 'Adjoa', 'Araba', 'Abba', 'Afua'] },
+  hau: { male: ['Musa', 'Ibrahim', 'Abubakar', 'Umar', 'Sani', 'Usman', 'Ali', 'Hassan', 'Idris', 'Kabiru'], female: ['Aisha', 'Fatima', 'Amina', 'Zainab', 'Mariam', 'Halima', 'Hadiza', 'Nafisa', 'Rahma', 'Safiya'] },
+  ibo: { male: ['Chinedu', 'Emeka', 'Obinna', 'Kelechi', 'Chukwuma', 'Ifeanyi', 'Nonso', 'Tochukwu'], female: ['Nneka', 'Chioma', 'Ifeoma', 'Amaka', 'Ada', 'Ego', 'Oluchi', 'Uzoma'] },
+  kik: { male: ['Kamau', 'Maina', 'Mwangi', 'Njoroge', 'Kariuki', 'Kimani', 'Gachanja', 'Macharia'], female: ['Wanjiru', 'Nyambura', 'Muthoni', 'Wangari', 'Njeri', 'Wambui', 'Mumbi', 'Wanjiku'] },
+  kin: { male: ['Kagabo', 'Bizimana', 'Uwimana', 'Jean', 'Gakuru', 'Munyaneza'], female: ['Mukamanzi', 'Uwase', 'Mutoni', 'Alice', 'Beata', 'Uwimana', 'Ingabire'] },
+  lug: { male: ['Musa', 'Ssemulu', 'Kato', 'Zolo', 'Wasswa', 'Mukasa', 'Kizza', 'Serwadda', 'Musoke', 'Lule'], female: ['Namubiru', 'Nakato', 'Babirye', 'Nantongo', 'Nalumansi', 'Namaganda', 'Nakafeero', 'Namazzi'] },
+  lgg: { male: ['Drani', 'Onzima', 'Bello', 'Drileba', 'Anguandia'], female: ['Akello', 'Adokorac', 'Ayikoru', 'Candiru', 'Asio'] },
+  luo: { male: ['Otieno', 'Onyango', 'Ochieng', 'Odhiambo', 'Okoth', 'Omondi', 'Owino', 'Odongo'], female: ['Atieno', 'Anyango', 'Adhiambo', 'Achieng', 'Akoth', 'Amondi', 'Awino', 'Adongo'] },
+  pcm: { male: ['Chief', 'Bobo', 'Presido', 'Uche', 'Oga', 'Bros', 'Paddy', 'Guy'], female: ['Sisi', 'Queen', 'Faith', 'Blessing', 'Joy', 'Mercy', 'Peace', 'Grace'] },
+  nyn: { male: ['Mugisha', 'Tumusiime', 'Karyeiju', 'Niwagaba', 'Bainomugisha', 'Asiimwe'], female: ['Mbabazi', 'Kansime', 'Rose', 'Kyomugisha', 'Atuhaire', 'Amanya', 'Nimusiima'] },
+  swa: { male: ['Bakari', 'Juma', 'Hassan', 'Saidi', 'Ali', 'Yusuf', 'Hamisi', 'Ramadhani'], female: ['Fatuma', 'Amina', 'Neema', 'Rehema', 'Zawadi', 'Asha', 'Mariam', 'Halima'] },
+  twi: { male: ['Kwesi', 'Yaw', 'Kofi', 'Mensah', 'Boateng', 'Opoku', 'Osei'], female: ['Esi', 'Adwoa', 'Abena', 'Afia', 'Ama', 'Akosua', 'Yaa'] },
+  wol: { male: ['Moussa', 'Modou', 'Cheikh', 'Abdou', 'Ousmane', 'Babacar'], female: ['Fatou', 'Mariama', 'Awa', 'Khady', 'Astou', 'Ndeye'] },
+  yor: { male: ['Olu', 'Ade', 'Babatunde', 'Segun', 'Femi', 'Kunle', 'Tunde', 'Ayo'], female: ['Bisi', 'Adeoro', 'Funke', 'Yinka', 'Folake', 'Ronke', 'Toyin', 'Nike'] },
 };
 
 const COLORS = ['#f472b6', '#60a5fa', '#fbbf24', '#34d399', '#818cf8', '#fb7185', '#a78bfa', '#fb923c', '#2dd4bf', '#94a3b8', '#facc15'];
 
+const speakerCounters = {};
+
 const SPEAKERS = RAW_SPEAKERS.map((s, idx) => {
+  const key = `${s.lang}_${s.gender}`;
+  speakerCounters[key] = (speakerCounters[key] || 0) + 1;
+  const currentIdx = speakerCounters[key] - 1;
+
   const langNames = NATIVE_NAMES[s.lang] || { male: ['Expert'], female: ['Expert'] };
   const nameList = s.gender === 'male' ? langNames.male : langNames.female;
-  const name = nameList[idx % nameList.length];
+  
+  let name = nameList[currentIdx % nameList.length];
+  if (currentIdx >= nameList.length) {
+    const cycle = Math.floor(currentIdx / nameList.length) + 1;
+    name = `${name} ${'I'.repeat(cycle)}`;
+  }
+  
   const langLabel = LANGUAGES.find(l => l.code === s.lang)?.name || s.lang.toUpperCase();
   
   return {
@@ -194,6 +207,10 @@ const SynthesisStudio = () => {
   const [docResults, setDocResults] = useState(null);
   const [docProgress, setDocProgress] = useState(0);
   const [isDocGenerating, setIsDocGenerating] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const filteredSpeakers = activeFilter === 'all' 
     ? SPEAKERS 
@@ -300,15 +317,15 @@ const SynthesisStudio = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2.5 }, minHeight: '100vh', background: '#0a0a0f', color: '#fff' }}>
+    <Box sx={{ p: { xs: 1.5, md: 3 }, minHeight: '100vh', background: '#0a0a0f', color: '#fff' }}>
       {/* Header Area */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
         <Box>
-            <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-1px', mb: 0.2, color: '#fff' }}>
+            <Typography variant={isMobile ? "h6" : "h5"} component="div" sx={{ fontWeight: 900, letterSpacing: '-1px', mb: 0.2, color: '#fff' }}>
                 Synthesis <span style={{ color: '#0ea5e9' }}>Studio</span>
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                <Verified sx={{ fontSize: 14, color: '#10b981' }} /> Professional Neural Vocalization Hub
+            <Typography variant="caption" component="div" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <Verified sx={{ fontSize: 14, color: '#10b981' }} /> Neural Vocalization Hub
             </Typography>
         </Box>
         <Chip 
@@ -318,7 +335,8 @@ const SynthesisStudio = () => {
             sx={{ 
                 px: 1, fontWeight: 900, fontSize: '0.65rem', 
                 bgcolor: 'rgba(255,255,255,0.02)', color: '#fff', 
-                border: '1px solid rgba(255,255,255,0.08)'
+                border: '1px solid rgba(255,255,255,0.08)',
+                alignSelf: { xs: 'flex-start', sm: 'auto' }
             }} 
         />
       </Stack>
@@ -328,17 +346,19 @@ const SynthesisStudio = () => {
         <Tabs 
           value={activeTab} 
           onChange={(e, v) => setActiveTab(v)}
+          variant={isMobile ? "fullWidth" : "standard"}
           sx={{
             '& .MuiTabs-indicator': { background: G, height: 3, borderRadius: '3px 3px 0 0' },
             '& .MuiTab-root': { 
-                color: 'rgba(255,255,255,0.3)', fontWeight: 900, fontSize: '0.75rem', 
-                textTransform: 'uppercase', letterSpacing: '1.5px', px: 4, py: 2,
+                color: 'rgba(255,255,255,0.3)', fontWeight: 900, fontSize: isMobile ? '0.65rem' : '0.75rem', 
+                textTransform: 'uppercase', letterSpacing: '1px', px: { xs: 2, sm: 4 }, py: 2,
+                minHeight: 48,
                 '&.Mui-selected': { color: '#fff' }
             }
           }}
         >
-          <Tab icon={<GraphicEq sx={{ fontSize: 18, mb: 0.5 }} />} label="Voice Studio" iconPosition="start" />
-          <Tab icon={<LibraryBooks sx={{ fontSize: 18, mb: 0.5 }} />} label="Document Hub" iconPosition="start" />
+          <Tab icon={<GraphicEq sx={{ fontSize: 18 }} />} label="Voice Studio" iconPosition="start" />
+          <Tab icon={<LibraryBooks sx={{ fontSize: 18 }} />} label="Document Hub" iconPosition="start" />
         </Tabs>
       </Box>
 
@@ -572,15 +592,20 @@ const SynthesisStudio = () => {
 
         {/* Expert Speaker Gallery Column (Right) */}
         <Grid item xs={12} lg={3.5} xl={3}>
-            <Box sx={{ ...GLASS, p: 2, height: { xs: 'auto', lg: '86vh' }, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ 
+                ...GLASS, p: { xs: 1.5, md: 2 }, 
+                height: { xs: 'auto', lg: '86vh' }, 
+                display: 'flex', flexDirection: 'column' 
+            }}>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="button" sx={{ mb: 1.5, display: 'block', color: 'rgba(255,255,255,0.3)', fontWeight: 900, textAlign: 'center', letterSpacing: '2px', fontSize: '0.6rem' }}>
-                        Expert Gallery
+                        Neural Experts
                     </Typography>
                     
                     {/* Language Filter Bar */}
                     <Box sx={{ 
                         display: 'flex', gap: 0.8, overflowX: 'auto', pb: 1, 
+                        px: 0.5,
                         '&::-webkit-scrollbar': { height: '3px' },
                         '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(139, 92, 246, 0.2)', borderRadius: '10px' }
                     }}>
@@ -593,8 +618,9 @@ const SynthesisStudio = () => {
                                 sx={{
                                     bgcolor: activeFilter === lang.code ? '#8b5cf6' : 'rgba(255,255,255,0.02)',
                                     color: activeFilter === lang.code ? '#fff' : 'rgba(255,255,255,0.4)',
-                                    fontWeight: 700, fontSize: '0.6rem',
-                                    height: '24px',
+                                    fontWeight: 700, fontSize: '0.62rem',
+                                    height: '26px',
+                                    flexShrink: 0,
                                     border: `1px solid ${activeFilter === lang.code ? '#8b5cf6' : 'rgba(255,255,255,0.04)'}`,
                                     '&:hover': { bgcolor: activeFilter === lang.code ? '#7c3aed' : 'rgba(255,255,255,0.06)' }
                                 }}
@@ -603,45 +629,56 @@ const SynthesisStudio = () => {
                     </Box>
                 </Box>
 
-                <Stack spacing={1.5} sx={{ overflowY: 'auto', maxHeight: { xs: '400px', lg: '100%' }, pr: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(139, 92, 246, 0.2)', borderRadius: '10px' } }}>
+                <Stack spacing={1} sx={{ 
+                    overflowY: 'auto', 
+                    maxHeight: { xs: '350px', lg: '100%' }, 
+                    pr: 0.5, 
+                    '&::-webkit-scrollbar': { width: '4px' }, 
+                    '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(139, 92, 246, 0.2)', borderRadius: '10px' } 
+                }}>
                     {filteredSpeakers.map((s) => (
                         <Card 
                             key={s.id}
                             onClick={() => handleSpeakerSelect(s)}
                             sx={{ 
-                                bgcolor: selectedSpeaker.id === s.id ? 'rgba(139, 92, 246, 0.1)' : 'rgba(255, 255, 255, 0.01)',
+                                bgcolor: selectedSpeaker.id === s.id ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.015)',
                                 border: `1px solid ${selectedSpeaker.id === s.id ? '#8b5cf6' : 'transparent'}`,
-                                borderRadius: '16px', transition: 'all 0.2s ease',
-                                cursor: 'pointer', minHeight: '68px', display: 'flex', alignItems: 'center',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
+                                borderRadius: '12px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                cursor: 'pointer', minHeight: '60px', display: 'flex', alignItems: 'center',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', transform: 'translateY(-1px)' }
                             }}
                         >
-                            <Box sx={{ p: 1.5, width: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ p: 1.2, width: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <Badge
                                     overlap="circular"
                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                     variant="dot"
+                                    invisible={!isGenerating && selectedSpeaker.id !== s.id}
                                     sx={{ '& .MuiBadge-badge': { bgcolor: '#10b981', width: 8, height: 8, borderRadius: '50%', border: '1.5px solid #0a0a0f' } }}
                                 >
-                                    <Avatar sx={{ bgcolor: s.color, fontWeight: 900, fontSize: '0.8rem', width: 36, height: 36 }}>{s.name[0]}</Avatar>
+                                    <Avatar sx={{ bgcolor: s.color, fontWeight: 900, fontSize: '0.75rem', width: 32, height: 32 }}>{s.name[0]}</Avatar>
                                 </Badge>
                                 <Box sx={{ flexGrow: 1 }}>
-                                    <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: '#fff', mb: 0.1 }}>
+                                    <Typography sx={{ fontWeight: 800, fontSize: '0.78rem', color: '#fff', mb: 0.1, lineHeight: 1.1 }}>
                                         {s.name}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
-                                        {LANGUAGES.find(l => l.code === s.lang)?.name}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+                                            {LANGUAGES.find(l => l.code === s.lang)?.code.toUpperCase()}
+                                        </Typography>
+                                        <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>
+                                            {s.gender}
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                                <Stack alignItems="flex-end">
-                                    {selectedSpeaker.id === s.id && <Verified sx={{ fontSize: 16, color: '#10b981' }} />}
-                                </Stack>
+                                {selectedSpeaker.id === s.id && <Verified sx={{ fontSize: 14, color: '#0ea5e9' }} />}
                             </Box>
                         </Card>
                     ))}
                     {filteredSpeakers.length === 0 && (
-                        <Typography variant="caption" sx={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', mt: 5 }}>
-                            No experts found for this region.
+                        <Typography variant="caption" sx={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', mt: 5, fontStyle: 'italic' }}>
+                            No experts found in this region.
                         </Typography>
                     )}
                 </Stack>

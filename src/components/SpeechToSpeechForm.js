@@ -70,7 +70,7 @@ export default function SpeechToSpeechForm() {
           <FormControl fullWidth size="small">
             <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
             <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
-              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
@@ -89,7 +89,7 @@ export default function SpeechToSpeechForm() {
                 </Box>
               )}
             >
-              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>

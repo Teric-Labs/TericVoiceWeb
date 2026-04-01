@@ -6,8 +6,9 @@ import {
 } from '@mui/material';
 import {
   CloudUpload, Mic, Stop, PlayArrow, Pause,
-  DeleteOutline, Send, CheckCircle,
+  DeleteOutline, Send, CheckCircle, VideoFile,
 } from '@mui/icons-material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 import { LANGUAGES } from '../constants/languages';
 import ViewAudioComponent from './ViewAudioComponent';
@@ -25,9 +26,13 @@ const SELECT_SX = {
 const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
 
 export default function TranscribeComponent() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tab, setTab] = useState(0);
+
+  // ... rest of state ...
   const [sourceLang, setSourceLang] = useState('en');
-  const [targetLangs, setTargetLangs] = useState([]);
+  const [responseFormat, setResponseFormat] = useState('json');
   const [file, setFile] = useState(null);
   const [blob, setBlob] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
@@ -93,7 +98,6 @@ export default function TranscribeComponent() {
   };
 
   const handleSubmit = async () => {
-    if (!targetLangs.length) { notify('Select at least one target language', 'error'); return; }
     if (tab === 0 && !file) { notify('Please select a file', 'error'); return; }
     if (tab === 1 && !blob) { notify('Please record audio first', 'error'); return; }
     if (tab === 2 && !videoUrl.trim()) { notify('Please enter a video URL', 'error'); return; }
@@ -111,12 +115,12 @@ export default function TranscribeComponent() {
       
       let res;
       if (tab === 0) {
-        res = await transcriptionAPI.uploadAudio(file, sourceLang, targetLangs, id);
+        res = await transcriptionAPI.uploadAudio(file, sourceLang, id, responseFormat);
       } else if (tab === 1) {
-        res = await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, targetLangs, id);
+        res = await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, id, responseFormat);
       } else {
         const { videoAPI } = await import('../services/api');
-        res = await videoAPI.uploadVideo(videoUrl.trim(), sourceLang, targetLangs, id);
+        res = await videoAPI.uploadVideo(videoUrl.trim(), sourceLang, id, responseFormat);
       }
       
       setDocId(res.doc_id);
@@ -134,48 +138,64 @@ export default function TranscribeComponent() {
       {/* Mode Tabs */}
       <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}
+          variant={isMobile ? "fullWidth" : "standard"}
           sx={{
-            minHeight: 40,
-            '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 },
+            minHeight: 48,
+            '& .MuiTabs-indicator': { background: G, height: 3, borderRadius: '3px 3px 0 0' },
           }}
         >
-          {['Upload File', 'Record Audio', 'Video Transcribe'].map((label, i) => (
-            <Tab key={i} label={label} sx={{
-              textTransform: 'none', fontWeight: 600, fontSize: '0.85rem',
-              color: tab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)',
-              minHeight: 40,
-              '&.Mui-selected': { color: '#0ea5e9' },
-            }} />
+          {[
+            { label: 'Upload', icon: <CloudUpload fontSize="small" /> },
+            { label: 'Record', icon: <Mic fontSize="small" /> },
+            { label: 'Video', icon: <VideoFile fontSize="small" /> }
+          ].map((item, i) => (
+            <Tab 
+              key={i} 
+              label={!isMobile ? (i === 0 ? 'Upload File' : i === 1 ? 'Record Audio' : 'Video Transcribe') : ''} 
+              icon={item.icon}
+              iconPosition="start"
+              sx={{
+                textTransform: 'none', fontWeight: 700, fontSize: '0.85rem',
+                color: tab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)',
+                minHeight: 48,
+                minWidth: isMobile ? 'auto' : 120,
+                flex: isMobile ? 1 : 'none',
+                '&.Mui-selected': { color: '#0ea5e9' },
+                '& .MuiSvgIcon-root': { mb: '0 !important', mr: isMobile ? 0 : 1 }
+              }} 
+            />
           ))}
         </Tabs>
       </Box>
 
-      {/* Language selectors */}
+      {/* Language and Format selectors */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small">
             <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
             <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
-              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small">
-            <InputLabel sx={LABEL_SX}>Target Languages</InputLabel>
-            <Select
-              multiple value={targetLangs} label="Target Languages"
-              onChange={e => setTargetLangs(e.target.value)} sx={SELECT_SX}
-              renderValue={sel => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {sel.map(v => (
-                    <Chip key={v} label={LANGUAGES.find(l => l.value === v)?.label || v} size="small"
-                      sx={{ background: 'rgba(14,165,233,0.2)', color: '#0ea5e9', fontSize: '0.72rem', borderRadius: '50px' }} />
-                  ))}
-                </Box>
-              )}
-            >
-              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+            <InputLabel sx={LABEL_SX}>Response Format</InputLabel>
+            <Select value={responseFormat} label="Response Format" onChange={e => setResponseFormat(e.target.value)} sx={SELECT_SX}>
+              {[
+                { value: 'json', label: 'JSON (Simple)', desc: 'Concise text-only JSON' },
+                { value: 'text', label: 'Plain Text', desc: 'Raw unformatted text' },
+                { value: 'srt', label: 'SRT (Subtitles)', desc: 'Standard SubRip format' },
+                { value: 'verbose_json', label: 'Verbose JSON', desc: 'Detailed with timestamps' },
+                { value: 'vtt', label: 'WebVTT', desc: 'Modern web subtitle format' }
+              ].map(f => (
+                <MenuItem key={f.value} value={f.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>{f.label}</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{f.desc}</Typography>
+                  </Box>
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Grid>

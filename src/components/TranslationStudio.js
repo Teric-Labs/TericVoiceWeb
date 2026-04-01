@@ -200,39 +200,41 @@ const TranslationStudio = () => {
         flexWrap: 'wrap', gap: 2,
         borderLeft: '4px solid #8b5cf6'
       }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Box sx={{ p: 1, borderRadius: '8px', background: G, display: 'flex' }}>
-            <AutoAwesome sx={{ color: '#fff', fontSize: 20 }} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
-              Professional Translation Studio
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
-              Expert Streaming Engine v2.0 • Active
-            </Typography>
-          </Box>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ flex: 1 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Box sx={{ p: 1, borderRadius: '8px', background: G, display: 'flex' }}>
+              <AutoAwesome sx={{ color: '#fff', fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
+                Translation Studio
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                Streaming Engine v2.0
+              </Typography>
+            </Box>
+          </Stack>
           
-          <Stack direction="row" spacing={1} sx={{ ml: 4 }}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, sm: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-start' } }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 }, flex: { xs: 1, sm: 'none' } }}>
                 <Select 
                     value={sourceLanguage} 
                     onChange={e => dispatch(setSourceLanguage(e.target.value))}
                     sx={{ borderRadius: '8px', color: '#fff', fontSize: '0.85rem', bgcolor: 'rgba(255,255,255,0.05)', border: 'none' }}
                 >
-                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#111' }}>{l.label}</MenuItem>)}
+                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#8b5cf6' } }}>{l.label}</MenuItem>)}
                 </Select>
             </FormControl>
-            <IconButton onClick={() => dispatch(setSourceLanguage(targetLanguage))} sx={{ color: '#8b5cf6' }}>
+            <IconButton onClick={() => dispatch(setSourceLanguage(targetLanguage))} sx={{ color: '#8b5cf6', p: 0.5 }}>
                 <SwapHoriz />
             </IconButton>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 }, flex: { xs: 1, sm: 'none' } }}>
                 <Select 
                     value={targetLanguage} 
                     onChange={e => dispatch(setTargetLanguage(e.target.value))}
                     sx={{ borderRadius: '8px', color: '#fff', fontSize: '0.85rem', bgcolor: 'rgba(255,255,255,0.05)' }}
                 >
-                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#111' }}>{l.label}</MenuItem>)}
+                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#8b5cf6' } }}>{l.label}</MenuItem>)}
                 </Select>
             </FormControl>
           </Stack>

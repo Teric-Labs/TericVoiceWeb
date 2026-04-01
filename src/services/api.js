@@ -203,15 +203,12 @@ export const subscriptionAPI = {
  */
 export const transcriptionAPI = {
   // Upload audio file for transcription
-  uploadAudio: async (audioFile, sourceLang, targetLangs, userId) => {
+  uploadAudio: async (audioFile, sourceLang, userId, responseFormat = 'json') => {
     const formData = new FormData();
     formData.append('audio_file', audioFile);
     formData.append('source_lang', sourceLang);
-    // Append each target language as a separate form field
-    targetLangs.forEach(lang => {
-      formData.append('target_langs', lang);
-    });
     formData.append('user_id', userId);
+    formData.append('response_format', responseFormat);
 
     const response = await apiClient.post('/upload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -220,15 +217,12 @@ export const transcriptionAPI = {
   },
 
   // Upload recorded audio
-  uploadRecordedAudio: async (audioFile, sourceLang, targetLangs, userId) => {
+  uploadRecordedAudio: async (audioFile, sourceLang, userId, responseFormat = 'json') => {
     const formData = new FormData();
     formData.append('recorded_audio', audioFile);
     formData.append('source_lang', sourceLang);
-    // Append each target language as a separate form field
-    targetLangs.forEach(lang => {
-      formData.append('target_langs', lang);
-    });
     formData.append('user_id', userId);
+    formData.append('response_format', responseFormat);
 
     const response = await apiClient.post('/upload_recorded_audio/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -254,15 +248,12 @@ export const transcriptionAPI = {
  */
 export const videoAPI = {
   // Upload video file (for YouTube URLs)
-  uploadVideo: async (youtubeUrl, sourceLang, targetLangs, userId) => {
+  uploadVideo: async (youtubeUrl, sourceLang, userId, responseFormat = 'json') => {
     const formData = new FormData();
     formData.append('youtube_link', youtubeUrl);
     formData.append('source_lang', sourceLang);
-    // Append each target language as a separate form field
-    targetLangs.forEach(lang => {
-      formData.append('target_langs', lang);
-    });
     formData.append('user_id', userId);
+    formData.append('response_format', responseFormat);
 
     const response = await apiClient.post('/videoUpload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -278,15 +269,12 @@ export const videoAPI = {
   },
 
   // Extract audio from video file
-  extractAudioFromVideo: async (videoFile, sourceLang, targetLangs, userId) => {
+  extractAudioFromVideo: async (videoFile, sourceLang, userId, responseFormat = 'json') => {
     const formData = new FormData();
     formData.append('video_file', videoFile);
     formData.append('source_lang', sourceLang);
-    // Append each target language as a separate form field
-    targetLangs.forEach(lang => {
-      formData.append('target_langs', lang);
-    });
     formData.append('user_id', userId);
+    formData.append('response_format', responseFormat);
 
     const response = await apiClient.post('/extract_audio_from_video/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -639,9 +627,9 @@ export const dataAPI = {
     return response.data;
   },
 
-  // Get all translations for user
+  // Get all translations for user (Unified: Text + Documents)
   getTranslations: async (userId) => {
-    const response = await apiClient.post('/get_translations', { user_id: userId });
+    const response = await apiClient.post('/get_unified_translations', { user_id: userId });
     return response.data;
   },
 
@@ -726,6 +714,20 @@ export const dataAPI = {
   // Get consolidated user stats for History page
   getUserStats: async (userId) => {
     const response = await apiClient.post('/api/user-stats', { user_id: userId });
+    return response.data;
+  },
+
+  // Delete a generic record permanently from Firestore
+  deleteRecord: async (collection, docId) => {
+    const { uid, userId: localId } = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = uid || localId;
+    if (!userId) throw new Error('User not authenticated');
+
+    const response = await apiClient.post('/api/delete-record', {
+      collection,
+      doc_id: docId,
+      user_id: userId
+    });
     return response.data;
   }
 };

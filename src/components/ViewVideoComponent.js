@@ -9,6 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VideoFileIcon from '@mui/icons-material/VideoFile';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CopyIcon from '@mui/icons-material/ContentCopy';
 import { dataAPI } from '../services/api';
 import YouTubeVideoComponent from "./YouTubeVideoComponent";
 import { useNavigate } from 'react-router-dom';
@@ -120,6 +121,13 @@ const ViewVideoComponent = ({ audioId }) => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
+  const handleCopy = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    // Optional: add a snackbar notification here if needed, 
+    // but the task is just to fix the error.
+  };
+
   if (loading) {
     return (
       <Box sx={{ minHeight: '100vh', background: '#0a0a0f', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -208,56 +216,95 @@ const ViewVideoComponent = ({ audioId }) => {
             <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>
               Original Transcript ({videoData.source_lang || 'en'})
             </Typography>
+            {transcripts.full && (
+              <IconButton size="small" onClick={() => handleCopy(transcripts.full)} sx={{ ml: 'auto', color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}>
+                <CopyIcon fontSize="small" />
+              </IconButton>
+            )}
           </Stack>
           <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
             {transcripts.full || "No original transcript available"}
           </Typography>
         </Box>
 
-        {/* All Translations */}
-        <Box sx={{ mb: 3 }}>
-          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2, px: 1 }}>
-            <LanguageIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
-            <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>All Translations ({languages.length})</Typography>
-          </Stack>
+        {/* Formatted Transcript (SRT, VTT, etc.) */}
+        {videoData?.formatted_transcript && (
+          <Box sx={{ ...GLASS, p: { xs: 3, md: 4 }, mb: 3, border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+              <CopyIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
+              <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                Formatted Output ({videoData.response_format?.toUpperCase() || 'RAW'})
+              </Typography>
+              <IconButton size="small" onClick={() => handleCopy(videoData.formatted_transcript)} sx={{ ml: 'auto', color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#8b5cf6' } }}>
+                <CopyIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+            <Box sx={{ 
+              background: 'rgba(0,0,0,0.3)', 
+              p: 2, 
+              borderRadius: '12px', 
+              fontFamily: "'Fira Code', monospace", 
+              fontSize: '0.85rem',
+              maxHeight: '400px',
+              overflowY: 'auto',
+              color: '#94a3b8',
+              border: '1px solid rgba(255,255,255,0.05)'
+            }}>
+              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                {typeof videoData.formatted_transcript === 'string' 
+                  ? videoData.formatted_transcript 
+                  : JSON.stringify(videoData.formatted_transcript, null, 2)}
+              </pre>
+            </Box>
+          </Box>
+        )}
 
-          {languages.map((language) => {
-            const translations = translationsRef.current?.[language];
-            const isExpanded = selectedLanguage === language;
-            return (
-              <Accordion
-                key={language}
-                expanded={isExpanded}
-                onChange={() => handleLanguageChange(language)}
-                sx={{ mb: 2, borderRadius: '16px !important', '&:before': { display: 'none' }, background: isExpanded ? 'rgba(14,165,233,0.04)' : 'rgba(255,255,255,0.02)', border: isExpanded ? '1px solid rgba(14,165,233,0.3)' : '1px solid rgba(255,255,255,0.07)', boxShadow: 'none' }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />} sx={{ borderRadius: '16px' }}>
-                  <Stack direction="row" alignItems="center" gap={2} sx={{ width: '100%' }}>
-                    <Chip label={language.toUpperCase()} size="small" sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', fontWeight: 800, fontSize: '0.7rem' }} />
-                    <Typography sx={{ fontWeight: 700, color: '#f8fafc' }}>{getLangName(language)}</Typography>
-                    <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>{Array.isArray(translations) ? translations.length : 0} segments</Typography>
-                      <Tooltip title="Download Translation">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); downloadTranslation(language, translations); }}
-                          sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}
-                        >
-                          <DownloadIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Stack>
-                </AccordionSummary>
-                <AccordionDetails sx={{ px: 3, pb: 3 }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                    {Array.isArray(translations) ? translations.map(s => s.text).join(' ') : (typeof translations === 'string' ? translations : "No translation available")}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            );
-          })}
-        </Box>
+        {/* All Translations - Only show if available */}
+        {languages.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2, px: 1 }}>
+              <LanguageIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
+              <Typography sx={{ fontWeight: 800, color: '#f8fafc' }}>All Translations ({languages.length})</Typography>
+            </Stack>
+
+            {languages.map((language) => {
+              const translations = translationsRef.current?.[language];
+              const isExpanded = selectedLanguage === language;
+              return (
+                <Accordion
+                  key={language}
+                  expanded={isExpanded}
+                  onChange={() => handleLanguageChange(language)}
+                  sx={{ mb: 2, borderRadius: '16px !important', '&:before': { display: 'none' }, background: isExpanded ? 'rgba(14,165,233,0.04)' : 'rgba(255,255,255,0.02)', border: isExpanded ? '1px solid rgba(14,165,233,0.3)' : '1px solid rgba(255,255,255,0.07)', boxShadow: 'none' }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />} sx={{ borderRadius: '16px' }}>
+                    <Stack direction="row" alignItems="center" gap={2} sx={{ width: '100%' }}>
+                      <Chip label={language.toUpperCase()} size="small" sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', fontWeight: 800, fontSize: '0.7rem' }} />
+                      <Typography sx={{ fontWeight: 700, color: '#f8fafc' }}>{getLangName(language)}</Typography>
+                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>{Array.isArray(translations) ? translations.length : 0} segments</Typography>
+                        <Tooltip title="Download Translation">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); downloadTranslation(language, translations); }}
+                            sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#0ea5e9' } }}
+                          >
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                      {Array.isArray(translations) ? translations.map(s => s.text).join(' ') : (typeof translations === 'string' ? translations : "No translation available")}
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+              );
+            })}
+          </Box>
+        )}
       </Container>
     </Box>
   );

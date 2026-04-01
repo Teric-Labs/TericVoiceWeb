@@ -23,6 +23,7 @@ export default function VideoTable() {
       fetchFn={id => dataAPI.getVideos(id)}
       columns={columns}
       viewPath={id => `/dashboard/video/${id}`}
+      collectionName="video_store"
       searchPlaceholder="Search videos…"
       emptyTitle="No videos processed yet"
       emptySubtitle="Submit a YouTube link or video file to get started."

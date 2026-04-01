@@ -27,6 +27,7 @@ export default function SummaryTable() {
       fetchFn={id => dataAPI.getSummaries(id)}
       columns={columns}
       viewPath={id => `/dashboard/summarydata/${id}`}
+      collectionName="summary"
       searchFilter={(r, q) =>
         (r.title || '').toLowerCase().includes(q.toLowerCase()) ||
         (r.summary || r.text || '').toLowerCase().includes(q.toLowerCase())

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   TextField, Button, Select, MenuItem, FormControl,
   Box, Chip, Alert, Snackbar, Drawer, Tab, Tabs, Grid, LinearProgress,
-  InputLabel, Stack,
+  InputLabel, Stack, Typography,
 } from "@mui/material";
 import { CloudUpload, VideoCall, CheckCircle, Link as LinkIcon } from "@mui/icons-material";
 import ViewVideoComponent from "./ViewVideoComponent";
@@ -33,7 +33,7 @@ const languageOptions = [
 const VideoCard = () => {
   const [user, setUser] = useState({ username: '', userId: '' });
   const [sourceLanguage, setSourceLanguage] = useState("en");
-  const [targetLanguages, setTargetLanguages] = useState([]);
+  const [responseFormat, setResponseFormat] = useState("json");
   const [selectedFile, setSelectedFile] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
@@ -63,7 +63,6 @@ const VideoCard = () => {
 
   const validateForm = () => {
     if (!sourceLanguage) { setError("Please select a source language"); return false; }
-    if (!targetLanguages.length) { setError("Please select at least one target language"); return false; }
     if (selectedTab === 0 && !selectedFile) { setError("Please select a video file"); return false; }
     if (selectedTab === 1 && !youtubeUrl.trim()) { setError("Please enter a YouTube URL"); return false; }
     return true;
@@ -86,8 +85,8 @@ const VideoCard = () => {
         return;
       }
       const response = selectedTab === 0
-        ? await videoAPI.extractAudioFromVideo(selectedFile, sourceLanguage, targetLanguages, user.userId)
-        : await videoAPI.uploadVideo(youtubeUrl, sourceLanguage, targetLanguages, user.userId);
+        ? await videoAPI.extractAudioFromVideo(selectedFile, sourceLanguage, user.userId, responseFormat)
+        : await videoAPI.uploadVideo(youtubeUrl, sourceLanguage, user.userId, responseFormat);
       setDocId(response.doc_id);
       setIsDrawerOpen(true);
       notify('Video processed successfully!');
@@ -117,27 +116,34 @@ const VideoCard = () => {
         </Tabs>
       </Box>
 
-      {/* Language Selectors */}
+      {/* Language and Format selectors */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small">
             <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
             <Select value={sourceLanguage} label="Source Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
-              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#0f172a' }}>{o.flag} {o.label}</MenuItem>)}
+              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{o.flag} {o.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth size="small">
-            <InputLabel sx={LABEL_SX}>Target Languages</InputLabel>
-            <Select multiple value={targetLanguages} label="Target Languages" onChange={e => setTargetLanguages(e.target.value)} sx={SELECT_SX}
-              renderValue={sel => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {sel.map(v => <Chip key={v} label={languageOptions.find(o => o.value === v)?.label || v} size="small"
-                    sx={{ background: 'rgba(14,165,233,0.2)', color: '#38bdf8', fontSize: '0.72rem', borderRadius: '50px' }} />)}
-                </Box>
-              )}>
-              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#0f172a' }}>{o.flag} {o.label}</MenuItem>)}
+            <InputLabel sx={LABEL_SX}>Response Format</InputLabel>
+            <Select value={responseFormat} label="Response Format" onChange={e => setResponseFormat(e.target.value)} sx={SELECT_SX}>
+              {[
+                { value: 'json', label: 'JSON (Simple)', desc: 'Concise text-only JSON' },
+                { value: 'text', label: 'Plain Text', desc: 'Raw unformatted text' },
+                { value: 'srt', label: 'SRT (Subtitles)', desc: 'Standard SubRip format' },
+                { value: 'verbose_json', label: 'Verbose JSON', desc: 'Detailed with timestamps' },
+                { value: 'vtt', label: 'WebVTT', desc: 'Modern web subtitle format' }
+              ].map(f => (
+                <MenuItem key={f.value} value={f.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'inherit' }}>{f.label}</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.65rem' }}>{f.desc}</Typography>
+                  </Box>
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Grid>

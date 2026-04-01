@@ -24,6 +24,7 @@ export default function DataTable() {
       fetchFn={id => dataAPI.getAudios(id)}
       columns={columns}
       viewPath={id => `/dashboard/audio/${id}`}
+      collectionName="audio_store"
       searchPlaceholder="Search transcripts…"
       emptyTitle="No transcriptions yet"
       emptySubtitle="Upload or record audio to get your first transcription."

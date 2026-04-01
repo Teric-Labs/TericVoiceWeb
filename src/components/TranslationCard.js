@@ -136,7 +136,7 @@ const TranslationCard = () => {
             <FormControl fullWidth size="small">
               <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
               <Select value={sourceLanguage} label="Source Language" onChange={e => dispatch(setSourceLanguage(e.target.value))} sx={SELECT_SX}>
-                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
@@ -149,7 +149,7 @@ const TranslationCard = () => {
             <FormControl fullWidth size="small">
               <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
               <Select value={targetLanguage} label="Target Language" onChange={e => dispatch(setTargetLanguage(e.target.value))} sx={SELECT_SX}>
-                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#0f172a' }}>{l.label}</MenuItem>)}
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>

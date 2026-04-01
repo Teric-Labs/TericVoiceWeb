@@ -27,6 +27,7 @@ export default function TextTable() {
       fetchFn={id => dataAPI.getVocifyVoices(id)}
       columns={columns}
       viewPath={id => `/dashboard/tts/${id}`}
+      collectionName="vocify"
       searchFilter={(r, q) =>
         (r.title || '').toLowerCase().includes(q.toLowerCase()) ||
         (r.original_text || '').toLowerCase().includes(q.toLowerCase())

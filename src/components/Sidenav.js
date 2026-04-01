@@ -322,40 +322,74 @@ export default function Sidenav() {
         flexGrow: 1, minHeight: '100vh',
         bgcolor: 'background.default',
         width: { xs: '100%', md: `calc(100% - ${open ? W : 65}px)` },
+        transition: 'width 0.2s ease',
       }}>
         {/* Page Title Bar */}
         <Box sx={{
           display: 'flex', alignItems: 'center',
-          px: { xs: 2, md: 3 }, pt: 2, pb: 0,
-          minHeight: 52,
+          px: { xs: 2, md: 4 }, pt: { xs: 2, md: 3 }, pb: 1,
+          minHeight: 64,
+          background: 'linear-gradient(180deg, rgba(10,10,15,0.8) 0%, transparent 100%)',
+          backdropFilter: 'blur(8px)',
+          position: 'sticky', top: 0, zIndex: 10,
         }}>
           {isMobile && (
             <IconButton
               onClick={toggleDrawer}
-              sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1.5, mr: 1.5, border: '1px solid rgba(255,255,255,0.08)' }}
+              sx={{ 
+                bgcolor: 'rgba(14,165,233,0.1)', 
+                borderRadius: '12px', mr: 2, 
+                border: '1px solid rgba(14,165,233,0.2)',
+                color: '#0ea5e9',
+                width: 40, height: 40,
+                '&:hover': { bgcolor: 'rgba(14,165,233,0.2)' }
+              }}
               size="small"
               aria-label="Open menu"
             >
-              <ChevronRight fontSize="small" sx={{ color: '#f8fafc' }} />
+              <ChevronRight fontSize="small" />
             </IconButton>
           )}
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{
-              fontWeight: 800,
-              fontSize: '1.1rem',
+            <Typography component="div" sx={{
+              fontWeight: 900,
+              fontSize: { xs: '1.2rem', md: '1.5rem' },
               color: '#f8fafc',
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.03em',
               textTransform: 'capitalize',
+              display: 'flex', alignItems: 'center', gap: 1
             }}>
               {(() => {
                 const seg = location.pathname.split('/').pop();
-                const labels = { transcribe: 'Transcribe Studio', translate: 'Translation Lab', synthesize: 'Speech Synthesis', 'voice-clone': 'Voice Cloning', summarize: 'Summarization', agents: 'AI Agents', history: 'History & Analytics', 'api-reference': 'API Reference', 'lang-support': 'Language Support', subscription: 'Upgrade Plan', profile: 'My Profile', settings: 'Settings', 'contact-support': 'Help Center' };
-                return labels[seg] || 'Dashboard';
+                const labels = { transcribe: 'Transcribe', translate: 'Translate', synthesize: 'Synthesize', 'voice-clone': 'Voice Cloning', summarize: 'Summarize', agents: 'AI Agents', history: 'Library', 'api-reference': 'API Reference', 'lang-support': 'Languages', subscription: 'Subscription', profile: 'Account', settings: 'Settings', 'contact-support': 'Support' };
+                const icons = { transcribe: <TranscribeIcon />, translate: <TranslateIcon />, synthesize: <SynthIcon />, history: <HistoryIcon />, profile: <PersonIcon /> };
+                return (
+                  <>
+                    <Box sx={{ color: '#0ea5e9', display: { xs: 'none', sm: 'flex' } }}>{icons[seg]}</Box>
+                    {labels[seg] || 'Dashboard'}
+                  </>
+                );
               })()}
             </Typography>
           </Box>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <IconButton sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#0ea5e9' } }}>
+              <Badge variant="dot" color="primary">
+                <NotificationsNoneIcon />
+              </Badge>
+            </IconButton>
+            <Avatar 
+              onClick={() => navigate('/dashboard/profile')}
+              sx={{ 
+                width: 36, height: 36, cursor: 'pointer', 
+                border: '2px solid rgba(255,255,255,0.05)',
+                transition: 'all 0.2s',
+                '&:hover': { transform: 'scale(1.05)', borderColor: '#0ea5e9' }
+              }} 
+            />
+          </Stack>
         </Box>
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Box sx={{ p: { xs: 1.5, md: 4 }, pt: { xs: 1, md: 2 } }}>
           <Outlet />
         </Box>
       </Box>
