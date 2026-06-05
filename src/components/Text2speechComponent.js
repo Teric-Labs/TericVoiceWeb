@@ -21,7 +21,7 @@ const Text2SpeechComponent = () => {
       <Box sx={{ mt: 4 }}>
         <Accordion sx={{ width: '100%', boxShadow: theme.shadows[2], '&:before': { display: 'none' } }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleToggleTableVisibility} sx={{ backgroundColor: theme.palette.action.hover }}>
-            <Typography variant="h6" sx={{fontFamily:'Inter'}}>View Generated Audios</Typography>
+            <Typography variant="h6">View Generated Audios</Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ width: '100%', padding: 2, margin: 'auto', justifyContent: 'center', display: 'flex'}}>
             {isTableVisible && <TextTable />}

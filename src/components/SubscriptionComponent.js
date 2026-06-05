@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Button, Modal, Container,
-  Chip, CircularProgress, Divider,
+  Chip, Divider
 } from '@mui/material';
 import {
   CheckCircle, Close, ArrowForward, Diamond, Workspaces,
@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { keyframes } from '@mui/material/styles';
 import { subscriptionAPI } from '../services/api';
-import StripeCheckoutForm from './StripeCheckoutForm';
+import PesapalCheckoutForm from './PesapalCheckoutForm';
 import { PLANS, PLAN_COLORS } from '../constants/plans';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ const pulseGlow = keyframes`
   50%      { opacity: 1;   transform: scale(1.04); }
 `;
 
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const G = 'linear-gradient(135deg, #E8A020, #C47F10)';
 const GOLD = '#f59e0b';
 
 const PLAN_ICONS = {
@@ -41,8 +41,8 @@ function KenteBg() {
       <defs>
         <pattern id="kente-sub" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
           <polygon points="20,2 38,20 20,38 2,20" fill="none" stroke="#f59e0b" strokeWidth="1.2" />
-          <line x1="0" y1="20" x2="40" y2="20" stroke="#8b5cf6" strokeWidth="0.4" />
-          <line x1="20" y1="0" x2="20" y2="40" stroke="#8b5cf6" strokeWidth="0.4" />
+          <line x1="0" y1="20" x2="40" y2="20" stroke="#C47F10" strokeWidth="0.4" />
+          <line x1="20" y1="0" x2="20" y2="40" stroke="#C47F10" strokeWidth="0.4" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#kente-sub)" />
@@ -52,7 +52,7 @@ function KenteBg() {
 
 // ── Plan card ─────────────────────────────────────────────────────────────
 function PlanCard({ plan, onSubscribe, index }) {
-  const color = PLAN_COLORS[plan.title] || '#0ea5e9';
+  const color = PLAN_COLORS[plan.title] || '#E8A020';
   const isCustom = plan.monthly === 'Custom';
   const isFree = plan.monthlyRaw === 0;
 
@@ -70,11 +70,11 @@ function PlanCard({ plan, onSubscribe, index }) {
     <Box sx={{
       position: 'relative',
       background: plan.popular
-        ? `linear-gradient(160deg, rgba(14,165,233,0.07) 0%, rgba(139,92,246,0.07) 100%)`
-        : 'rgba(255,255,255,0.025)',
+        ? `linear-gradient(160deg, rgba(232, 160, 32,0.07) 0%, rgba(232, 160, 32,0.07) 100%)`
+        : 'rgba(17, 17, 17,0.025)',
       border: plan.popular
-        ? '1.5px solid rgba(14,165,233,0.4)'
-        : '1px solid rgba(255,255,255,0.07)',
+        ? '1.5px solid rgba(232, 160, 32,0.4)'
+        : '1px solid rgba(17, 17, 17,0.07)',
       borderRadius: '24px',
       p: 3.5,
       height: '100%',
@@ -96,7 +96,7 @@ function PlanCard({ plan, onSubscribe, index }) {
           background: G, borderRadius: '50px', px: 2, py: 0.5,
           boxShadow: `0 4px 16px ${color}50`,
         }}>
-          <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ color: '#111111', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
             ⚡ Most Popular
           </Typography>
         </Box>
@@ -115,7 +115,7 @@ function PlanCard({ plan, onSubscribe, index }) {
           </Box>
           {!isCustom && !isFree && (
             <Chip label="Billed monthly" size="small" sx={{
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(17, 17, 17, 0.05)', border: '1px solid rgba(17, 17, 17, 0.08)',
               color: '#475569', fontWeight: 600, fontSize: '0.7rem', borderRadius: '50px',
             }} />
           )}
@@ -133,7 +133,7 @@ function PlanCard({ plan, onSubscribe, index }) {
             </Typography>
           ) : (
             <>
-              <Typography sx={{ color: '#f8fafc', fontWeight: 900, fontSize: '3rem', lineHeight: 1, letterSpacing: '-0.04em' }}>
+              <Typography sx={{ color: '#111111', fontWeight: 900, fontSize: '3rem', lineHeight: 1, letterSpacing: '-0.04em' }}>
                 {plan.monthly}
               </Typography>
               {!isFree && (
@@ -149,7 +149,7 @@ function PlanCard({ plan, onSubscribe, index }) {
       </Box>
 
       {/* Divider */}
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2.5 }} />
+      <Divider sx={{ borderColor: 'rgba(17, 17, 17,0.06)', mb: 2.5 }} />
 
       {/* Features */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3.5 }}>
@@ -159,11 +159,11 @@ function PlanCard({ plan, onSubscribe, index }) {
               {included ? (
                 <CheckCircle sx={{ fontSize: 16, color }} />
               ) : (
-                <Close sx={{ fontSize: 16, color: '#374151' }} />
+                <Close sx={{ fontSize: 16, color: '#222222' }} />
               )}
             </Box>
             <Typography sx={{
-              color: included ? '#cbd5e1' : '#374151',
+              color: included ? '#cbd5e1' : '#222222',
               fontSize: '0.88rem',
               fontWeight: included ? 500 : 400,
               lineHeight: 1.4,
@@ -185,10 +185,10 @@ function PlanCard({ plan, onSubscribe, index }) {
           py: 1.5, borderRadius: '50px', fontWeight: 700, fontSize: '0.93rem',
           textTransform: 'none',
           ...(isFree ? {
-            background: 'rgba(255,255,255,0.04)', color: '#374151',
-            border: '1px solid rgba(255,255,255,0.07)', cursor: 'default',
+            background: 'rgba(17, 17, 17,0.04)', color: '#222222',
+            border: '1px solid rgba(17, 17, 17,0.07)', cursor: 'default',
           } : plan.popular ? {
-            background: G, color: '#fff',
+            background: G, color: '#111111',
             boxShadow: `0 6px 24px ${color}40`,
             '&:hover': { transform: 'translateY(-1px)', boxShadow: `0 8px 32px ${color}55}` },
           } : isCustom ? {
@@ -214,7 +214,8 @@ const SubscriptionComponent = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTier, setCurrentTier] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -224,7 +225,7 @@ const SubscriptionComponent = () => {
 
   const loadCurrentTier = async () => {
     try {
-      setIsLoading(true);
+
       const stored = JSON.parse(localStorage.getItem('user') || '{}');
       if (stored.userId) {
         const resp = await subscriptionAPI.getSubscription(stored.userId);
@@ -243,14 +244,14 @@ const SubscriptionComponent = () => {
     parseInt((monthly || '0').replace(/[^0-9]/g, '')) * 100;
 
   return (
-    <Box sx={{ background: '#07071a', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      <KenteBg />
+    <Box sx={{ background: '#ffffff', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* <KenteBg /> */}
 
       {/* Ambient glow */}
       <Box sx={{
         position: 'absolute', top: '5%', left: '50%', transform: 'translateX(-50%)',
         width: 700, height: 400, borderRadius: '50%',
-        background: 'radial-gradient(ellipse, rgba(14,165,233,0.09) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(232, 160, 32,0.09) 0%, transparent 70%)',
         animation: `${pulseGlow} 8s ease-in-out infinite`, pointerEvents: 'none',
       }} />
 
@@ -264,7 +265,7 @@ const SubscriptionComponent = () => {
             '& .MuiChip-label': { px: 2 },
           }} />
           <Typography sx={{
-            color: '#f8fafc', fontWeight: 800,
+            color: '#111111', fontWeight: 800,
             fontSize: { xs: '2rem', md: '2.8rem' },
             letterSpacing: '-0.03em', lineHeight: 1.1, mb: 1.5,
           }}>
@@ -301,13 +302,13 @@ const SubscriptionComponent = () => {
         <Box sx={{
           display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
           gap: { xs: 2.5, md: 5 }, animation: `${fadeUp} 0.5s ease 0.4s both`,
-          py: 3, borderTop: '1px solid rgba(255,255,255,0.05)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          py: 3, borderTop: '1px solid rgba(17, 17, 17, 0.05)',
+          borderBottom: '1px solid rgba(17, 17, 17, 0.05)',
         }}>
           {[
             { icon: <VerifiedUser sx={{ fontSize: 16, color: '#10b981' }} />, text: 'Secure Stripe payments' },
-            { icon: <Bolt sx={{ fontSize: 16, color: '#0ea5e9' }} />, text: 'Instant activation' },
-            { icon: <Lock sx={{ fontSize: 16, color: '#8b5cf6' }} />, text: 'Cancel anytime' },
+            { icon: <Bolt sx={{ fontSize: 16, color: '#E8A020' }} />, text: 'Instant activation' },
+            { icon: <Lock sx={{ fontSize: 16, color: '#C47F10' }} />, text: 'Cancel anytime' },
           ].map(({ icon, text }) => (
             <Box key={text} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {icon}
@@ -331,7 +332,7 @@ const SubscriptionComponent = () => {
               <Workspaces sx={{ color: GOLD, fontSize: 20 }} />
               <Typography sx={{ color: GOLD, fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enterprise Plus</Typography>
             </Box>
-            <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.4rem' }, mb: 0.5 }}>
+            <Typography sx={{ color: '#111111', fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.4rem' }, mb: 0.5 }}>
               Need unlimited scale?
             </Typography>
             <Typography sx={{ color: '#64748b', fontSize: '0.92rem' }}>
@@ -339,7 +340,7 @@ const SubscriptionComponent = () => {
             </Typography>
           </Box>
           <Button
-            onClick={() => window.open('mailto:labteric@gmail.com?subject=Enterprise%20Plus%20Inquiry', '_blank')}
+            onClick={() => window.open('mailto:phosaico@gmail.com?subject=Enterprise%20Plus%20Inquiry', '_blank')}
             variant="outlined"
             endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
             sx={{
@@ -358,21 +359,27 @@ const SubscriptionComponent = () => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.7)'
+          }
+        }}
       >
         <Box sx={{
           width: { xs: '95%', sm: 500 }, maxHeight: '90vh', overflow: 'auto',
-          background: '#0d0d1f', border: '1px solid rgba(255,255,255,0.09)',
+          background: '#ffffff', border: '1px solid rgba(17, 17, 17,0.09)',
           borderRadius: '24px', outline: 'none',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
         }}>
           {/* Modal top bar */}
           <Box sx={{ height: 3, background: G, borderRadius: '24px 24px 0 0' }} />
           <Box sx={{
             px: 3.5, py: 2.5,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid rgba(17, 17, 17,0.06)',
           }}>
             <Box>
-              <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: '1.1rem' }}>
+              <Typography sx={{ color: '#111111', fontWeight: 700, fontSize: '1.1rem' }}>
                 Upgrade to {selectedPlan?.title}
               </Typography>
               <Typography sx={{ color: '#475569', fontSize: '0.82rem', mt: 0.25 }}>
@@ -383,10 +390,10 @@ const SubscriptionComponent = () => {
               onClick={() => setIsModalOpen(false)}
               sx={{
                 width: 32, height: 32, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.05)', cursor: 'pointer',
+                background: 'rgba(17, 17, 17, 0.05)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#64748b', transition: 'all 0.2s ease',
-                '&:hover': { background: 'rgba(255,255,255,0.1)', color: '#f8fafc' },
+                '&:hover': { background: 'rgba(17, 17, 17, 0.1)', color: '#111111' },
               }}
             >
               <Close sx={{ fontSize: 18 }} />
@@ -394,8 +401,8 @@ const SubscriptionComponent = () => {
           </Box>
           <Box sx={{ p: 3.5 }}>
             {selectedPlan && (
-              <StripeCheckoutForm
-                amount={getAmountInCents(selectedPlan.monthly)}
+              <PesapalCheckoutForm
+                amount={getAmountInCents(selectedPlan.monthly) / 100}
                 tier={selectedPlan.title}
                 tierId={selectedPlan.tierId}
                 userId={user.userId}

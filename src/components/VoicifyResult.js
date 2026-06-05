@@ -79,21 +79,20 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
       sx={{
         '& .MuiDrawer-paper': {
           width: { xs: '100%', sm: '600px' },
-          backgroundColor: '#ffffff',
         },
       }}
     >
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box sx={{ 
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
           p: 3,
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" sx={{ color: 'white', fontWeight: 600 }}>
+            <Typography variant="h5" sx={{ color: '#111111', fontWeight: 600 }}>
               Voice Translation
             </Typography>
-            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <IconButton onClick={onClose} sx={{ color: '#111111' }}>
               <Close />
             </IconButton>
           </Box>
@@ -102,12 +101,12 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
             <Chip
               icon={<VolumeUp sx={{ color: 'white !important' }} />}
               label="Preview Quality"
-              sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}
+              sx={{ backgroundColor: 'rgba(17, 17, 17, 0.2)', color: '#111111' }}
             />
             <Chip
               icon={<Translate sx={{ color: 'white !important' }} />}
               label="Single Translation"
-              sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}
+              sx={{ backgroundColor: 'rgba(17, 17, 17, 0.2)', color: '#111111' }}
             />
           </Stack>
         </Box>
@@ -119,11 +118,11 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
             <Paper elevation={0} sx={{ 
               p: 3, 
               mb: 3, 
-              backgroundColor: '#ffffff',
+              backgroundColor: 'background.paper',
               borderRadius: 2,
               border: '1px solid #e2e8f0'
             }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0f172a' }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#111111' }}>
                 Original Audio
               </Typography>
               <AudioPlayer
@@ -131,7 +130,6 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                 onPlay={e => console.log("Playing original audio")}
                 style={{ 
                   borderRadius: '8px',
-                  backgroundColor: '#f8fafc'
                 }}
               />
             </Paper>
@@ -142,12 +140,12 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
             <Paper key={language} elevation={0} sx={{ 
               p: 3, 
               mb: 3, 
-              backgroundColor: '#ffffff',
+              backgroundColor: 'background.paper',
               borderRadius: 2,
               border: '1px solid #e2e8f0'
             }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ color: '#0f172a' }}>
+                <Typography variant="h6" sx={{ color: '#111111' }}>
                   {language.toUpperCase()} Translation (Preview)
                 </Typography>
               </Box>
@@ -156,7 +154,6 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                 onPlay={e => console.log(`Playing ${language} translation`)}
                 style={{ 
                   borderRadius: '8px',
-                  backgroundColor: '#f8fafc'
                 }}
                 customVolumeControls={[]} 
                 customAdditionalControls={[]} 
@@ -176,7 +173,7 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
             onClick={() => setIsPremiumExpanded(!isPremiumExpanded)}
             sx={{
               p: 2.5,
-              color: '#0ea5e9',
+              color: '#E8A020',
               textTransform: 'none',
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -184,12 +181,12 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
               alignItems: 'center',
               gap: 2,
               '&:hover': {
-                backgroundColor: 'rgba(14, 165, 233, 0.04)',
+                backgroundColor: 'rgba(232, 160, 32, 0.04)',
               }
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Bolt sx={{ fontSize: 24, color: '#0ea5e9' }} />
+              <Bolt sx={{ fontSize: 24, color: '#E8A020' }} />
               <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 600 }}>
                 Unlock Voicify Pro Features
               </Typography>
@@ -206,8 +203,8 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
           </Button>
 
           <Collapse in={isPremiumExpanded}>
-            <Box sx={{ p: 4, backgroundColor: '#f8fafc' }}>
-              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#0f172a' }}>
+            <Box sx={{ p: 4, backgroundColor: 'background.paper' }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#111111' }}>
                 Enhance Your Voice Translations
               </Typography>
               
@@ -217,11 +214,11 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                     p: 2.5, 
                     borderRadius: 2,
                     border: '1px solid #e2e8f0',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'background.default',
                     position: 'relative',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': { 
-                      borderColor: '#0ea5e9',
+                      borderColor: '#E8A020',
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }
@@ -230,8 +227,8 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                       <Box sx={{ 
                         p: 1.5, 
                         borderRadius: 1.5, 
-                        background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
-                        color: 'white'
+                        background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
+                        color: '#111111'
                       }}>
                         {feature.icon}
                       </Box>
@@ -245,8 +242,8 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                               size="small"
                               label={feature.highlight}
                               sx={{ 
-                                backgroundColor: 'rgba(14,165,233,0.08)',
-                                color: '#0ea5e9',
+                                backgroundColor: 'rgba(232, 160, 32,0.08)',
+                                color: '#E8A020',
                                 fontWeight: 600,
                                 fontSize: '0.75rem'
                               }}
@@ -275,9 +272,9 @@ const VoicifyResult = ({ response, isOpen, onClose }) => {
                   fontWeight: 600,
                   fontSize: '1.1rem',
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
+                  background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)'
+                    background: 'linear-gradient(135deg, #0284c7 0%, #F5B844 100%)'
                   }
                 }}
               >

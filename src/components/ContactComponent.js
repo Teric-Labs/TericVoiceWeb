@@ -6,60 +6,67 @@ import TwitterIcon from '@mui/icons-material/Twitter';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import LanguageIcon from '@mui/icons-material/Language';
 
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const G = 'linear-gradient(135deg, #f59e0b, #d97706)';
 const GOLD = '#f59e0b';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px' };
+const GLASS = { background: 'rgba(248, 246, 240, 0.65)', border: '1px solid rgba(232, 160, 32, 0.15)', borderRadius: '16px' };
 
 const contactInfo = {
-  email: 'labteric@gmail.com',
-  instagram: 'https://www.instagram.com/tericdatalabs',
-  twitter: 'https://www.twitter.com/tericdatalabs',
-  linkedin: 'https://www.linkedin.com/company/tericdatalabs',
-  website: 'https://tericweb.web.app/',
-  discord: 'https://discord.gg/tericdatalabs',
-  slack: 'https://tericdatalabs.slack.com',
+  email: 'phosaico@gmail.com',
+  linkedin: 'https://www.linkedin.com/company/phosai',
+  twitter: 'https://x.com/phosai',
+  website: 'https://phosai.com',
+  tiktok: 'https://www.tiktok.com/@phosai',
+  discord: 'https://discord.gg/phosai',
 };
 
 const CHANNELS = [
   {
     icon: <EmailIcon />,
     label: 'Email',
-    value: 'labteric@gmail.com',
-    href: 'mailto:labteric@gmail.com',
-    color: '#ef4444',
+    value: 'phosaico@gmail.com',
+    href: 'mailto:phosaico@gmail.com',
+    color: '#f59e0b',
     desc: 'Send us a message directly',
   },
   {
     icon: <LanguageIcon />,
     label: 'Website',
-    value: 'tericweb.web.app',
+    value: 'phosai.com',
     href: contactInfo.website,
-    color: '#0ea5e9',
+    color: '#e89f28',
     desc: 'Visit our company website',
   },
   {
     icon: <LinkedInIcon />,
     label: 'LinkedIn',
-    value: 'TericData Labs',
+    value: 'Phosai',
     href: contactInfo.linkedin,
     color: '#0077B5',
     desc: 'Connect professionally',
   },
   {
-    icon: <TwitterIcon />,
-    label: 'Twitter / X',
-    value: '@tericdatalabs',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    ),
+    label: 'X',
+    value: '@phosai',
     href: contactInfo.twitter,
-    color: '#1DA1F2',
-    desc: 'Follow for updates',
+    color: '#f59e0b',
+    desc: 'Follow us on X',
   },
   {
-    icon: <InstagramIcon />,
-    label: 'Instagram',
-    value: '@tericdatalabs',
-    href: contactInfo.instagram,
-    color: '#E4405F',
-    desc: 'Behind the scenes',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.74-3.99-1.72-.08-.07-.17-.17-.25-.26v6.4c-.02 2.14-.94 4.31-2.73 5.5-1.9 1.35-4.5 1.63-6.67.75-2.61-1.01-4.32-3.87-4.04-6.72.24-3.23 3.04-5.91 6.29-5.74.86.03 1.7.24 2.47.61V.02z"/>
+      </svg>
+    ),
+    label: 'TikTok',
+    value: '@phosai',
+    href: contactInfo.tiktok,
+    color: '#ff0050',
+    desc: 'Watch our content',
   },
   {
     icon: (
@@ -86,7 +93,7 @@ const ContactCard = ({ icon, label, value, href, color, desc }) => (
       transition: 'all 0.25s ease',
       cursor: 'pointer',
       '&:hover': {
-        background: 'rgba(255,255,255,0.07)',
+        background: 'rgba(17, 17, 17, 0.03)',
         borderColor: `${color}40`,
         transform: 'translateY(-2px)',
         boxShadow: `0 8px 24px ${color}15`,
@@ -104,7 +111,7 @@ const ContactCard = ({ icon, label, value, href, color, desc }) => (
         <Typography sx={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {label}
         </Typography>
-        <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <Typography sx={{ color: '#111111', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {value}
         </Typography>
         <Typography sx={{ color: '#475569', fontSize: '0.78rem' }}>{desc}</Typography>
@@ -125,7 +132,7 @@ const ContactComponent = () => (
       }}>
         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: GOLD }} />
         <Typography sx={{ color: GOLD, fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          TericData Labs
+          Phosai Co
         </Typography>
       </Box>
       <Typography sx={{
@@ -136,14 +143,14 @@ const ContactComponent = () => (
         Get in Touch
       </Typography>
       <Typography sx={{ color: '#64748b', fontSize: '1rem', maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
-        A-Voices is a product of TericData Labs. Connect with us through any of these channels — we'd love to hear from you.
+        A-Voices is a product of Phosai. Connect with us through any of these channels — we'd love to hear from you.
       </Typography>
     </Box>
 
     {/* Cards */}
     <Box sx={{ ...GLASS, overflow: 'hidden' }}>
       {/* Gold accent bar */}
-      <Box sx={{ height: 3, background: `linear-gradient(90deg, #0ea5e9, #f59e0b, #8b5cf6)` }} />
+      <Box sx={{ height: 3, background: `linear-gradient(90deg, #f59e0b, #fbbf24, #d97706)` }} />
 
       <Box sx={{ p: { xs: 2.5, md: 4 } }}>
         <Grid container spacing={2}>
@@ -156,12 +163,12 @@ const ContactComponent = () => (
 
         {/* Bottom note */}
         <Box sx={{
-          mt: 4, pt: 4, borderTop: '1px solid rgba(255,255,255,0.06)',
+          mt: 4, pt: 4, borderTop: '1px solid rgba(17, 17, 17, 0.08)',
           textAlign: 'center',
         }}>
           <Typography sx={{ color: '#475569', fontSize: '0.88rem' }}>
             Usually respond within{' '}
-            <Box component="span" sx={{ color: '#0ea5e9', fontWeight: 600 }}>24 hours</Box>
+            <Box component="span" sx={{ color: GOLD, fontWeight: 600 }}>24 hours</Box>
             {' '}on business days.
           </Typography>
         </Box>
@@ -171,3 +178,4 @@ const ContactComponent = () => (
 );
 
 export default ContactComponent;
+

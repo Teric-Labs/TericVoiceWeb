@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
+import useFileDrop from "../hooks/useFileDrop";
 import {
   TextField, Button, Select, MenuItem, FormControl,
-  Box, Chip, Alert, Snackbar, Drawer, Tab, Tabs, Grid, LinearProgress,
+  Box, Alert, Snackbar, Drawer, Tab, Tabs, Grid,
   InputLabel, Stack, Typography,
 } from "@mui/material";
 import { CloudUpload, VideoCall, CheckCircle, Link as LinkIcon } from "@mui/icons-material";
 import ViewVideoComponent from "./ViewVideoComponent";
 import { videoAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 import UpgradePromptModal from './UpgradePromptModal';
+import { ActivityStrip } from './progress';
 
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const G = 'linear-gradient(135deg, #E8A020, #C47F10)';
 const SELECT_SX = {
-  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+  borderRadius: '12px', color: '#111111', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(17, 17, 17, 0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#E8A020' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#E8A020' },
+  '& .MuiSvgIcon-root': { color: 'rgba(17, 17, 17, 0.5)' },
 };
-const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
+const LABEL_SX = { color: 'rgba(17, 17, 17, 0.5)', '&.Mui-focused': { color: '#E8A020' } };
 
 const languageOptions = [
   { value: "en",  label: "English",    flag: "🇺🇸" },
@@ -61,6 +63,11 @@ const VideoCard = () => {
     notify('Video file selected successfully');
   };
 
+  const { isDragOver, dropProps } = useFileDrop(
+    files => handleFileSelection(files[0]),
+    { accept: ['video/'], multiple: false },
+  );
+
   const validateForm = () => {
     if (!sourceLanguage) { setError("Please select a source language"); return false; }
     if (selectedTab === 0 && !selectedFile) { setError("Please select a video file"); return false; }
@@ -102,7 +109,7 @@ const VideoCard = () => {
   return (
     <Box>
       {/* Tabs */}
-      <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <Box sx={{ mb: 3, borderBottom: '1px solid rgba(17, 17, 17,0.07)' }}>
         <Tabs value={selectedTab} onChange={(_, v) => setSelectedTab(v)}
           sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2, borderRadius: 1 } }}>
           {[
@@ -110,7 +117,7 @@ const VideoCard = () => {
             { label: 'YouTube URL',       icon: <LinkIcon  sx={{ fontSize: 17 }} /> },
           ].map(({ label, icon }, i) => (
             <Tab key={i} label={label} icon={icon} iconPosition="start"
-              sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: selectedTab === i ? '#38bdf8' : 'rgba(255,255,255,0.4)', '&.Mui-selected': { color: '#38bdf8' } }}
+              sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: selectedTab === i ? '#F5B844' : 'rgba(17, 17, 17,0.4)', '&.Mui-selected': { color: '#F5B844' } }}
             />
           ))}
         </Tabs>
@@ -122,7 +129,7 @@ const VideoCard = () => {
           <FormControl fullWidth size="small">
             <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
             <Select value={sourceLanguage} label="Source Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
-              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{o.flag} {o.label}</MenuItem>)}
+              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: '#111111', '&:hover': { color: '#E8A020' } }}>{o.flag} {o.label}</MenuItem>)}
             </Select>
           </FormControl>
         </Grid>
@@ -137,10 +144,10 @@ const VideoCard = () => {
                 { value: 'verbose_json', label: 'Verbose JSON', desc: 'Detailed with timestamps' },
                 { value: 'vtt', label: 'WebVTT', desc: 'Modern web subtitle format' }
               ].map(f => (
-                <MenuItem key={f.value} value={f.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>
+                <MenuItem key={f.value} value={f.value} sx={{ color: '#111111', '&:hover': { color: '#E8A020' } }}>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'inherit' }}>{f.label}</Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.65rem' }}>{f.desc}</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(17, 17, 17, 0.6)', display: 'block', fontSize: '0.65rem' }}>{f.desc}</Typography>
                   </Box>
                 </MenuItem>
               ))}
@@ -162,13 +169,14 @@ const VideoCard = () => {
           <input ref={fileInputRef} type="file" accept="video/*" onChange={e => e.target.files[0] && handleFileSelection(e.target.files[0])} style={{ display: 'none' }} />
           <Box
             onClick={() => fileInputRef.current?.click()}
+            {...dropProps}
             sx={{
               border: '1.5px dashed',
-              borderColor: selectedFile ? '#10b981' : 'rgba(255,255,255,0.12)',
+              borderColor: isDragOver ? '#E8A020' : selectedFile ? '#10b981' : 'rgba(17, 17, 17,0.12)',
               borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
-              background: selectedFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+              background: isDragOver ? 'rgba(232, 160, 32,0.1)' : selectedFile ? 'rgba(16,185,129,0.05)' : 'rgba(17, 17, 17,0.02)',
               transition: 'all 0.25s ease',
-              '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
+              '&:hover': { borderColor: '#E8A020', background: 'rgba(232, 160, 32,0.04)' },
             }}
           >
             {selectedFile ? (
@@ -178,10 +186,10 @@ const VideoCard = () => {
               </Stack>
             ) : (
               <>
-                <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                  <CloudUpload sx={{ fontSize: 26, color: '#0ea5e9' }} />
+                <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(232, 160, 32,0.1)', border: '1px solid rgba(232, 160, 32,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <CloudUpload sx={{ fontSize: 26, color: '#E8A020' }} />
                 </Box>
-                <Box sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload or drag and drop</Box>
+                <Box sx={{ color: '#111111', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload or drag and drop</Box>
                 <Box sx={{ color: '#64748b', fontSize: '0.8rem' }}>MP4, AVI, MOV, WMV · Max 100MB</Box>
               </>
             )}
@@ -196,14 +204,14 @@ const VideoCard = () => {
             value={youtubeUrl}
             onChange={e => setYoutubeUrl(e.target.value)}
             sx={{
-              '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#f8fafc', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: '#0ea5e9' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } },
+              '& .MuiOutlinedInput-root': { borderRadius: '14px', color: '#111111', '& fieldset': { borderColor: 'rgba(17, 17, 17, 0.1)' }, '&:hover fieldset': { borderColor: '#E8A020' }, '&.Mui-focused fieldset': { borderColor: '#E8A020' } },
               '& .MuiInputLabel-root': LABEL_SX,
             }}
           />
         </Box>
       )}
 
-      {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+      <ActivityStrip active={loading} />
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Button
@@ -212,9 +220,9 @@ const VideoCard = () => {
           startIcon={<CloudUpload />}
           sx={{
             borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-            background: G, boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
-            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)', transform: 'translateY(-1px)' },
-            '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+            background: G, boxShadow: '0 4px 20px rgba(232, 160, 32,0.35)',
+            '&:hover': { background: 'linear-gradient(135deg,#0284c7,#7c3aed)', boxShadow: '0 6px 28px rgba(232, 160, 32,0.5)', transform: 'translateY(-1px)' },
+            '&.Mui-disabled': { background: 'rgba(17, 17, 17, 0.08)', color: 'rgba(17, 17, 17,0.3)', boxShadow: 'none' },
           }}
         >
           {loading ? 'Processing…' : 'Process Video'}
@@ -226,7 +234,7 @@ const VideoCard = () => {
       </Snackbar>
 
       <Drawer anchor="right" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
+        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, borderLeft: '1px solid rgba(17, 17, 17,0.07)' } }}>
         {docId && <ViewVideoComponent audioId={docId} />}
       </Drawer>
 

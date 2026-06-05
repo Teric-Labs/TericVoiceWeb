@@ -1,21 +1,27 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Paper, Checkbox, TextField, IconButton, CircularProgress,
+  TableRow, Checkbox, TextField, IconButton,
   Typography, Button, Tooltip, TableSortLabel, Snackbar, Alert,
   Menu, MenuItem, Stack, InputAdornment, ListItemIcon, Select, FormControl,
-  useMediaQuery, useTheme, Card, Divider
+  useMediaQuery, useTheme, Card, Divider, Grid, Chip
 } from '@mui/material';
 import {
-  Delete, Share, Visibility, Search, MoreVert,
-  InboxOutlined, Refresh as RefreshIcon, ErrorOutline,
+  InboxOutlined,
   FileDownload as DownloadIcon, CalendarMonth as CalendarIcon,
+  Search, Delete, Visibility, MoreVert, Share, Refresh,
 } from '@mui/icons-material';
 import ReactPaginate from 'react-paginate';
 import './Pagination.css';
 import Skeleton from '@mui/material/Skeleton';
 import { dataAPI } from '../services/api';
+import {
+  AC, G, isProcessingStatus, getEntryDate, getAssetDownloadUrl, defaultVaultSearch, resolveRowTitle,
+} from '../utils/mediaVault';
+import {
+  fetchVaultCached, readVaultCacheSync, invalidateVaultCache, VAULT_CACHE_KEYS,
+} from '../utils/vaultCache';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 const getUser = () => JSON.parse(localStorage.getItem('user') || '{}');
@@ -29,20 +35,41 @@ export default function ResultsTable({
   searchPlaceholder = 'Search…',
   emptyTitle = 'No results yet',
   emptySubtitle = 'Your processed files will appear here.',
-  sortKey = 'date',
+  emptyActionLabel = 'Open Studio',
+  studioPath = null,
+  sortKey,
   dateKey = 'date',
+  refreshKey = 0,
+  cacheKey = null,
+  onEntriesLoaded,
 }) {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const fetchFnRef = useRef(fetchFn);
+  const onLoadedRef = useRef(onEntriesLoaded);
+  const hasEntriesRef = useRef(false);
+  fetchFnRef.current = fetchFn;
+  onLoadedRef.current = onEntriesLoaded;
+
+  const resolveCacheKey = cacheKey || collectionName || 'table';
+
+  const [entries, setEntries] = useState(() => {
+    const { uid, userId } = getUser();
+    const id = uid || userId;
+    if (!id) return [];
+    const cached = readVaultCacheSync(id, resolveCacheKey);
+    return Array.isArray(cached?.entries) ? cached.entries : [];
+  });
+  const [initialLoading, setInitialLoading] = useState(() => entries.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(0);
   const [perPage, setPerPage] = useState(PAGE_SIZE_OPTIONS[0]);
-  const [orderBy, setOrderBy] = useState(sortKey);
+  const resolvedSortKey = sortKey ?? dateKey;
+  const [orderBy, setOrderBy] = useState(resolvedSortKey);
   const [order, setOrder] = useState('desc');
   const [selected, setSelected] = useState([]);
   const [anchor, setAnchor] = useState(null);
@@ -52,25 +79,65 @@ export default function ResultsTable({
   const [dateTo, setDateTo] = useState('');
   const [showDateFilter, setShowDateFilter] = useState(false);
 
+  useEffect(() => {
+    hasEntriesRef.current = entries.length > 0;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const notify = (msg, sev = 'success') => setSnack({ open: true, msg, sev });
 
-  const fetchData = useCallback(async () => {
+  const applyEntries = useCallback((list) => {
+    hasEntriesRef.current = list.length > 0;
+    setEntries(list);
+    onLoadedRef.current?.(list);
+  }, []);
+
+  const fetchData = useCallback(async ({ force = false, silent = false } = {}) => {
     const { uid, userId } = getUser();
     const id = uid || userId;
-    if (!id) { setLoading(false); return; }
-    setLoading(true);
+    if (!id) {
+      setInitialLoading(false);
+      return;
+    }
+
+    if (!silent && !hasEntriesRef.current) setInitialLoading(true);
+    else if (silent) setRefreshing(true);
+
     setLoadError(false);
     try {
-      const res = await fetchFn(id);
-      setEntries(Array.isArray(res?.entries) ? res.entries : []);
+      const { data: res } = await fetchVaultCached(
+        id,
+        resolveCacheKey,
+        () => fetchFnRef.current(id),
+        { force }
+      );
+      const list = Array.isArray(res?.entries) ? res.entries : [];
+      applyEntries(list);
     } catch {
-      setLoadError(true);
+      if (!silent && !hasEntriesRef.current) setLoadError(true);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [fetchFn]);
+  }, [applyEntries, resolveCacheKey]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const refreshKeyRef = useRef(refreshKey);
+  useEffect(() => {
+    const force = refreshKey !== refreshKeyRef.current;
+    refreshKeyRef.current = refreshKey;
+    if (force) {
+      const { uid, userId } = getUser();
+      const id = uid || userId;
+      if (id) invalidateVaultCache(id, resolveCacheKey);
+    }
+    fetchData({ force, silent: hasEntriesRef.current });
+  }, [refreshKey, resolveCacheKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const hasProcessing = entries.some(r => isProcessingStatus(r.status));
+    if (!hasProcessing) return undefined;
+    const iv = setInterval(() => fetchData({ force: true, silent: true }), 15000);
+    return () => clearInterval(iv);
+  }, [entries, fetchData]);
 
   const handleSort = (field) => {
     setOrder(orderBy === field && order === 'asc' ? 'desc' : 'asc');
@@ -104,9 +171,9 @@ export default function ResultsTable({
 
   const filtered = useMemo(() => {
     return entries.filter(r => {
-      if (filter && !(searchFilter ? searchFilter(r, filter) : (r.title || '').toLowerCase().includes(filter.toLowerCase()))) return false;
+      if (filter && !(searchFilter ? searchFilter(r, filter) : defaultVaultSearch(r, filter))) return false;
       if (dateFrom || dateTo) {
-        const d = new Date(r[dateKey] || 0);
+        const d = new Date(getEntryDate(r) || 0);
         if (dateFrom && d < new Date(dateFrom)) return false;
         if (dateTo && d > new Date(dateTo + 'T23:59:59')) return false;
       }
@@ -116,28 +183,60 @@ export default function ResultsTable({
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      if (orderBy === dateKey) {
-        const da = new Date(a[dateKey] || 0), db = new Date(b[dateKey] || 0);
+      if (orderBy === resolvedSortKey || orderBy === dateKey || orderBy === 'date' || orderBy === 'Date') {
+        const da = new Date(getEntryDate(a) || 0);
+        const db = new Date(getEntryDate(b) || 0);
         return order === 'asc' ? da - db : db - da;
       }
-      const va = (a[orderBy] || '').toString();
-      const vb = (b[orderBy] || '').toString();
+      if (orderBy === 'title') {
+        const va = resolveRowTitle(a);
+        const vb = resolveRowTitle(b);
+        return order === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      }
+      const va = (a[orderBy] ?? '').toString();
+      const vb = (b[orderBy] ?? '').toString();
       return order === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
     });
-  }, [filtered, orderBy, order, dateKey]);
+  }, [filtered, orderBy, order, dateKey, resolvedSortKey]);
 
   const displayed = useMemo(() => sorted.slice(page * perPage, (page + 1) * perPage), [sorted, page, perPage]);
 
-  const handleView = useCallback((id) => navigate(viewPath(id)), [navigate, viewPath]);
+  const handleView = useCallback((id, row) => {
+    const path = viewPath?.(id);
+    if (path) navigate(path);
+    else {
+      const url = getAssetDownloadUrl(row);
+      if (url) window.open(url, '_blank');
+    }
+  }, [navigate, viewPath]);
+
+  const copyShareLink = (row) => {
+    const path = viewPath?.(row?.doc_id);
+    const url = path
+      ? `${window.location.origin}${path}`
+      : `${window.location.origin}/dashboard/history`;
+    navigator.clipboard.writeText(url).then(() => notify('Link copied to clipboard')).catch(() => notify('Could not copy link', 'error'));
+  };
 
   const handleMenuAction = async (action) => {
-    if (action === 'view') handleView(activeRow?.doc_id);
+    if (action === 'view') handleView(activeRow?.doc_id, activeRow);
+    if (action === 'download' && activeRow) {
+      const url = getAssetDownloadUrl(activeRow);
+      if (url) window.open(url, '_blank');
+      else notify('No download available for this item', 'warning');
+    }
     if (action === 'delete' && activeRow) {
       if (window.confirm('Are you sure you want to permanently delete this record?')) {
         try {
           const coll = activeRow.collection || collectionName;
           if (!coll) { notify('Error: Collection name missing', 'error'); return; }
           await dataAPI.deleteRecord(coll, activeRow.doc_id);
+          const { uid, userId } = getUser();
+          const id = uid || userId;
+          if (id) {
+            invalidateVaultCache(id, resolveCacheKey);
+            invalidateVaultCache(id, VAULT_CACHE_KEYS.ALL_ACTIVITY);
+          }
           setEntries(prev => prev.filter(r => r.doc_id !== activeRow.doc_id));
           notify('Record deleted permanently');
         } catch (err) {
@@ -146,14 +245,14 @@ export default function ResultsTable({
         }
       }
     }
-    if (action === 'share') notify('Share link copied to clipboard');
+    if (action === 'share' && activeRow) copyShareLink(activeRow);
     setAnchor(null);
     setActiveRow(null);
   };
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ width: '100%', p: { xs: 1.5, md: 2.5 }, borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <Box sx={{ width: '100%', p: { xs: 1.5, md: 2.5 }, borderRadius: '20px', background: 'rgba(17, 17, 17,0.03)', border: '1px solid rgba(17, 17, 17,0.07)' }}>
         {/* Toolbar */}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mb: 2.5 }}>
           <TextField
@@ -189,9 +288,23 @@ export default function ResultsTable({
                 Del ({selected.length})
               </Button>
             )}
+            <Tooltip title="Refresh">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  const { uid, userId } = getUser();
+                  const id = uid || userId;
+                  if (id) invalidateVaultCache(id, resolveCacheKey);
+                  fetchData({ force: true, silent: hasEntriesRef.current });
+                }}
+                sx={{ flexShrink: 0, opacity: refreshing ? 0.5 : 1 }}
+              >
+                <Refresh fontSize="small" sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Filter by date">
               <IconButton size="small" onClick={() => setShowDateFilter(v => !v)}
-                sx={{ flexShrink: 0, color: (dateFrom || dateTo) ? 'primary.main' : 'inherit' }}>
+                sx={{ flexShrink: 0, color: (dateFrom || dateTo) ? AC : 'inherit' }}>
                 <CalendarIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -236,47 +349,65 @@ export default function ResultsTable({
           </Stack>
         )}
 
+        {loadError && (
+          <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }} action={<Button color="inherit" size="small" onClick={() => fetchData({ force: true })}>Retry</Button>}>
+            Could not load records. Try refreshing.
+          </Alert>
+        )}
+
         {/* Content */}
-        {loading ? (
+        {initialLoading ? (
           <Box sx={{ px: 1, pt: 1 }}>
             {[...Array(5)].map((_, i) => (
               <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5, py: 0.5 }}>
-                <Skeleton variant="rectangular" width={18} height={18} sx={{ borderRadius: '4px', bgcolor: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
-                <Skeleton variant="text" sx={{ flex: 1, height: 20, bgcolor: 'rgba(255,255,255,0.05)' }} />
-                <Skeleton variant="circular" width={28} height={28} sx={{ bgcolor: 'rgba(255,255,255,0.05)', flexShrink: 0 }} />
+                <Skeleton variant="rectangular" width={18} height={18} sx={{ borderRadius: '4px', bgcolor: 'rgba(17, 17, 17,0.07)', flexShrink: 0 }} />
+                <Skeleton variant="text" sx={{ flex: 1, height: 20, bgcolor: 'rgba(17, 17, 17, 0.05)' }} />
+                <Skeleton variant="circular" width={28} height={28} sx={{ bgcolor: 'rgba(17, 17, 17, 0.05)', flexShrink: 0 }} />
               </Box>
             ))}
           </Box>
         ) : filtered.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, px: 2, textAlign: 'center' }}>
-            <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: 'rgba(17, 17, 17,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
               <InboxOutlined sx={{ fontSize: 32, color: 'text.disabled' }} />
             </Box>
             <Typography variant="subtitle1" fontWeight={600} mb={0.5}>{filter ? 'No results' : emptyTitle}</Typography>
             <Typography variant="body2" color="text.secondary" mb={2.5}>{filter ? `No results for "${filter}"` : emptySubtitle}</Typography>
+            {!filter && studioPath && (
+              <Button variant="contained" onClick={() => navigate(studioPath)} sx={{ background: G, fontWeight: 800, borderRadius: '12px', textTransform: 'none' }}>
+                {emptyActionLabel}
+              </Button>
+            )}
           </Box>
-        ) : isMobile ? (
+        ) : (
+        <Box sx={{ opacity: refreshing ? 0.92 : 1, transition: 'opacity 0.15s ease' }}>
+        {isMobile ? (
           /* ---- Mobile Card View ---- */
           <Stack spacing={2}>
             {displayed.map(row => (
               <Card key={row.doc_id} sx={{ 
-                p: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px',
-                '&:hover': { background: 'rgba(255,255,255,0.04)' }
+                p: 2, bgcolor: 'rgba(17, 17, 17,0.02)', border: '1px solid rgba(17, 17, 17, 0.05)', borderRadius: '12px',
+                '&:hover': { background: 'rgba(17, 17, 17,0.04)' }
               }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
                   <Checkbox size="small" checked={selected.includes(row.doc_id)} onChange={() => toggleSelect(row.doc_id)} sx={{ p: 0.5 }} />
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton size="small" onClick={() => handleView(row.doc_id)}><Visibility sx={{ fontSize: 18, color: '#0ea5e9' }} /></IconButton>
+                    {getAssetDownloadUrl(row) && (
+                      <IconButton size="small" component="a" href={getAssetDownloadUrl(row)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                        <DownloadIcon sx={{ fontSize: 18, color: AC }} />
+                      </IconButton>
+                    )}
+                    <IconButton size="small" onClick={() => handleView(row.doc_id, row)}><Visibility sx={{ fontSize: 18, color: AC }} /></IconButton>
                     <IconButton size="small" onClick={e => { setAnchor(e.currentTarget); setActiveRow(row); }}><MoreVert sx={{ fontSize: 18 }} /></IconButton>
                   </Stack>
                 </Stack>
-                <Box onClick={() => handleView(row.doc_id)} sx={{ cursor: 'pointer' }}>
+                <Box onClick={() => handleView(row.doc_id, row)} sx={{ cursor: 'pointer' }}>
                   {columns.map(col => (
                     <Box key={col.id} sx={{ mb: 1.5, '&:last-child': { mb: 0 } }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.3 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(17, 17, 17,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.3 }}>
                         {col.label}
                       </Typography>
-                      {col.render ? col.render(row) : <Typography variant="body2" sx={{ color: '#f8fafc' }}>{row[col.id] || '—'}</Typography>}
+                      {col.render ? col.render(row) : <Typography variant="body2" sx={{ color: '#111111' }}>{row[col.id] || '—'}</Typography>}
                     </Box>
                   ))}
                 </Box>
@@ -284,80 +415,86 @@ export default function ResultsTable({
             ))}
           </Stack>
         ) : (
-          /* ---- Desktop Table View ---- */
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ '& .MuiTableCell-head': { fontWeight: 700, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)' } }}>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      indeterminate={selected.length > 0 && selected.length < entries.length}
-                      checked={entries.length > 0 && selected.length === entries.length}
-                      onChange={toggleSelectAll}
-                    />
-                  </TableCell>
-                  {columns.map(col => (
-                    <TableCell key={col.id}>
-                      {col.sortable !== false ? (
-                        <TableSortLabel
-                          active={orderBy === col.id}
-                          direction={orderBy === col.id ? order : 'asc'}
-                          onClick={() => handleSort(col.id)}
-                          sx={{ '&.Mui-active': { color: '#0ea5e9' }, '& .MuiTableSortLabel-icon': { color: '#0ea5e9 !important' } }}
-                        >
-                          {col.label}
-                        </TableSortLabel>
-                      ) : col.label}
-                    </TableCell>
-                  ))}
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {displayed.map(row => (
-                  <TableRow
-                    key={row.doc_id} hover
-                    selected={selected.includes(row.doc_id)}
-                    sx={{ 
-                      cursor: 'pointer', 
-                      '&.Mui-selected, &.Mui-selected:hover': { background: 'rgba(14,165,233,0.05)' },
-                      '& .MuiTableCell-root': { borderBottom: '1px solid rgba(255,255,255,0.03)' }
-                    }}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox size="small" checked={selected.includes(row.doc_id)}
-                        onChange={() => toggleSelect(row.doc_id)}
-                        onClick={e => e.stopPropagation()} />
-                    </TableCell>
-                    {columns.map(col => (
-                      <TableCell key={col.id} onClick={() => handleView(row.doc_id)}>
-                        {col.render ? col.render(row) : (
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>{row[col.id] ?? '—'}</Typography>
-                        )}
-                      </TableCell>
-                    ))}
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title="View Result">
-                          <IconButton size="small" onClick={() => handleView(row.doc_id)}>
-                            <Visibility sx={{ fontSize: 18, color: '#0ea5e9' }} />
+          /* ---- Desktop Card Grid View ---- */
+          <>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(17,17,17,0.45)', fontWeight: 700 }}>
+                {filtered.length} assets
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setSelected(selected.length === filtered.length ? [] : filtered.map(r => r.doc_id))}
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              >
+                {selected.length === filtered.length ? 'Clear selection' : 'Select all'}
+              </Button>
+            </Stack>
+            <Grid container spacing={2}>
+              {displayed.map(row => (
+                <Grid item xs={12} sm={6} lg={4} key={row.doc_id}>
+                  <Card sx={{
+                    p: 2, bgcolor: 'rgba(17, 17, 17,0.02)', border: '1px solid rgba(17, 17, 17, 0.05)', borderRadius: '14px',
+                    transition: 'all .2s ease',
+                    boxShadow: '0 1px 0 rgba(17,17,17,0.02)',
+                    '&:hover': { background: 'rgba(17, 17, 17,0.035)', transform: 'translateY(-1px)', boxShadow: '0 10px 30px rgba(17,17,17,0.08)' }
+                  }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.25}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Checkbox size="small" checked={selected.includes(row.doc_id)} onChange={() => toggleSelect(row.doc_id)} sx={{ p: 0.5 }} />
+                        <Chip
+                          size="small"
+                          label={isProcessingStatus(row.status) ? 'Processing' : (row.status || 'Complete')}
+                          sx={{
+                            height: 22,
+                            fontSize: '0.66rem',
+                            fontWeight: 700,
+                            bgcolor: isProcessingStatus(row.status) ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                            color: isProcessingStatus(row.status) ? '#b45309' : '#059669',
+                            border: `1px solid ${isProcessingStatus(row.status) ? 'rgba(245,158,11,0.25)' : 'rgba(16,185,129,0.22)'}`,
+                          }}
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={0.5}>
+                        {getAssetDownloadUrl(row) && (
+                          <IconButton size="small" component="a" href={getAssetDownloadUrl(row)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                            <DownloadIcon sx={{ fontSize: 18, color: AC }} />
                           </IconButton>
-                        </Tooltip>
-                        <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.2)' }} onClick={e => { setAnchor(e.currentTarget); setActiveRow(row); }}>
+                        )}
+                        <IconButton size="small" onClick={() => handleView(row.doc_id, row)}>
+                          <Visibility sx={{ fontSize: 18, color: AC }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={e => { setAnchor(e.currentTarget); setActiveRow(row); }}>
                           <MoreVert sx={{ fontSize: 18 }} />
                         </IconButton>
                       </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    </Stack>
+                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(17,17,17,0.45)', fontWeight: 600, mb: 1 }}>
+                      {new Date(getEntryDate(row) || Date.now()).toLocaleString()}
+                    </Typography>
+                    <Box onClick={() => handleView(row.doc_id, row)} sx={{ cursor: 'pointer' }}>
+                      {columns.map(col => (
+                        <Box key={col.id} sx={{ mb: 1.2, '&:last-child': { mb: 0 } }}>
+                          <Typography variant="caption" sx={{ color: 'rgba(17,17,17,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.25 }}>
+                            {col.label}
+                          </Typography>
+                          {col.render
+                            ? col.render(row)
+                            : <Typography variant="body2" sx={{ color: '#111111' }}>{row[col.id] || '—'}</Typography>}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </>
+        )}
+        </Box>
         )}
 
         {filtered.length > perPage && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, pt: 2, borderTop: '1px solid rgba(17, 17, 17, 0.05)' }}>
             <ReactPaginate
               previousLabel="Prev" nextLabel="Next" breakLabel="..."
               pageCount={Math.ceil(filtered.length / perPage)}
@@ -378,12 +515,17 @@ export default function ResultsTable({
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{ sx: { background: '#0a0a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1.5, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: 160 } }}>
-        <MenuItem onClick={() => handleMenuAction('view')} sx={{ fontSize: '0.875rem', py: 1, color: '#f8fafc' }}>
-          <ListItemIcon><Visibility fontSize="small" sx={{ color: '#0ea5e9' }} /></ListItemIcon> View Link
+        PaperProps={{ sx: { background: 'transparent', border: '1px solid rgba(17, 17, 17, 0.1)', borderRadius: 1.5, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: 160 } }}>
+        <MenuItem onClick={() => handleMenuAction('view')} sx={{ fontSize: '0.875rem', py: 1, color: '#111111' }}>
+          <ListItemIcon><Visibility fontSize="small" sx={{ color: '#E8A020' }} /></ListItemIcon> View
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('share')} sx={{ fontSize: '0.875rem', py: 1, color: '#f8fafc' }}>
-          <ListItemIcon><Share fontSize="small" sx={{ color: '#8b5cf6' }} /></ListItemIcon> Share Link
+        {activeRow && getAssetDownloadUrl(activeRow) && (
+          <MenuItem onClick={() => handleMenuAction('download')} sx={{ fontSize: '0.875rem', py: 1, color: '#111111' }}>
+            <ListItemIcon><DownloadIcon fontSize="small" sx={{ color: '#C47F10' }} /></ListItemIcon> Download
+          </MenuItem>
+        )}
+        <MenuItem onClick={() => handleMenuAction('share')} sx={{ fontSize: '0.875rem', py: 1, color: '#111111' }}>
+          <ListItemIcon><Share fontSize="small" sx={{ color: '#C47F10' }} /></ListItemIcon> Share Link
         </MenuItem>
         <Divider sx={{ opacity: 0.1 }} />
         <MenuItem onClick={() => handleMenuAction('delete')} sx={{ fontSize: '0.875rem', py: 1, color: '#f43f5e' }}>

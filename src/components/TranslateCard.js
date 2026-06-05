@@ -7,11 +7,14 @@ const TranslateCard = ({ title, language, translation }) => {
     <Card sx={{
       minWidth: 275,
       margin: '20px',
-      border: '2px dotted #ccc',
-      boxShadow: '0 4px 8px 0 rgba(0,0,0,0.5)',
-      transition: '0.3s',
+      border: '1px solid rgba(232, 160, 32, 0.15)',
+      backgroundColor: 'transparent',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+      borderRadius: '16px',
+      transition: 'all 0.3s ease-in-out',
       '&:hover': {
-        boxShadow: '0 8px 16px 0 rgba(0,0,0,0.8)' 
+        boxShadow: '0 8px 24px rgba(232, 160, 32, 0.08)',
+        transform: 'translateY(-2px)',
       }
     }}>
       <CardContent>
@@ -21,14 +24,14 @@ const TranslateCard = ({ title, language, translation }) => {
           px: 2, 
           py: 1,  
         }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 ,fontFamily:'Inter'}}>
-            <TranslateIcon color="action" /> {title} 
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TranslateIcon color="primary" /> {title} 
           </Typography>
         </Box>
-        <Typography sx={{ mt: 2, mb: 1, fontFamily:'Inter' }}>
+        <Typography sx={{ mt: 2, mb: 1, color: 'text.secondary' }}>
           Language: {language}
         </Typography>
-        <Typography sx={{ fontStyle: 'italic' , fontFamily:'Inter'}}>
+        <Typography sx={{ fontStyle: 'italic', color: 'text.primary' }}>
           {translation}
         </Typography>
       </CardContent>

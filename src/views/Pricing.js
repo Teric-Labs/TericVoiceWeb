@@ -1,17 +1,11 @@
-import React from "react";
-import {Box} from '@mui/material'
-import PricingComponet from "../components/PricingComponent.js";
-import AppBarComponent from "../components/AppBarComponent.js";
-import FooterComponent from '../components/FooterComponent.js'
-const Pricing =()=>{
-    return(
-        <Box sx={{display: 'flex', flexDirection: 'column', background: '#ffffff', minHeight: '100vh'}}>
-        <AppBarComponent/>
-        <Box sx={{ flexGrow: 1 }}>
-        <PricingComponet/> 
-        </Box>
-        <FooterComponent/>
-        </Box>
-    );
-}
+import React from 'react';
+import PublicPageLayout from '../components/marketing/PublicPageLayout';
+import PricingComponent from '../components/PricingComponent';
+
+const Pricing = () => (
+  <PublicPageLayout>
+    <PricingComponent />
+  </PublicPageLayout>
+);
+
 export default Pricing;

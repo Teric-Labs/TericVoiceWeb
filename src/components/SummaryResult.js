@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Box, Typography, IconButton, Drawer, Button, Paper, Chip, Tooltip, LinearProgress, Stack
+  Box, Typography, IconButton, Drawer, Button, Paper, Chip, Tooltip, LinearProgress, Stack, useTheme
 } from "@mui/material";
 import {
   Close, HeadphonesOutlined, DescriptionOutlined, TranslateOutlined, 
@@ -8,15 +8,27 @@ import {
   AutoGraphOutlined, Bolt, AutoFixHigh as AIvatarIcon, QueryStats as MetricsIcon
 } from "@mui/icons-material";
 
-const G = 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)';
-const GLASS = { 
-  background: 'rgba(255,255,255,0.03)', 
-  backdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255,255,255,0.08)', 
-  borderRadius: '20px' 
-};
+const G = 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)';
 
 const SummaryResult = ({ response, isOpen, onClose }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const textColor = isDark ? '#ffffff' : '#111111';
+  const subTextColor = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(17, 17, 17, 0.7)';
+  const mutedTextColor = isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(17, 17, 17, 0.4)';
+  const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(17, 17, 17, 0.08)';
+  const dividerColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(17, 17, 17, 0.05)';
+  const glassBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(17, 17, 17, 0.03)';
+  const headerBg = isDark ? 'rgba(255, 255, 255, 0.01)' : 'rgba(17, 17, 17, 0.02)';
+
+  const GLASS = { 
+    background: glassBg, 
+    backdropFilter: 'blur(12px)',
+    border: `1px solid ${borderColor}`, 
+    borderRadius: '20px' 
+  };
+
   const normalizeResponse = (response) => {
     const defaultStructure = {
       summary: '',
@@ -47,9 +59,7 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
       sx={{
         '& .MuiDrawer-paper': {
           width: { xs: '100%', sm: '640px' },
-          backgroundColor: '#0a0a0f',
-          color: '#fff',
-          borderLeft: '1px solid rgba(255,255,255,0.1)',
+          borderLeft: `1px solid ${borderColor}`,
         },
       }}
     >
@@ -57,51 +67,51 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
         {/* Absolute Background Glow */}
         <Box sx={{ 
             position: 'absolute', top: -100, right: -100, width: 400, height: 400, 
-            background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(232, 160, 32,0.15) 0%, transparent 70%)',
             zIndex: 0, pointerEvents: 'none'
         }} />
 
         {/* Header Section */}
-        <Box sx={{ p: 4, zIndex: 1, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <Box sx={{ p: 4, zIndex: 1, borderBottom: `1px solid ${dividerColor}` }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ p: 1.5, borderRadius: '12px', background: G, display: 'flex' }}>
-                <AIvatarIcon sx={{ color: '#fff', fontSize: 24 }} />
+                <AIvatarIcon sx={{ color: '#111111', fontSize: 24 }} />
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: textColor }}>
                 {processedData.title}
               </Typography>
             </Box>
-            <IconButton onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { background: 'rgba(255,255,255,0.05)', color: '#fff' } }}>
+            <IconButton onClick={onClose} sx={{ color: mutedTextColor, '&:hover': { background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(17, 17, 17, 0.05)', color: textColor } }}>
               <Close />
             </IconButton>
           </Box>
 
           <Stack direction="row" spacing={1.5}>
             <Chip
-              icon={<AccessTimeOutlined sx={{ color: '#0ea5e9 !important', fontSize: '18px !important' }} />}
+              icon={<AccessTimeOutlined sx={{ color: '#E8A020 !important', fontSize: '18px !important' }} />}
               label={`${processedData.readTime} Consumption`}
-              sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', fontWeight: 600, border: '1px solid rgba(14,165,233,0.2)' }}
+              sx={{ background: 'rgba(232, 160, 32,0.1)', color: '#E8A020', fontWeight: 600, border: '1px solid rgba(232, 160, 32,0.2)' }}
             />
             <Chip
-              icon={<AutoGraphOutlined sx={{ color: '#8b5cf6 !important', fontSize: '18px !important' }} />}
+              icon={<AutoGraphOutlined sx={{ color: '#C47F10 !important', fontSize: '18px !important' }} />}
               label={`${processedData.quality}% Logical Match`}
-              sx={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', fontWeight: 600, border: '1px solid rgba(139,92,246,0.2)' }}
+              sx={{ background: 'rgba(232, 160, 32,0.1)', color: '#C47F10', fontWeight: 600, border: '1px solid rgba(232, 160, 32,0.2)' }}
             />
           </Stack>
         </Box>
 
         {/* Action Belt */}
-        <Box sx={{ px: 4, py: 2, background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)', zIndex: 1 }}>
+        <Box sx={{ px: 4, py: 2, background: headerBg, borderBottom: `1px solid ${dividerColor}`, zIndex: 1 }}>
             <Stack direction="row" spacing={2} justifyContent="flex-start">
                <Tooltip title="Export to Document">
-                 <Button startIcon={<GetAppOutlined />} sx={{ color: '#fff', textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Export</Button>
+                 <Button startIcon={<GetAppOutlined />} sx={{ color: textColor, textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Export</Button>
                </Tooltip>
                <Tooltip title="Instant Translation">
-                 <Button startIcon={<TranslateOutlined />} sx={{ color: '#fff', textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Translate</Button>
+                 <Button startIcon={<TranslateOutlined />} sx={{ color: textColor, textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Translate</Button>
                </Tooltip>
                <Tooltip title="Save to Intelligence Hub">
-                 <Button startIcon={<BookmarkBorderOutlined />} sx={{ color: '#fff', textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Vault</Button>
+                 <Button startIcon={<BookmarkBorderOutlined />} sx={{ color: textColor, textTransform: 'none', fontWeight: 500, fontSize: '0.85rem' }}>Vault</Button>
                </Tooltip>
             </Stack>
         </Box>
@@ -112,10 +122,10 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
           <Paper elevation={0} sx={{ ...GLASS, p: 4, mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                  <Bolt sx={{ color: '#fbbf24' }} />
-                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', fontSize: '1.1rem' }}>Expert Synthesis</Typography>
+                 <Typography variant="h6" sx={{ fontWeight: 700, color: textColor, fontSize: '1.1rem' }}>Expert Synthesis</Typography>
             </Box>
             <Typography variant="body1" sx={{ 
-              lineHeight: 1.85, color: 'rgba(255,255,255,0.85)', fontSize: '1rem', 
+              lineHeight: 1.85, color: subTextColor, fontSize: '1rem', 
               whiteSpace: 'pre-line', letterSpacing: '0.01em'
             }}>
               {processedData.summary || "Generating deep analysis..."}
@@ -123,30 +133,30 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
           </Paper>
 
           {/* AI Diagnostic Insights */}
-          <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 800, mb: 2, display: 'block', letterSpacing: '0.1em' }}>
+          <Typography variant="overline" sx={{ color: mutedTextColor, fontWeight: 800, mb: 2, display: 'block', letterSpacing: '0.1em' }}>
             AI DIAGNOSTIC INSIGHTS
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
              <Paper sx={{ ...GLASS, p: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Relevance</Typography>
-                     <Typography variant="caption" sx={{ color: '#0ea5e9', fontWeight: 700 }}>96%</Typography>
+                      <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>Relevance</Typography>
+                      <Typography variant="caption" sx={{ color: '#E8A020', fontWeight: 700 }}>96%</Typography>
                  </Box>
-                 <LinearProgress variant="determinate" value={96} sx={{ borderRadius: 2, height: 4, background: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { background: '#0ea5e9' } }} />
+                 <LinearProgress variant="determinate" value={96} sx={{ borderRadius: 2, height: 4, background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(17, 17, 17, 0.05)', '& .MuiLinearProgress-bar': { background: '#E8A020' } }} />
              </Paper>
              <Paper sx={{ ...GLASS, p: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Clarity</Typography>
-                     <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 700 }}>92%</Typography>
+                      <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>Clarity</Typography>
+                      <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 700 }}>92%</Typography>
                  </Box>
-                 <LinearProgress variant="determinate" value={92} sx={{ borderRadius: 2, height: 4, background: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { background: '#10b981' } }} />
+                 <LinearProgress variant="determinate" value={92} sx={{ borderRadius: 2, height: 4, background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(17, 17, 17, 0.05)', '& .MuiLinearProgress-bar': { background: '#10b981' } }} />
              </Paper>
           </Box>
 
-          <Box sx={{ mt: 4, p: 3, borderRadius: '16px', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.1)' }}>
+          <Box sx={{ mt: 4, p: 3, borderRadius: '16px', background: 'rgba(232, 160, 32,0.05)', border: '1px solid rgba(232, 160, 32,0.1)' }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                  <MetricsIcon sx={{ color: '#8b5cf6' }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
+                  <MetricsIcon sx={{ color: '#C47F10' }} />
+                  <Typography variant="body2" sx={{ color: subTextColor, fontWeight: 500 }}>
                       This summary has been optimized for professional executive review using Avoices Neural Engine V4.
                   </Typography>
               </Box>
@@ -154,14 +164,14 @@ const SummaryResult = ({ response, isOpen, onClose }) => {
         </Box>
 
         {/* Footer actions */}
-        <Box sx={{ p: 3, background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <Box sx={{ p: 3, background: headerBg, borderTop: `1px solid ${dividerColor}`, textAlign: 'center' }}>
             <Button 
                 variant="outlined" 
                 onClick={onClose}
                 sx={{ 
                     borderRadius: '50px', textTransform: 'none', px: 4, 
-                    borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)',
-                    '&:hover': { borderColor: '#fff', color: '#fff', background: 'transparent' }
+                    borderColor: borderColor, color: subTextColor,
+                    '&:hover': { borderColor: textColor, color: textColor, background: 'transparent' }
                 }}
             >
                 Close Synthesis Wrap

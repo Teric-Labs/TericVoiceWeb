@@ -1,56 +1,30 @@
 import React, { useState } from 'react';
 import { Button, Typography, Box, CircularProgress, Alert, Container, CssBaseline, Snackbar } from '@mui/material';
-import { PaymentElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import axios from 'axios';
+import { BASE_URL } from '../services/api';
 
-// Lazy-loaded stripe promise to prevent top-level load errors
-let stripePromise = null;
-const getStripe = () => {
-  if (!stripePromise) {
-    stripePromise = loadStripe("pk_test_51OoNCdDqmFs47Ob6SjZEbrwKYGtagQUoqytYuGG6wkQRy0VFvZVqduRtCVx9WH1HpXo8b8Tbx7QSnfcOyhKQea4T000RTDwWLA")
-      .catch(err => {
-        console.warn("Stripe failed to load:", err);
-        return null;
-      });
-  }
-  return stripePromise;
-};
-
-const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
-  const stripe = useStripe();
-  const elements = useElements();
+const PesapalCheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const paymentServerUrl = "https://teric-asr-api-wlivbm2klq-ue.a.run.app/create-checkout-session";
+  const paymentServerUrl = `${BASE_URL}/create-checkout-session`;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!stripe || !elements) {
-      setErrorMessage("Stripe hasn't loaded yet. Please try again.");
-      return;
-    }
 
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const { error: submitError } = await elements.submit();
-      if (submitError) {
-        throw new Error(submitError.message);
-      }
-
       const formData = new FormData();
       formData.append('tier_id', tierId);
       formData.append('price', amount);
       formData.append('tier', tier);
       formData.append('user_id', userId);
 
-      // Create the PaymentIntent on your server
+      // Create the Checkout Session on your server
       const response = await axios.post(paymentServerUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -59,36 +33,19 @@ const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
         throw new Error(`Server error: ${response.status} ${response.statusText}`);
       }
 
-      const { clientSecret } = response.data;
+      const { redirect_url } = response.data;
 
-      if (!clientSecret) {
-        throw new Error('No client secret received from the server');
+      if (!redirect_url) {
+        throw new Error('No redirect URL received from the server');
       }
 
-      const { error: paymentError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        clientSecret,
-        confirmParams: {
-          return_url: 'https://example.com/order/complete',
-        },
-        redirect: 'if_required',
-      });
-
-      if (paymentError) {
-        throw new Error(paymentError.message);
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        setSnackbarMessage('Subscription completed successfully!');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-        onClose();
-      } else {
-        throw new Error(`Unexpected payment status: ${paymentIntent.status}`);
-      }
+      // Redirect the user to the Pesapal Checkout Page
+      window.location.href = redirect_url;
+      
     } catch (error) {
-      setErrorMessage(error.message || 'An unexpected error occurred');
-      setSnackbarMessage('Payment failed. Please try again.');
+      const errorMsg = error.response?.data?.detail || error.message || 'An unexpected error occurred';
+      setErrorMessage(errorMsg);
+      setSnackbarMessage('Payment initialization failed. Please try again.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
@@ -109,22 +66,32 @@ const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          textAlign: 'center',
+          paddingBottom: 4
         }}
       >
-        <Typography component="h1" variant="h5">
+        <Typography component="h1" variant="h5" gutterBottom>
           Complete Your Payment
         </Typography>
+        <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+          You will be securely redirected to Pesapal to complete your payment using Mobile Money or Card.
+        </Typography>
+        
+        <Typography variant="h6" sx={{ mb: 3 }}>
+          Amount: ${amount}
+        </Typography>
+        
         <form onSubmit={handleSubmit} style={{ width: '100%', marginTop: 1 }}>
-          <PaymentElement />
           <Box sx={{ position: 'relative', mt: 2 }}>
             <Button
               type="submit"
               fullWidth
               variant="contained"
               color="primary"
-              disabled={!stripe || !elements || loading}
+              disabled={loading}
+              sx={{ padding: '12px', fontSize: '1.1rem' }}
             >
-              {loading ? 'Processing...' : 'Pay'}
+              {loading ? 'Initializing...' : 'Proceed to Pesapal'}
             </Button>
             {loading && (
               <CircularProgress
@@ -161,18 +128,4 @@ const CheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
   );
 };
 
-const StripeCheckoutForm = ({ amount, tier, tierId, userId, onClose }) => {
-  const options = {
-    mode: 'payment',
-    amount: amount,
-    currency: 'usd',
-  };
-
-  return (
-    <Elements stripe={getStripe()} options={options}>
-      <CheckoutForm amount={amount} tier={tier} tierId={tierId} userId={userId} onClose={onClose} />
-    </Elements>
-  );
-};
-
-export default StripeCheckoutForm;
+export default PesapalCheckoutForm;

@@ -17,6 +17,18 @@ export default function GlobalSnackbar() {
     dispatch(removeNotification(id));
   };
 
+  React.useEffect(() => {
+    const handleAppNotification = (e) => {
+      const { type, message, title } = e.detail;
+      dispatch({
+        type: 'ui/addNotification', // Using string type to avoid circular/import issues if any
+        payload: { id: Date.now().toString(), type, message, title }
+      });
+    };
+    window.addEventListener('app-notification', handleAppNotification);
+    return () => window.removeEventListener('app-notification', handleAppNotification);
+  }, [dispatch]);
+
   return (
     <Box
       sx={{
@@ -56,12 +68,11 @@ export default function GlobalSnackbar() {
               </IconButton>
             }
             sx={{
-              backgroundColor: '#18181b', // pure minimal black/zinc
+              backgroundColor: '#111111', // pure minimal black/zinc
               color: '#fafafa',
               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(17, 17, 17, 0.08)',
               borderRadius: '12px',
-              fontFamily: '"Inter", sans-serif',
               fontSize: '0.875rem',
               fontWeight: 500,
               minWidth: 280,
@@ -69,7 +80,7 @@ export default function GlobalSnackbar() {
               display: 'flex',
               alignItems: 'center',
               '& .MuiAlert-icon': {
-                color: n.type === 'error' ? '#ef4444' : n.type === 'success' ? '#10b981' : '#38bdf8',
+                color: n.type === 'error' ? '#ef4444' : n.type === 'success' ? '#10b981' : '#F5B844',
               },
             }}
           >

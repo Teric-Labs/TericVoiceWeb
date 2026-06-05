@@ -2,11 +2,18 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-// ── Design tokens ───────────────────────────────────────────────────────────
-const BLUE   = '#8b5cf6';   // primary purple
-const PURPLE = '#a855f7';   // secondary violet
-const GOLD   = '#f59e0b';   // African gold accent
-const FOCUS_RING = `0 0 0 3px rgba(139,92,246,0.35)`;
+// ── Brand Palette (from PHOSAI logo) ──────────────────────────────────────
+const GOLD        = '#E8A020';   // Sun-ray amber – primary accent
+const GOLD_LIGHT  = '#F5B844';   // Hover highlight
+const GOLD_DARK   = '#C47F10';   // Pressed / deeper accent
+const BLACK       = '#111111';   // Africa silhouette – dark surface
+const BLACK_MID   = '#1A1A1A';   // Secondary dark surface
+const BLACK_SOFT  = '#242424';   // Card / panel surface
+const OFFWHITE    = '#F8F6F0';   // Logo background – light surface
+const OFFWHITE_MID= '#F0EDE5';   // Secondary light surface
+const OFFWHITE_DK = '#E0D9CC';   // Borders on light bg
+
+const FOCUS_RING  = `0 0 0 3px rgba(232,160,32,0.4)`;
 
 export default function AppThemeProvider({ children }) {
   const mode = useSelector(state => state.ui.theme.mode);
@@ -14,20 +21,21 @@ export default function AppThemeProvider({ children }) {
   const theme = useMemo(() => createTheme({
     palette: {
       mode,
-      primary:   { main: BLUE,   light: '#a78bfa', dark: '#7c3aed', contrastText: '#ffffff' },
-      secondary: { main: PURPLE, light: '#c084fc', dark: '#9333ea', contrastText: '#ffffff' },
-      warning:   { main: GOLD,   light: '#fbbf24', dark: '#d97706', contrastText: '#000000' },
-      success:   { main: '#10b981', light: '#34d399', dark: '#059669', contrastText: '#ffffff' },
-      error:     { main: '#ef4444', light: '#f87171', dark: '#dc2626', contrastText: '#ffffff' },
-      info:      { main: BLUE,   light: '#38bdf8', dark: '#0284c7', contrastText: '#ffffff' },
+      primary:   { main: GOLD,     light: GOLD_LIGHT, dark: GOLD_DARK, contrastText: BLACK },
+      secondary: { main: GOLD_DARK, light: GOLD,      dark: '#A06A08', contrastText: BLACK },
+      warning:   { main: GOLD,     light: GOLD_LIGHT, dark: GOLD_DARK, contrastText: BLACK },
+      // Error and success kept minimal – mapped to gold/black variants
+      success:   { main: GOLD_DARK, light: GOLD,      dark: '#8A5608', contrastText: BLACK },
+      error:     { main: '#C43030', light: '#D95050', dark: '#A02020', contrastText: OFFWHITE },
+      info:      { main: GOLD,     light: GOLD_LIGHT, dark: GOLD_DARK, contrastText: BLACK },
       ...(mode === 'dark' ? {
-        background: { default: '#07071a', paper: '#0d0d24' },
-        text: { primary: '#f8fafc', secondary: '#94a3b8', disabled: 'rgba(248,250,252,0.35)' },
-        divider: 'rgba(255,255,255,0.07)',
+        background: { default: BLACK,     paper: BLACK_MID },
+        text:       { primary: OFFWHITE,  secondary: 'rgba(248,246,240,0.58)', disabled: 'rgba(248,246,240,0.3)' },
+        divider:    `rgba(232,160,32,0.12)`,
       } : {
-        background: { default: '#f5f3ff', paper: '#ffffff' },
-        text: { primary: '#0f172a', secondary: '#475569', disabled: 'rgba(15,23,42,0.35)' },
-        divider: 'rgba(139,92,246,0.12)',
+        background: { default: '#ffffff',  paper: '#ffffff' },
+        text:       { primary: BLACK,     secondary: '#3A3020', disabled: 'rgba(17,17,17,0.35)' },
+        divider:    `rgba(232,160,32,0.2)`,
       }),
     },
     typography: {
@@ -38,10 +46,10 @@ export default function AppThemeProvider({ children }) {
       h4: { fontWeight: 600, fontSize: '1.5rem',  lineHeight: 1.4 },
       h5: { fontWeight: 600, fontSize: '1.25rem', lineHeight: 1.4 },
       h6: { fontWeight: 600, fontSize: '1.1rem',  lineHeight: 1.4 },
-      body1: { fontSize: '1rem',    lineHeight: 1.7 },
-      body2: { fontSize: '0.875rem',lineHeight: 1.6 },
-      subtitle1: { fontWeight: 500, fontSize: '1.05rem' },
-      button:  { fontWeight: 700, letterSpacing: '0.01em' },
+      body1:    { fontSize: '1rem',     lineHeight: 1.7 },
+      body2:    { fontSize: '0.875rem', lineHeight: 1.6 },
+      subtitle1:{ fontWeight: 500, fontSize: '1.05rem' },
+      button:   { fontWeight: 700, letterSpacing: '0.01em' },
     },
     shape: { borderRadius: 12 },
     shadows: [
@@ -55,10 +63,10 @@ export default function AppThemeProvider({ children }) {
       '0 16px 44px rgba(0,0,0,0.22)',
       '0 20px 52px rgba(0,0,0,0.24)',
       '0 24px 60px rgba(0,0,0,0.26)',
-      '0 28px 68px rgba(14,165,233,0.2)',
-      '0 32px 76px rgba(14,165,233,0.25)',
-      '0 36px 84px rgba(139,92,246,0.25)',
-      '0 40px 92px rgba(139,92,246,0.3)',
+      `0 28px 68px rgba(232,160,32,0.12)`,
+      `0 32px 76px rgba(232,160,32,0.15)`,
+      `0 36px 84px rgba(232,160,32,0.15)`,
+      `0 40px 92px rgba(232,160,32,0.18)`,
       '0 44px 100px rgba(0,0,0,0.32)',
       '0 48px 108px rgba(0,0,0,0.34)',
       '0 52px 116px rgba(0,0,0,0.36)',
@@ -72,7 +80,7 @@ export default function AppThemeProvider({ children }) {
       '0 84px 180px rgba(0,0,0,0.52)',
     ],
     components: {
-      /* ── Buttons ─────────────────────────────────────── */
+      /* ── Buttons ──────────────────────────────────────────── */
       MuiButton: {
         styleOverrides: {
           root: {
@@ -86,33 +94,38 @@ export default function AppThemeProvider({ children }) {
             '&.Mui-disabled': { opacity: 0.4, cursor: 'not-allowed', pointerEvents: 'auto' },
           },
           contained: {
-            background: `linear-gradient(135deg, ${BLUE}, ${PURPLE})`,
-            boxShadow: `0 4px 20px rgba(139,92,246,0.35)`,
+            background: `linear-gradient(135deg, ${GOLD}, ${GOLD_DARK})`,
+            color: BLACK,
+            boxShadow: `0 4px 20px rgba(232,160,32,0.35)`,
             '&:hover': {
-              background: `linear-gradient(135deg, #7c3aed, #9333ea)`,
-              boxShadow: `0 6px 28px rgba(139,92,246,0.5)`,
+              background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`,
+              boxShadow: `0 6px 28px rgba(232,160,32,0.5)`,
               transform: 'translateY(-1px)',
             },
-            '&.Mui-disabled': { background: mode === 'dark' ? '#1e293b' : '#e2e8f0', boxShadow: 'none', color: '#64748b' },
+            '&.Mui-disabled': {
+              background: mode === 'dark' ? BLACK_SOFT : OFFWHITE_DK,
+              boxShadow: 'none',
+              color: mode === 'dark' ? 'rgba(248,246,240,0.3)' : 'rgba(17,17,17,0.3)',
+            },
           },
           outlined: {
-            borderColor: BLUE,
-            color: BLUE,
+            borderColor: GOLD,
+            color: GOLD,
             borderWidth: '1.5px',
             '&:hover': {
-              borderColor: PURPLE,
-              color: PURPLE,
-              backgroundColor: 'rgba(168,85,247,0.06)',
+              borderColor: GOLD_DARK,
+              color: GOLD_DARK,
+              backgroundColor: `rgba(232,160,32,0.06)`,
               borderWidth: '1.5px',
               transform: 'translateY(-1px)',
             },
           },
           text: {
-            '&:hover': { backgroundColor: 'rgba(139,92,246,0.06)' },
+            '&:hover': { backgroundColor: `rgba(232,160,32,0.06)` },
           },
         },
       },
-      /* ── Icon buttons ───────────────────────────────── */
+      /* ── Icon buttons ─────────────────────────────────────── */
       MuiIconButton: {
         styleOverrides: {
           root: {
@@ -122,75 +135,77 @@ export default function AppThemeProvider({ children }) {
           },
         },
       },
-      /* ── Alerts ─────────────────────────────────────── */
+      /* ── Alerts ───────────────────────────────────────────── */
       MuiAlert: {
         styleOverrides: {
           root: { borderRadius: '12px', fontWeight: 500, fontSize: '0.9rem', alignItems: 'center' },
           standardSuccess: {
-            backgroundColor: mode === 'dark' ? '#052e16' : '#ecfdf5',
-            color: mode === 'dark' ? '#34d399' : '#065f46',
-            '& .MuiAlert-icon': { color: '#10b981' },
+            backgroundColor: mode === 'dark' ? 'rgba(232,160,32,0.1)' : 'rgba(232,160,32,0.08)',
+            color: mode === 'dark' ? GOLD_LIGHT : GOLD_DARK,
+            '& .MuiAlert-icon': { color: GOLD },
           },
           standardError: {
-            backgroundColor: mode === 'dark' ? '#2d0a0a' : '#fef2f2',
-            color: mode === 'dark' ? '#f87171' : '#991b1b',
-            '& .MuiAlert-icon': { color: '#ef4444' },
+            backgroundColor: mode === 'dark' ? 'rgba(196,48,48,0.15)' : 'rgba(196,48,48,0.08)',
+            color: mode === 'dark' ? '#E07070' : '#A02020',
+            '& .MuiAlert-icon': { color: '#C43030' },
           },
           standardWarning: {
-            backgroundColor: mode === 'dark' ? '#2d1b00' : '#fffbeb',
-            color: mode === 'dark' ? '#fbbf24' : '#92400e',
+            backgroundColor: mode === 'dark' ? 'rgba(232,160,32,0.1)' : 'rgba(232,160,32,0.08)',
+            color: mode === 'dark' ? GOLD_LIGHT : GOLD_DARK,
             '& .MuiAlert-icon': { color: GOLD },
           },
           standardInfo: {
-            backgroundColor: mode === 'dark' ? '#0c1a2d' : '#f0f9ff',
-            color: mode === 'dark' ? '#38bdf8' : '#0c4a6e',
-            '& .MuiAlert-icon': { color: BLUE },
+            backgroundColor: mode === 'dark' ? `rgba(232,160,32,0.1)` : `rgba(232,160,32,0.06)`,
+            color: mode === 'dark' ? GOLD_LIGHT : GOLD_DARK,
+            '& .MuiAlert-icon': { color: GOLD },
           },
-          filledSuccess: { backgroundColor: '#059669' },
-          filledError:   { backgroundColor: '#dc2626' },
-          filledWarning: { backgroundColor: GOLD },
-          filledInfo:    { backgroundColor: '#0284c7' },
+          filledSuccess: { backgroundColor: GOLD_DARK, color: BLACK },
+          filledError:   { backgroundColor: '#C43030', color: BLACK },
+          filledWarning: { backgroundColor: GOLD,      color: BLACK },
+          filledInfo:    { backgroundColor: GOLD_DARK, color: BLACK },
         },
       },
-      /* ── Cards & Papers ─────────────────────────────── */
+      /* ── Cards & Papers ───────────────────────────────────── */
       MuiCard: {
         styleOverrides: {
           root: {
             borderRadius: '20px',
             backgroundImage: 'none',
-            border: mode === 'dark' ? '1px solid rgba(139,92,246,0.12)' : '1px solid rgba(139,92,246,0.15)',
-            boxShadow: mode === 'dark' ? '0 4px 24px rgba(0,0,0,0.5)' : '0 4px 20px rgba(139,92,246,0.08)',
+            border: mode === 'dark'
+              ? `1px solid rgba(232,160,32,0.14)`
+              : `1px solid rgba(232,160,32,0.18)`,
+            boxShadow: mode === 'dark'
+              ? '0 4px 24px rgba(0,0,0,0.55)'
+              : `0 4px 20px rgba(232,160,32,0.1)`,
           },
         },
       },
       MuiPaper: {
-        styleOverrides: {
-          root: { borderRadius: '16px', backgroundImage: 'none' },
-        },
+        styleOverrides: { root: { borderRadius: '16px', backgroundImage: 'none' } },
       },
-      /* ── Text fields ────────────────────────────────── */
+      /* ── Text fields ──────────────────────────────────────── */
       MuiTextField: {
         styleOverrides: {
           root: {
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px',
               '& fieldset': {
-                borderColor: mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(14,165,233,0.2)',
+                borderColor: mode === 'dark' ? 'rgba(232,160,32,0.2)' : `rgba(232,160,32,0.25)`,
               },
-              '&:hover fieldset': { borderColor: BLUE },
-              '&.Mui-focused fieldset': { borderColor: BLUE, borderWidth: '2px' },
+              '&:hover fieldset':      { borderColor: GOLD },
+              '&.Mui-focused fieldset': { borderColor: GOLD, borderWidth: '2px' },
             },
-            '& .MuiInputLabel-root.Mui-focused': { color: BLUE },
+            '& .MuiInputLabel-root.Mui-focused': { color: GOLD },
           },
         },
       },
-      /* ── Select ─────────────────────────────────────── */
+      /* ── Select ───────────────────────────────────────────── */
       MuiSelect: {
         styleOverrides: {
           root: { '&:focus-visible': { outline: 'none', boxShadow: FOCUS_RING } },
         },
       },
-      /* ── Tables ─────────────────────────────────────── */
+      /* ── Tables ───────────────────────────────────────────── */
       MuiTableHead: {
         styleOverrides: {
           root: {
@@ -199,9 +214,11 @@ export default function AppThemeProvider({ children }) {
               fontSize: '0.72rem',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
-              backgroundColor: mode === 'dark' ? '#0a0a23' : '#f0f9ff',
-              color: mode === 'dark' ? '#64748b' : '#475569',
-              borderBottom: mode === 'dark' ? '1px solid rgba(255,255,255,0.07)' : `1px solid rgba(14,165,233,0.15)`,
+              backgroundColor: mode === 'dark' ? BLACK_SOFT : OFFWHITE_MID,
+              color: mode === 'dark' ? 'rgba(248,246,240,0.55)' : '#5A4A30',
+              borderBottom: mode === 'dark'
+                ? `1px solid rgba(232,160,32,0.12)`
+                : `1px solid rgba(232,160,32,0.18)`,
             },
           },
         },
@@ -210,7 +227,9 @@ export default function AppThemeProvider({ children }) {
         styleOverrides: {
           root: {
             '&:hover': {
-              backgroundColor: mode === 'dark' ? 'rgba(14,165,233,0.04)' : 'rgba(14,165,233,0.03)',
+              backgroundColor: mode === 'dark'
+                ? 'rgba(232,160,32,0.05)'
+                : 'rgba(232,160,32,0.04)',
             },
           },
         },
@@ -218,12 +237,14 @@ export default function AppThemeProvider({ children }) {
       MuiTableCell: {
         styleOverrides: {
           root: {
-            borderColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(14,165,233,0.08)',
+            borderColor: mode === 'dark'
+              ? 'rgba(232,160,32,0.08)'
+              : 'rgba(232,160,32,0.1)',
             fontSize: '0.875rem',
           },
         },
       },
-      /* ── Chips ──────────────────────────────────────── */
+      /* ── Chips ────────────────────────────────────────────── */
       MuiChip: {
         styleOverrides: {
           root: {
@@ -233,42 +254,44 @@ export default function AppThemeProvider({ children }) {
           },
         },
       },
-      /* ── Badges ─────────────────────────────────────── */
+      /* ── Badges ───────────────────────────────────────────── */
       MuiBadge: {
         styleOverrides: {
           badge: { fontSize: '0.7rem', fontWeight: 700, minWidth: '18px', height: '18px' },
         },
       },
-      /* ── Drawers ────────────────────────────────────── */
+      /* ── Drawers ──────────────────────────────────────────── */
       MuiDrawer: {
         styleOverrides: {
           paper: {
             borderRight: 'none',
             backgroundImage: 'none',
-            boxShadow: mode === 'dark' ? '4px 0 24px rgba(0,0,0,0.7)' : '4px 0 20px rgba(14,165,233,0.12)',
+            boxShadow: mode === 'dark'
+              ? '4px 0 24px rgba(0,0,0,0.7)'
+              : `4px 0 20px rgba(232,160,32,0.12)`,
+            background: mode === 'dark' ? '#18181b' : '#f4f4f5',
+            backgroundColor: mode === 'dark' ? '#18181b' : '#f4f4f5',
+            color: mode === 'dark' ? '#ffffff' : '#111111',
           },
         },
       },
-      /* ── List items ─────────────────────────────────── */
       MuiListItemButton: {
         styleOverrides: {
           root: {
             borderRadius: '12px',
             margin: '2px 8px',
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': { transform: 'translateX(3px)', backgroundColor: 'rgba(139,92,246,0.08)' },
-            '&.Mui-selected': {
-              backgroundColor: 'rgba(139,92,246,0.12)',
-              '&:hover': { backgroundColor: 'rgba(139,92,246,0.16)' },
-            },
-            '&:focus-visible': { outline: 'none', boxShadow: `inset ${FOCUS_RING}` },
+            '&:hover':           { transform: 'translateX(3px)', backgroundColor: `rgba(232,160,32,0.08)` },
+            '&.Mui-selected':    { backgroundColor: `rgba(232,160,32,0.13)` },
+            '&.Mui-selected:hover':{ backgroundColor: `rgba(232,160,32,0.18)` },
+            '&:focus-visible':   { outline: 'none', boxShadow: `inset ${FOCUS_RING}` },
           },
         },
       },
       MuiListItemIcon: {
         styleOverrides: { root: { minWidth: '40px', transition: 'color 0.2s ease' } },
       },
-      /* ── Tooltips ───────────────────────────────────── */
+      /* ── Tooltips ─────────────────────────────────────────── */
       MuiTooltip: {
         styleOverrides: {
           tooltip: {
@@ -276,34 +299,60 @@ export default function AppThemeProvider({ children }) {
             fontSize: '0.78rem',
             fontWeight: 600,
             padding: '6px 12px',
-            backgroundColor: mode === 'dark' ? '#1e293b' : '#0f172a',
+            backgroundColor: mode === 'dark' ? BLACK_SOFT : BLACK,
+            color: BLACK,
           },
-          arrow: { color: mode === 'dark' ? '#1e293b' : '#0f172a' },
+          arrow: { color: mode === 'dark' ? BLACK_SOFT : BLACK },
         },
       },
-      /* ── Dialogs ────────────────────────────────────── */
+      /* ── Dialogs ──────────────────────────────────────────── */
       MuiDialog: {
         styleOverrides: {
           paper: {
             borderRadius: '24px',
             backgroundImage: 'none',
-            boxShadow: mode === 'dark' ? '0 32px 80px rgba(0,0,0,0.7)' : '0 32px 80px rgba(14,165,233,0.15)',
+            boxShadow: mode === 'dark'
+              ? '0 32px 80px rgba(0,0,0,0.7)'
+              : `0 32px 80px rgba(232,160,32,0.15)`,
           },
         },
       },
       MuiDialogTitle: {
         styleOverrides: { root: { fontWeight: 700, fontSize: '1.25rem' } },
       },
-      /* ── Progress ───────────────────────────────────── */
+      /* ── Progress (Avoices design system) ───────────────────── */
       MuiLinearProgress: {
-        styleOverrides: { root: { borderRadius: '8px', height: '6px' } },
+        styleOverrides: {
+          root: {
+            borderRadius: '6px',
+            height: '6px',
+            backgroundColor: 'rgba(17, 17, 17, 0.08)',
+          },
+          bar: {
+            borderRadius: '6px',
+            background: 'linear-gradient(90deg, #E8A020 0%, #F5B844 45%, #C47F10 100%)',
+          },
+          bar1Indeterminate: {
+            background: 'linear-gradient(90deg, #E8A020 0%, #F5B844 45%, #C47F10 100%)',
+          },
+          bar2Indeterminate: {
+            background: 'linear-gradient(90deg, #E8A020 0%, #F5B844 45%, #C47F10 100%)',
+            opacity: 0.35,
+          },
+        },
       },
-      /* ── Checkbox & sort ────────────────────────────── */
+      MuiCircularProgress: {
+        styleOverrides: {
+          root: { color: '#E8A020' },
+          circle: { strokeLinecap: 'round' },
+        },
+      },
+      /* ── Checkbox & sort ──────────────────────────────────── */
       MuiCheckbox: {
         styleOverrides: {
           root: {
-            color: mode === 'dark' ? '#475569' : '#94a3b8',
-            '&.Mui-checked': { color: BLUE },
+            color: mode === 'dark' ? 'rgba(248,246,240,0.35)' : 'rgba(17,17,17,0.35)',
+            '&.Mui-checked':   { color: GOLD },
             '&:focus-visible': { outline: 'none', boxShadow: FOCUS_RING, borderRadius: '4px' },
           },
         },
@@ -312,42 +361,50 @@ export default function AppThemeProvider({ children }) {
         styleOverrides: {
           root: {
             '&:focus-visible': { outline: 'none', boxShadow: FOCUS_RING, borderRadius: '4px' },
-            '&.Mui-active': { color: BLUE },
+            '&.Mui-active':    { color: GOLD },
           },
         },
       },
-      /* ── Menus (dark globally) ───────────────────────── */
+      /* ── Menus ────────────────────────────────────────────── */
       MuiMenu: {
         styleOverrides: {
           paper: {
-            background: '#12122a',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: mode === 'dark' ? BLACK_MID : OFFWHITE,
+            border: mode === 'dark'
+              ? `1px solid rgba(232,160,32,0.14)`
+              : `1px solid rgba(232,160,32,0.22)`,
             borderRadius: '14px !important',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+            boxShadow: mode === 'dark'
+              ? '0 16px 48px rgba(0,0,0,0.65)'
+              : '0 16px 48px rgba(0,0,0,0.12)',
           },
         },
       },
       MuiMenuItem: {
         styleOverrides: {
           root: {
-            color: '#f8fafc',
+            color: mode === 'dark' ? OFFWHITE : BLACK,
             fontSize: '0.9rem',
             borderRadius: '8px',
             margin: '2px 6px',
-            '&:hover': { background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' },
-            '&.Mui-selected': { background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' },
-            '&.Mui-selected:hover': { background: 'rgba(14,165,233,0.2)' },
+            '&:hover':            { background: `rgba(232,160,32,0.12)`, color: GOLD },
+            '&.Mui-selected':     { background: `rgba(232,160,32,0.15)`, color: GOLD },
+            '&.Mui-selected:hover': { background: `rgba(232,160,32,0.2)` },
           },
         },
       },
-      /* ── Popover ────────────────────────────────────── */
+      /* ── Popover ──────────────────────────────────────────── */
       MuiPopover: {
         styleOverrides: {
           paper: {
-            background: '#12122a',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: mode === 'dark' ? BLACK_MID : OFFWHITE,
+            border: mode === 'dark'
+              ? `1px solid rgba(232,160,32,0.14)`
+              : `1px solid rgba(232,160,32,0.22)`,
             borderRadius: '14px',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+            boxShadow: mode === 'dark'
+              ? '0 16px 48px rgba(0,0,0,0.65)'
+              : '0 16px 48px rgba(0,0,0,0.12)',
           },
         },
       },

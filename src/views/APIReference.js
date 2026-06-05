@@ -1,17 +1,12 @@
-import React from "react";
-import {Box} from '@mui/material'
-import Documentation from "../components/Documentation.js";
-import AppBarComponent from "../components/AppBarComponent.js";
-import FooterComponent from '../components/FooterComponent.js'
-const APIReference =()=>{
-    return(
-        <Box sx={{display: 'flex', flexDirection: 'column'}}>
-        <AppBarComponent/>
-        <Box sx={{ flexGrow: 1 }}>
-        <Documentation/> 
-        </Box>
-        <FooterComponent/>
-        </Box>
-    );
-}
+import React from 'react';
+import { Box } from '@mui/material';
+import ApiReferenceDocs from '../components/api-reference/ApiReferenceDocs';
+
+/** Dashboard API reference — rendered inside Sidenav layout (no extra app bar). */
+const APIReference = () => (
+  <Box sx={{ width: '100%', minHeight: '100%' }}>
+    <ApiReferenceDocs />
+  </Box>
+);
+
 export default APIReference;

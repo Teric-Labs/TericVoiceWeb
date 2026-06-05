@@ -127,13 +127,13 @@ const FilePreview = ({ file, onRemove, index }) => {
     <Card
       sx={{
         borderRadius: '12px',
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(17, 17, 17, 0.95)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(14, 165, 233, 0.1)',
+        border: '1px solid rgba(232, 160, 32, 0.1)',
         transition: 'all 0.3s ease',
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: '0 8px 24px rgba(14, 165, 233, 0.15)',
+          boxShadow: '0 8px 24px rgba(232, 160, 32, 0.15)',
         },
       }}
     >
@@ -144,15 +144,15 @@ const FilePreview = ({ file, onRemove, index }) => {
               sx={{
                 width: 48,
                 height: 48,
-                background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
+                background: 'linear-gradient(135deg, #E8A020, #C47F10)',
                 animation: `${pulse} 2s infinite`,
                 animationDelay: `${0.1 * index}s`,
               }}
             >
-              <VolumeUpIcon sx={{ color: 'white' }} />
+              <VolumeUpIcon sx={{ color: '#111111' }} />
             </Avatar>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#0ea5e9' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#E8A020' }}>
                 {file.name}
               </Typography>
               <Typography variant="body2" sx={{ color: '#666666' }}>
@@ -166,9 +166,9 @@ const FilePreview = ({ file, onRemove, index }) => {
                 size="small"
                 onClick={() => setIsPlaying(!isPlaying)}
                 sx={{
-                  color: '#0ea5e9',
+                  color: '#E8A020',
                   '&:hover': {
-                    backgroundColor: alpha('#0ea5e9', 0.1),
+                    backgroundColor: alpha('#E8A020', 0.1),
                   },
                 }}
               >
@@ -201,8 +201,8 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
   <Card
     sx={{
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(100, 181, 246, 0.05))',
-      border: '1px solid rgba(14, 165, 233, 0.2)',
+      background: 'linear-gradient(135deg, rgba(232, 160, 32, 0.05), rgba(100, 181, 246, 0.05))',
+      border: '1px solid rgba(232, 160, 32, 0.2)',
       p: 2,
       mb: 2,
     }}
@@ -212,12 +212,12 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
         sx={{
           width: 40,
           height: 40,
-          background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
+          background: 'linear-gradient(135deg, #E8A020, #C47F10)',
         }}
       >
-        <AutoDetectIcon sx={{ color: 'white' }} />
+        <AutoDetectIcon sx={{ color: '#111111' }} />
       </Avatar>
-      <Typography variant="h6" sx={{ color: '#0ea5e9', fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ color: '#E8A020', fontWeight: 600 }}>
         AI Language Detection
       </Typography>
     </Box>
@@ -233,10 +233,10 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
       disabled={isDetecting}
       sx={{
         borderRadius: '8px',
-        borderColor: '#0ea5e9',
-        color: '#0ea5e9',
+        borderColor: '#E8A020',
+        color: '#E8A020',
         '&:hover': {
-          backgroundColor: alpha('#0ea5e9', 0.1),
+          backgroundColor: alpha('#E8A020', 0.1),
         },
       }}
     >
@@ -263,7 +263,7 @@ const LanguageDetection = ({ onDetect, detectedLanguage, isDetecting }) => (
 const AdvancedOptions = ({ options, onChange }) => (
   <Accordion sx={{ borderRadius: '12px', mb: 2 }}>
     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-      <Typography variant="h6" sx={{ color: '#0ea5e9', fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ color: '#E8A020', fontWeight: 600 }}>
         Advanced Options
       </Typography>
     </AccordionSummary>
@@ -501,9 +501,9 @@ const LanguageAndUploadModal = ({
           borderRadius: '24px',
           p: 0,
           outline: 'none',
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'rgba(17, 17, 17, 0.95)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(14, 165, 233, 0.2)',
+          border: '1px solid rgba(232, 160, 32, 0.2)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         }}
       >
@@ -516,7 +516,7 @@ const LanguageAndUploadModal = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(100, 181, 246, 0.05))',
+            background: 'linear-gradient(135deg, rgba(232, 160, 32, 0.05), rgba(100, 181, 246, 0.05))',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -524,17 +524,17 @@ const LanguageAndUploadModal = ({
               sx={{
                 width: 48,
                 height: 48,
-                background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
+                background: 'linear-gradient(135deg, #E8A020, #C47F10)',
               }}
             >
-              <SmartToyIcon sx={{ color: 'white' }} />
+              <SmartToyIcon sx={{ color: '#111111' }} />
             </Avatar>
             <Box>
               <Typography
                 variant="h5"
                 sx={{
                   fontWeight: 600,
-                  background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+                  background: 'linear-gradient(45deg, #E8A020, #C47F10)',
                   backgroundClip: 'text',
                   textFillColor: 'transparent',
                 }}
@@ -578,7 +578,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 0 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#E8A020', fontWeight: 600 }}>
                   Upload Audio Files
                 </Typography>
                 
@@ -592,10 +592,10 @@ const LanguageAndUploadModal = ({
                     justifyContent: 'center', gap: 1,
                     borderRadius: '12px', p: 4, mb: 3, cursor: 'pointer',
                     border: '2px dashed',
-                    borderColor: isDragOver ? 'primary.main' : 'rgba(14, 165, 233,0.35)',
-                    bgcolor: isDragOver ? alpha('#0ea5e9', 0.08) : 'transparent',
+                    borderColor: isDragOver ? 'primary.main' : 'rgba(232, 160, 32,0.35)',
+                    bgcolor: isDragOver ? alpha('#E8A020', 0.08) : 'transparent',
                     transition: 'all 0.2s ease',
-                    '&:hover': { bgcolor: alpha('#0ea5e9', 0.05), borderColor: 'primary.main' },
+                    '&:hover': { bgcolor: alpha('#E8A020', 0.05), borderColor: 'primary.main' },
                   }}
                 >
                   <FileUploadIcon sx={{ fontSize: 40, color: isDragOver ? 'primary.main' : 'text.disabled' }} />
@@ -623,7 +623,7 @@ const LanguageAndUploadModal = ({
                 {/* File List */}
                 {selectedFiles && (
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 2, color: '#0ea5e9', fontWeight: 600 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 2, color: '#E8A020', fontWeight: 600 }}>
                       Selected Files ({isMultiple ? selectedFiles.length : 1})
                     </Typography>
                     {isMultiple ? (
@@ -654,7 +654,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 1 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#E8A020', fontWeight: 600 }}>
                   Language Configuration
                 </Typography>
 
@@ -681,8 +681,8 @@ const LanguageAndUploadModal = ({
                               label={language.code.toUpperCase()}
                               size="small"
                               sx={{
-                                backgroundColor: alpha('#0ea5e9', 0.1),
-                                color: '#0ea5e9',
+                                backgroundColor: alpha('#E8A020', 0.1),
+                                color: '#E8A020',
                                 fontSize: '0.7rem',
                               }}
                             />
@@ -721,9 +721,9 @@ const LanguageAndUploadModal = ({
                                 label={language ? language.name : value}
                                 sx={{
                                   bgcolor: 'primary.main',
-                                  color: 'white',
+                                  color: '#111111',
                                   '& .MuiChip-deleteIcon': {
-                                    color: 'white',
+                                    color: '#111111',
                                   }
                                 }}
                               />
@@ -740,8 +740,8 @@ const LanguageAndUploadModal = ({
                               label={language.code.toUpperCase()}
                               size="small"
                               sx={{
-                                backgroundColor: alpha('#0ea5e9', 0.1),
-                                color: '#0ea5e9',
+                                backgroundColor: alpha('#E8A020', 0.1),
+                                color: '#E8A020',
                                 fontSize: '0.7rem',
                               }}
                             />
@@ -764,7 +764,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 2 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#E8A020', fontWeight: 600 }}>
                   Advanced Processing Options
                 </Typography>
                 <AdvancedOptions
@@ -779,7 +779,7 @@ const LanguageAndUploadModal = ({
           {activeStep === 3 && (
             <Fade in>
               <Box>
-                <Typography variant="h6" sx={{ mb: 3, color: '#0ea5e9', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 3, color: '#E8A020', fontWeight: 600 }}>
                   Review & Submit
                 </Typography>
 
@@ -802,9 +802,9 @@ const LanguageAndUploadModal = ({
                   />
 
                   {/* Summary Card */}
-                  <Card sx={{ borderRadius: '12px', border: '1px solid rgba(14, 165, 233, 0.2)' }}>
+                  <Card sx={{ borderRadius: '12px', border: '1px solid rgba(232, 160, 32, 0.2)' }}>
                     <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2, color: '#0ea5e9', fontWeight: 600 }}>
+                      <Typography variant="h6" sx={{ mb: 2, color: '#E8A020', fontWeight: 600 }}>
                         Processing Summary
                       </Typography>
                       <Stack spacing={2}>
@@ -889,9 +889,9 @@ const LanguageAndUploadModal = ({
                 sx={{
                   borderRadius: '12px',
                   textTransform: 'none',
-                  background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+                  background: 'linear-gradient(45deg, #E8A020, #C47F10)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #0284c7, #38bdf8)',
+                    background: 'linear-gradient(45deg, #0284c7, #F5B844)',
                   }
                 }}
               >

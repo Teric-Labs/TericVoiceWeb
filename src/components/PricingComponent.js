@@ -3,7 +3,7 @@ import {
   Box, Typography, Grid, Container, Button, Chip, Switch,
   Accordion, AccordionSummary, AccordionDetails, Divider,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { keyframes } from '@mui/material/styles';
 import {
   CheckCircle, Close, ExpandMore, ArrowForward,
@@ -11,19 +11,20 @@ import {
   VerifiedUser, Bolt, ShieldOutlined,
 } from '@mui/icons-material';
 import { PLANS, PLAN_COLORS } from '../constants/plans';
+import MarketingPageHeader from './marketing/MarketingPageHeader';
+import {
+  M_AC, M_AC_DARK, M_GRADIENT, M_BLACK, M_BORDER, M_SURFACE, M_TEXT_MUTED,
+  mBtnPrimary, mCard,
+} from './marketing/marketingTokens';
+import { useAuth } from './AuthContext';
 
-// ── Animations ─────────────────────────────────────────────────────────────
 const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(22px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 `;
-const pulseGlow = keyframes`
-  0%,100% { opacity: 0.5; transform: scale(1); }
-  50%      { opacity: 0.9; transform: scale(1.05); }
-`;
 
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GOLD = '#f59e0b';
+const G = M_GRADIENT;
+const GOLD = M_AC;
 
 const PLAN_ICONS = {
   'Free Trial':      <Lock sx={{ fontSize: 22 }} />,
@@ -32,49 +33,38 @@ const PLAN_ICONS = {
   'Enterprise Plus': <Workspaces sx={{ fontSize: 22 }} />,
 };
 
-// ── Kente background ────────────────────────────────────────────────────────
-function KenteBg() {
-  return (
-    <Box component="svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
-      sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04, pointerEvents: 'none' }}
-    >
-      <defs>
-        <pattern id="kente-price" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-          <polygon points="20,2 38,20 20,38 2,20" fill="none" stroke="#f59e0b" strokeWidth="1.2" />
-          <line x1="0" y1="20" x2="40" y2="20" stroke="#8b5cf6" strokeWidth="0.4" />
-          <line x1="20" y1="0" x2="20" y2="40" stroke="#8b5cf6" strokeWidth="0.4" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#kente-price)" />
-    </Box>
-  );
-}
-
 // ── Pricing card ─────────────────────────────────────────────────────────────
 function PricingCard({ plan, isAnnual, index }) {
-  const color = PLAN_COLORS[plan.title] || '#0ea5e9';
+  const color = PLAN_COLORS[plan.title] || M_AC;
   const isCustom = plan.monthly === 'Custom';
   const isFree = plan.monthlyRaw === 0;
   const price = isAnnual ? plan.annual : plan.monthly;
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleClick = () => {
     if (plan.ctaPath?.startsWith('mailto:')) {
       window.open(plan.ctaPath, '_blank');
     } else if (plan.ctaPath) {
-      window.location.href = plan.ctaPath;
+      // For paid plans, check if user is authenticated
+      if (!isFree && !isAuthenticated) {
+        // Redirect to get-started for non-logged-in users
+        navigate('/get-started');
+      } else {
+        // For logged-in users or free plan, use React Router navigation
+        navigate(plan.ctaPath);
+      }
     }
   };
 
   return (
     <Box sx={{
       position: 'relative',
-      background: plan.popular
-        ? `linear-gradient(160deg, rgba(14,165,233,0.07), rgba(139,92,246,0.07))`
-        : 'rgba(255,255,255,0.025)',
+      bgcolor: M_SURFACE,
       border: plan.popular
-        ? '1.5px solid rgba(14,165,233,0.4)'
-        : '1px solid rgba(255,255,255,0.07)',
-      borderRadius: '24px',
+        ? '1.5px solid rgba(232, 160, 32, 0.35)'
+        : `1px solid ${M_BORDER}`,
+      borderRadius: '16px',
       p: { xs: 3, md: 3.5 },
       height: '100%',
       display: 'flex',
@@ -95,7 +85,7 @@ function PricingCard({ plan, isAnnual, index }) {
           background: G, borderRadius: '50px', px: 2, py: 0.5,
           boxShadow: `0 4px 16px ${color}50`,
         }}>
-          <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ color: '#111111', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
             ⚡ Most Popular
           </Typography>
         </Box>
@@ -131,7 +121,7 @@ function PricingCard({ plan, isAnnual, index }) {
             <Typography sx={{ color: GOLD, fontWeight: 800, fontSize: '2rem', lineHeight: 1 }}>Custom</Typography>
           ) : (
             <>
-              <Typography sx={{ color: '#f8fafc', fontWeight: 900, fontSize: '3rem', lineHeight: 1, letterSpacing: '-0.04em' }}>{price}</Typography>
+              <Typography sx={{ color: '#111111', fontWeight: 900, fontSize: '3rem', lineHeight: 1, letterSpacing: '-0.04em' }}>{price}</Typography>
               {!isFree && <Typography sx={{ color: '#475569', fontSize: '0.9rem', mb: 0.5 }}>/mo</Typography>}
             </>
           )}
@@ -142,7 +132,7 @@ function PricingCard({ plan, isAnnual, index }) {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2.5 }} />
+      <Divider sx={{ borderColor: 'rgba(17, 17, 17,0.06)', mb: 2.5 }} />
 
       {/* Features */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3.5 }}>
@@ -151,10 +141,10 @@ function PricingCard({ plan, isAnnual, index }) {
             <Box sx={{ flexShrink: 0 }}>
               {included
                 ? <CheckCircle sx={{ fontSize: 16, color }} />
-                : <Close sx={{ fontSize: 16, color: '#374151' }} />
+                : <Close sx={{ fontSize: 16, color: '#222222' }} />
               }
             </Box>
-            <Typography sx={{ color: included ? '#cbd5e1' : '#374151', fontSize: '0.88rem', fontWeight: included ? 500 : 400 }}>
+            <Typography sx={{ color: included ? M_TEXT_MUTED : 'rgba(17,17,17,0.25)', fontSize: '0.88rem', fontWeight: included ? 500 : 400 }}>
               {label}
             </Typography>
           </Box>
@@ -172,7 +162,7 @@ function PricingCard({ plan, isAnnual, index }) {
         sx={{
           py: 1.5, borderRadius: '50px', fontWeight: 700, fontSize: '0.93rem', textTransform: 'none',
           ...(plan.popular ? {
-            background: G, color: '#fff',
+            background: G, color: '#111111',
             boxShadow: `0 6px 24px ${color}40`,
             '&:hover': { transform: 'translateY(-1px)', boxShadow: `0 8px 32px ${color}55` },
           } : isCustom ? {
@@ -215,43 +205,20 @@ export default function PricingComponent() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   return (
-    <Box sx={{ background: '#07071a', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      <KenteBg />
+    <Box sx={{ bgcolor: 'transparent', pb: { xs: 5, md: 7 } }}>
+      <MarketingPageHeader
+        chip="Pricing"
+        title="Start free."
+        titleAccent="Scale effortlessly."
+        subtitle="No surprise fees. No lock-in. Upgrade or cancel anytime."
+        pt={{ xs: 8, md: 9 }}
+        pb={2.5}
+      />
 
-      {/* Ambient glow */}
-      <Box sx={{
-        position: 'absolute', top: '5%', left: '50%', transform: 'translateX(-50%)',
-        width: 700, height: 400, borderRadius: '50%',
-        background: 'radial-gradient(ellipse, rgba(139,92,246,0.1) 0%, transparent 70%)',
-        animation: `${pulseGlow} 8s ease-in-out infinite`, pointerEvents: 'none',
-      }} />
-
-      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, py: { xs: 10, md: 14 } }}>
-
-        {/* ── Header ──────────────────────────────────── */}
-        <Box sx={{ textAlign: 'center', mb: 8, animation: `${fadeUp} 0.5s ease both` }}>
-          <Chip label="Simple, Transparent Pricing" size="small" sx={{
-            background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
-            color: GOLD, fontWeight: 700, borderRadius: '50px', mb: 3,
-            '& .MuiChip-label': { px: 2 },
-          }} />
-          <Typography sx={{
-            color: '#f8fafc', fontWeight: 800,
-            fontSize: { xs: '2.5rem', md: '3.5rem' },
-            letterSpacing: '-0.03em', lineHeight: 1.1, mb: 2,
-          }}>
-            Start free.{' '}
-            <Box component="span" sx={{ background: G, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Scale effortlessly.
-            </Box>
-          </Typography>
-          <Typography sx={{ color: '#64748b', fontSize: { xs: '1rem', md: '1.15rem' }, mb: 5, maxWidth: 500, mx: 'auto', lineHeight: 1.7 }}>
-            No surprise fees. No lock-in. Upgrade or cancel anytime.
-          </Typography>
-
-          {/* Billing toggle */}
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '50px', px: 2.5, py: 1 }}>
-            <Typography sx={{ color: !isAnnual ? '#f8fafc' : '#475569', fontWeight: 700, fontSize: '0.9rem' }}>Monthly</Typography>
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6, animation: `${fadeUp} 0.5s ease both` }}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, bgcolor: M_SURFACE, border: `1px solid ${M_BORDER}`, borderRadius: '999px', px: 2.5, py: 1 }}>
+            <Typography sx={{ color: !isAnnual ? M_BLACK : M_TEXT_MUTED, fontWeight: 700, fontSize: '0.88rem' }}>Monthly</Typography>
             <Switch
               checked={isAnnual}
               onChange={e => setIsAnnual(e.target.checked)}
@@ -261,14 +228,13 @@ export default function PricingComponent() {
               }}
             />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ color: isAnnual ? '#f8fafc' : '#475569', fontWeight: 700, fontSize: '0.9rem' }}>Annual</Typography>
-              <Chip label="Save 20%" size="small" sx={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', fontWeight: 700, fontSize: '0.7rem', borderRadius: '50px' }} />
+              <Typography sx={{ color: isAnnual ? M_BLACK : M_TEXT_MUTED, fontWeight: 700, fontSize: '0.88rem' }}>Annual</Typography>
+              <Chip label="Save 20%" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#059669', fontWeight: 700, fontSize: '0.68rem', borderRadius: '999px' }} />
             </Box>
           </Box>
         </Box>
 
-        {/* ── Plan cards ──────────────────────────────── */}
-        <Grid container spacing={3} justifyContent="center" alignItems="stretch" sx={{ mb: 8 }}>
+        <Grid container spacing={2.5} justifyContent="center" alignItems="stretch" sx={{ mb: 8 }}>
           {PLANS.map((plan, i) => (
             <Grid item xs={12} sm={6} md={3} key={plan.id}>
               <PricingCard plan={plan} isAnnual={isAnnual} index={i} />
@@ -280,18 +246,18 @@ export default function PricingComponent() {
         <Box sx={{
           display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
           gap: { xs: 3, md: 6 }, mb: 8,
-          py: 3.5, borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          py: 3.5, borderTop: `1px solid ${M_BORDER}`, borderBottom: `1px solid ${M_BORDER}`,
           animation: `${fadeUp} 0.5s ease 0.4s both`,
         }}>
           {[
             { icon: <ShieldOutlined sx={{ fontSize: 18, color: '#10b981' }} />, text: 'Secure Stripe payments' },
-            { icon: <VerifiedUser sx={{ fontSize: 18, color: '#0ea5e9' }} />, text: 'SOC 2 compliant' },
-            { icon: <Bolt sx={{ fontSize: 18, color: '#8b5cf6' }} />, text: 'Instant activation' },
+            { icon: <VerifiedUser sx={{ fontSize: 18, color: M_AC }} />, text: 'SOC 2 compliant' },
+            { icon: <Bolt sx={{ fontSize: 18, color: M_AC_DARK }} />, text: 'Instant activation' },
             { icon: <Lock sx={{ fontSize: 18, color: GOLD }} />, text: 'Cancel anytime' },
           ].map(({ icon, text }) => (
             <Box key={text} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               {icon}
-              <Typography sx={{ color: '#64748b', fontSize: '0.88rem', fontWeight: 600 }}>{text}</Typography>
+              <Typography sx={{ color: M_TEXT_MUTED, fontSize: '0.88rem', fontWeight: 600 }}>{text}</Typography>
             </Box>
           ))}
         </Box>
@@ -299,9 +265,9 @@ export default function PricingComponent() {
         {/* ── Enterprise callout ───────────────────────── */}
         <Box sx={{
           mb: 8, p: { xs: 4, md: 5 },
-          background: 'rgba(245,158,11,0.04)',
-          border: '1px solid rgba(245,158,11,0.15)',
-          borderRadius: '24px',
+          bgcolor: M_SURFACE,
+          border: `1px solid ${M_BORDER}`,
+          borderRadius: '16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 3,
           animation: `${fadeUp} 0.5s ease 0.45s both`,
         }}>
@@ -310,15 +276,15 @@ export default function PricingComponent() {
               <Workspaces sx={{ color: GOLD, fontSize: 20 }} />
               <Typography sx={{ color: GOLD, fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enterprise Plus</Typography>
             </Box>
-            <Typography sx={{ color: '#f8fafc', fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.4rem' }, mb: 0.5 }}>
+            <Typography sx={{ color: '#111111', fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.4rem' }, mb: 0.5 }}>
               Need unlimited scale for your team?
             </Typography>
-            <Typography sx={{ color: '#64748b', fontSize: '0.92rem' }}>
+            <Typography sx={{ color: M_TEXT_MUTED, fontSize: '0.92rem' }}>
               Custom models, dedicated infrastructure, SLA guarantees and 24/7 support.
             </Typography>
           </Box>
           <Button
-            onClick={() => window.open('mailto:labteric@gmail.com?subject=Enterprise%20Plus%20Inquiry', '_blank')}
+            onClick={() => window.open('mailto:phosaico@gmail.com?subject=Enterprise%20Plus%20Inquiry', '_blank')}
             variant="outlined"
             endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
             sx={{
@@ -333,21 +299,21 @@ export default function PricingComponent() {
 
         {/* ── FAQ ─────────────────────────────────────── */}
         <Box sx={{ maxWidth: 680, mx: 'auto', animation: `${fadeUp} 0.5s ease 0.5s both` }}>
-          <Typography sx={{ color: '#f8fafc', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.025em', textAlign: 'center', mb: 4 }}>
+          <Typography sx={{ color: '#111111', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.025em', textAlign: 'center', mb: 4 }}>
             Frequently asked questions
           </Typography>
           {FAQS.map(({ q, a }) => (
             <Accordion key={q} elevation={0} sx={{
-              background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '16px !important', mb: 1.5, overflow: 'hidden',
+              bgcolor: M_SURFACE, border: `1px solid ${M_BORDER}`,
+              borderRadius: '12px !important', mb: 1.5, overflow: 'hidden',
               '&:before': { display: 'none' },
-              '&.Mui-expanded': { border: '1px solid rgba(14,165,233,0.2)', background: 'rgba(14,165,233,0.04)' },
+              '&.Mui-expanded': { border: '1px solid rgba(232, 160, 32, 0.25)', bgcolor: 'rgba(232, 160, 32, 0.03)' },
             }}>
               <AccordionSummary expandIcon={<ExpandMore sx={{ color: '#64748b' }} />} sx={{ px: 3, py: 0.5 }}>
-                <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.97rem' }}>{q}</Typography>
+                <Typography sx={{ color: '#111111', fontWeight: 600, fontSize: '0.97rem' }}>{q}</Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 3, pb: 2.5 }}>
-                <Typography sx={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.75 }}>{a}</Typography>
+                <Typography sx={{ color: M_TEXT_MUTED, fontSize: '0.9rem', lineHeight: 1.75 }}>{a}</Typography>
               </AccordionDetails>
             </Accordion>
           ))}

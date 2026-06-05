@@ -15,15 +15,17 @@ const CustomCard = ({ heading, value, imageUrl, to }) => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderRadius: 2,
-          border: '1px solid #ddd',
+          borderRadius: 4,
+          border: '1px solid rgba(232, 160, 32, 0.15)',
+          backgroundColor: 'transparent',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
           transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
           '&:hover': {
-            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)',
-            transform: 'translateY(-10px)'
+            boxShadow: '0 12px 24px rgba(232, 160, 32, 0.08)',
+            transform: 'translateY(-8px)'
           }
         }}
-        elevation={3}
+        elevation={0}
       >
         <Box
           component="img"
@@ -43,7 +45,6 @@ const CustomCard = ({ heading, value, imageUrl, to }) => {
             marginBottom: 2,
             textAlign: 'center',
             fontSize: '14px',
-            fontFamily: 'Inter'
           }}
         >
           {heading}
@@ -54,7 +55,6 @@ const CustomCard = ({ heading, value, imageUrl, to }) => {
             textAlign: 'center',
             opacity: 0.8,
             fontSize: '12px',
-            fontFamily: 'Inter'
           }}
         >
           {value}

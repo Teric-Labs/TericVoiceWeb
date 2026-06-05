@@ -68,7 +68,7 @@ const CodeBlock = ({ code, onCopy, title, description }) => (
           maxHeight: '300px'
         }}
       >
-        <pre style={{ margin: 0, color: '#fff', fontFamily: 'Monaco, monospace', fontSize: '14px' }}>
+        <pre style={{ margin: 0, color: '#111111', fontFamily: 'Monaco, monospace', fontSize: '14px' }}>
           <code>{code}</code>
         </pre>
       </Box>
@@ -80,12 +80,12 @@ const CodeBlock = ({ code, onCopy, title, description }) => (
             position: 'absolute',
             top: 8,
             right: 8,
-            color: 'white',
+            color: '#111111',
             opacity: 0.4,
             transition: 'opacity 0.2s',
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(17, 17, 17, 0.1)',
             '&:hover': {
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              backgroundColor: 'rgba(17, 17, 17, 0.2)',
               opacity: 1
             }
           }}

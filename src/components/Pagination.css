@@ -1,4 +1,4 @@
-/* Pagination — Dark themed, aligned with ASRVoices Studio palette (#0ea5e9 / #8b5cf6) */
+/* Pagination — Dark themed, aligned with ASRVoices Studio palette (#E8A020 / #C47F10) */
 
 .pagination {
   display: flex;
@@ -21,11 +21,11 @@
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 17, 0.1);
   border-radius: 8px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.6);
-  background-color: rgba(255, 255, 255, 0.03);
+  color: rgba(17, 17, 17, 0.6);
+  background-color: rgba(17, 17, 17, 0.03);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 600;
@@ -35,32 +35,32 @@
 }
 
 .page-link:hover {
-  background-color: rgba(14, 165, 233, 0.1);
-  border-color: rgba(14, 165, 233, 0.4);
-  color: #0ea5e9;
+  background-color: rgba(232, 160, 32, 0.1);
+  border-color: rgba(232, 160, 32, 0.4);
+  color: #E8A020;
 }
 
 .page-link:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid #E8A020;
   outline-offset: 2px;
 }
 
 .active-link {
-  background-color: rgba(14, 165, 233, 0.15);
-  border-color: rgba(14, 165, 233, 0.4);
-  color: #0ea5e9;
+  background-color: rgba(232, 160, 32, 0.15);
+  border-color: rgba(232, 160, 32, 0.4);
+  color: #E8A020;
   font-weight: 700;
   pointer-events: none;
 }
 
 .active-link:hover {
-  background-color: rgba(14, 165, 233, 0.2);
+  background-color: rgba(232, 160, 32, 0.2);
 }
 
 .page-item.disabled .page-link {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(17, 17, 17, 0.2);
   pointer-events: none;
   background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(17, 17, 17, 0.05);
   cursor: default;
 }

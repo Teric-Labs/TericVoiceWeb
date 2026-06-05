@@ -2,55 +2,108 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Typography, Button, Grid, Snackbar, Alert,
   FormControl, Select, MenuItem, IconButton, Tab, Tabs,
-  Chip, Drawer, LinearProgress, InputLabel, Stack, TextField,
+  Drawer, InputLabel, Stack,
+  Stepper, Step, StepLabel, StepContent, Paper,
+  Chip,
 } from '@mui/material';
 import {
   CloudUpload, Mic, Stop, PlayArrow, Pause,
-  DeleteOutline, Send, CheckCircle, VideoFile,
+  CheckCircle, CheckCircleOutline, DeleteOutline,
+  AutoAwesome, SettingsVoice,
 } from '@mui/icons-material';
 import { useMediaQuery, useTheme } from '@mui/material';
-import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+import { transcriptionAPI, subscriptionAPI, getFriendlyErrorMessage } from '../services/api';
 import { LANGUAGES } from '../constants/languages';
 import ViewAudioComponent from './ViewAudioComponent';
 import UpgradePromptModal from './UpgradePromptModal';
-
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+import { AC, G, GLASS, STEPPER_SX } from '../utils/mediaVault';
+import { AvoicesBackdropLoader } from './progress';
+import useFileDrop from '../hooks/useFileDrop';
+import { UsageTip, useStudioTour } from './onboarding';
+import { TOUR_IDS, transcribeTour } from './onboarding/tours';
 const SELECT_SX = {
-  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+  borderRadius: '12px', color: '#111111', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(17, 17, 17, 0.15)' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: AC },
 };
-const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
+const LABEL_SX = { color: 'rgba(17, 17, 17, 0.5)', '&.Mui-focused': { color: AC } };
+
+const MAX_FILE_MB = 50;
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+
+const FORMAT_OPTIONS = [
+  { value: 'json', label: 'JSON (Simple)', desc: 'Concise text-only JSON' },
+  { value: 'text', label: 'Plain Text', desc: 'Raw unformatted text' },
+  { value: 'srt', label: 'SRT (Subtitles)', desc: 'Standard SubRip format' },
+  { value: 'verbose_json', label: 'Verbose JSON', desc: 'Detailed with timestamps' },
+  { value: 'vtt', label: 'WebVTT', desc: 'Modern web subtitle format' },
+];
+
+function StepNav({ onBack, onNext, backDisabled, nextDisabled, nextLabel = 'Next' }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+      <Button disabled={backDisabled} onClick={onBack} sx={{ borderRadius: '10px', fontWeight: 800, textTransform: 'none', color: 'rgba(17,17,17,0.6)' }}>Back</Button>
+      <Button variant="contained" onClick={onNext} disabled={nextDisabled} sx={{ background: G, borderRadius: '10px', fontWeight: 800, textTransform: 'none', boxShadow: '0 4px 18px rgba(232, 160, 32, 0.25)' }}>{nextLabel}</Button>
+    </Stack>
+  );
+}
 
 export default function TranscribeComponent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tab, setTab] = useState(0);
-
-  // ... rest of state ...
+  const [activeStep, setActiveStep] = useState(0);
   const [sourceLang, setSourceLang] = useState('en');
   const [responseFormat, setResponseFormat] = useState('json');
   const [file, setFile] = useState(null);
   const [blob, setBlob] = useState(null);
-  const [videoUrl, setVideoUrl] = useState('');
   const [audioURL, setAudioURL] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [docId, setDocId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
   const [snack, setSnack] = useState({ open: false, msg: '', sev: 'success' });
   const [upgradeModal, setUpgradeModal] = useState({ open: false, data: null });
+  const [userBalance, setUserBalance] = useState(null);
 
   const recorder = useRef(null);
   const stream = useRef(null);
   const player = useRef(null);
   const fileInput = useRef(null);
 
+  useStudioTour(TOUR_IDS.transcribe, transcribeTour);
+
+  const selectFile = (f) => {
+    if (!f) return;
+    if (f.size > MAX_FILE_BYTES) {
+      setSnack({ open: true, msg: `File is too large (${(f.size / (1024 * 1024)).toFixed(1)} MB). Max ${MAX_FILE_MB} MB.`, sev: 'error' });
+      return;
+    }
+    setFile(f);
+  };
+
+  const { isDragOver, dropProps } = useFileDrop(
+    files => selectFile(files[0]),
+    { accept: ['audio/', 'video/'], multiple: false, disabled: loading },
+  );
+
   const getUser = () => JSON.parse(localStorage.getItem('user') || '{}');
+  const isLowBalance = false; // balance check handled server-side
+
+  const tabLabels = ['Upload File', 'Record Audio'];
+  const hasContent = tab === 0 ? !!file : !!blob;
+
+  useEffect(() => {
+    const user = getUser();
+    const userId = user.uid || user.userId;
+    if (userId) {
+      subscriptionAPI.getBalance(userId)
+        .then(data => setUserBalance(data.balance ?? data.credit_balance ?? null))
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => () => {
     stream.current?.getTracks().forEach(t => t.stop());
@@ -58,6 +111,37 @@ export default function TranscribeComponent() {
   }, [audioURL]);
 
   const notify = (msg, sev = 'success') => setSnack({ open: true, msg, sev });
+
+  const handleTabChange = (_, v) => {
+    setTab(v);
+    setActiveStep(0);
+    setSuccessMsg(null);
+    setDocId(null);
+  };
+
+  const handleNext = () => setActiveStep(s => s + 1);
+  const handleBack = () => setActiveStep(s => Math.max(0, s - 1));
+  const handleReset = () => {
+    setActiveStep(0);
+    setFile(null);
+    setBlob(null);
+    discardRecording();
+    setDocId(null);
+    setSuccessMsg(null);
+  };
+
+  const loadDemoAudio = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('https://res.cloudinary.com/demo/video/upload/dog.mp3');
+      const demoBlob = await response.blob();
+      setFile(new File([demoBlob], 'demo_audio.mp3', { type: 'audio/mp3' }));
+    } catch {
+      notify('Failed to load demo audio.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleRecording = async () => {
     if (isRecording) {
@@ -80,14 +164,18 @@ export default function TranscribeComponent() {
         mr.start(1000);
         recorder.current = mr;
         setIsRecording(true);
-      } catch { notify('Microphone access denied', 'error'); }
+      } catch {
+        notify('Microphone access denied', 'error');
+      }
     }
   };
 
   const discardRecording = () => {
     stream.current?.getTracks().forEach(t => t.stop());
     if (audioURL) URL.revokeObjectURL(audioURL);
-    setBlob(null); setAudioURL(null); setIsPlaying(false);
+    setBlob(null);
+    setAudioURL(null);
+    setIsPlaying(false);
     if (player.current) player.current.pause();
   };
 
@@ -98,229 +186,258 @@ export default function TranscribeComponent() {
   };
 
   const handleSubmit = async () => {
-    if (tab === 0 && !file) { notify('Please select a file', 'error'); return; }
-    if (tab === 1 && !blob) { notify('Please record audio first', 'error'); return; }
-    if (tab === 2 && !videoUrl.trim()) { notify('Please enter a video URL', 'error'); return; }
-    
-    setLoading(true); setDocId(null);
+    if (!hasContent) {
+      notify(tab === 0 ? 'Please select a file' : 'Please record audio first', 'error');
+      return;
+    }
+    setLoading(true);
+    setDocId(null);
+    setSuccessMsg(null);
     try {
-      const usage = await checkUsageBeforeRequest(tab === 2 ? 'videoUpload' : 'upload');
-      if (!usage.allowed) {
-        setUpgradeModal({ open: true, data: { currentUsage: usage.current_usage, limit: usage.limit, tier: usage.tier } });
-        return;
-      }
       const { uid, userId } = getUser();
       const id = uid || userId;
       if (!id) { notify('Please log in again', 'error'); return; }
-      
+
       let res;
       if (tab === 0) {
         res = await transcriptionAPI.uploadAudio(file, sourceLang, id, responseFormat);
-      } else if (tab === 1) {
-        res = await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, id, responseFormat);
       } else {
-        const { videoAPI } = await import('../services/api');
-        res = await videoAPI.uploadVideo(videoUrl.trim(), sourceLang, id, responseFormat);
+        res = await transcriptionAPI.uploadRecordedAudio(blob, sourceLang, id, responseFormat);
       }
-      
+
       setDocId(res.doc_id);
-      setDrawerOpen(true);
-      notify('Transcription submitted!');
+      subscriptionAPI.getBalance(id).then(data => {
+        setUserBalance(data.balance ?? data.credit_balance ?? null);
+        window.dispatchEvent(new CustomEvent('refresh-balance'));
+      }).catch(() => {});
+      setSuccessMsg('Transcription completed successfully!');
+      setActiveStep(3);
+      window.dispatchEvent(new CustomEvent('library-updated'));
     } catch (e) {
-      const info = handleAPIError(e, tab === 2 ? 'videoUpload' : 'upload');
-      if (info.shouldUpgrade) window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: info }));
-      else notify(info.message || 'Submission failed. Please try again.', 'error');
-    } finally { setLoading(false); }
+      if (!e?.shouldUpgrade) {
+        notify(getFriendlyErrorMessage(e, 'Transcription failed. Please try again.'), 'error');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <Box>
-      {/* Mode Tabs */}
-      <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}
-          variant={isMobile ? "fullWidth" : "standard"}
-          sx={{
-            minHeight: 48,
-            '& .MuiTabs-indicator': { background: G, height: 3, borderRadius: '3px 3px 0 0' },
-          }}
-        >
-          {[
-            { label: 'Upload', icon: <CloudUpload fontSize="small" /> },
-            { label: 'Record', icon: <Mic fontSize="small" /> },
-            { label: 'Video', icon: <VideoFile fontSize="small" /> }
-          ].map((item, i) => (
-            <Tab 
-              key={i} 
-              label={!isMobile ? (i === 0 ? 'Upload File' : i === 1 ? 'Record Audio' : 'Video Transcribe') : ''} 
-              icon={item.icon}
-              iconPosition="start"
-              sx={{
-                textTransform: 'none', fontWeight: 700, fontSize: '0.85rem',
-                color: tab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)',
-                minHeight: 48,
-                minWidth: isMobile ? 'auto' : 120,
-                flex: isMobile ? 1 : 'none',
-                '&.Mui-selected': { color: '#0ea5e9' },
-                '& .MuiSvgIcon-root': { mb: '0 !important', mr: isMobile ? 0 : 1 }
-              }} 
-            />
-          ))}
-        </Tabs>
-      </Box>
-
-      {/* Language and Format selectors */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth size="small">
-            <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
-            <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
-              {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth size="small">
-            <InputLabel sx={LABEL_SX}>Response Format</InputLabel>
-            <Select value={responseFormat} label="Response Format" onChange={e => setResponseFormat(e.target.value)} sx={SELECT_SX}>
-              {[
-                { value: 'json', label: 'JSON (Simple)', desc: 'Concise text-only JSON' },
-                { value: 'text', label: 'Plain Text', desc: 'Raw unformatted text' },
-                { value: 'srt', label: 'SRT (Subtitles)', desc: 'Standard SubRip format' },
-                { value: 'verbose_json', label: 'Verbose JSON', desc: 'Detailed with timestamps' },
-                { value: 'vtt', label: 'WebVTT', desc: 'Modern web subtitle format' }
-              ].map(f => (
-                <MenuItem key={f.value} value={f.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>{f.label}</Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{f.desc}</Typography>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-
-      {/* Upload zone */}
-      {tab === 0 && (
+  const renderInputStep = () => {
+    if (tab === 0) {
+      return (
         <>
-          <input ref={fileInput} type="file" accept="audio/*,video/*" hidden onChange={e => { setFile(e.target.files[0]); e.target.value = ''; }} />
-          <Box onClick={() => fileInput.current?.click()} sx={{
-            ...GLASS,
-            p: 4, textAlign: 'center', cursor: 'pointer', mb: 3,
-            borderStyle: 'dashed',
-            borderColor: file ? '#0ea5e9' : 'rgba(255,255,255,0.08)',
-            background: file ? 'rgba(14,165,233,0.05)' : 'rgba(255,255,255,0.02)',
+          <input ref={fileInput} type="file" accept="audio/*,video/*" hidden onChange={e => { selectFile(e.target.files[0]); e.target.value = ''; }} />
+          <Box onClick={() => fileInput.current?.click()} {...dropProps} sx={{
+            p: 4, textAlign: 'center', cursor: 'pointer',
+            border: '1px dashed', borderRadius: '16px',
+            borderColor: isDragOver || file ? AC : 'rgba(17,17,17,0.12)',
+            background: isDragOver ? 'rgba(232,160,32,0.1)' : file ? 'rgba(232,160,32,0.05)' : 'rgba(17,17,17,0.02)',
             transition: 'all 0.25s ease',
-            '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)', transform: 'scale(1.005)' },
+            '&:hover': { borderColor: AC, background: 'rgba(232,160,32,0.04)' },
           }}>
             {file ? (
               <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
-                <CheckCircle sx={{ color: '#0ea5e9', fontSize: 22 }} />
-                <Typography sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>{file.name}</Typography>
+                <CheckCircle sx={{ color: AC, fontSize: 22 }} />
+                <Typography sx={{ color: AC, fontWeight: 700, fontSize: '0.9rem' }}>{file.name}</Typography>
               </Stack>
             ) : (
               <>
-                <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                  <CloudUpload sx={{ fontSize: 26, color: '#0ea5e9' }} />
+                <Box sx={{ width: 60, height: 60, borderRadius: '16px', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <CloudUpload sx={{ fontSize: 30, color: AC }} />
                 </Box>
-                <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Drop your file here or click to browse</Typography>
-                <Typography sx={{ color: '#64748b', fontSize: '0.8rem' }}>MP3, WAV, MP4, AVI · Max 10 MB</Typography>
+                <Typography sx={{ color: '#111111', fontWeight: 700, fontSize: '0.95rem', mb: 0.5 }}>Drop your file or click to browse</Typography>
+                <Typography sx={{ color: 'rgba(17,17,17,0.5)', fontSize: '0.8rem', mb: 2 }}>Audio or video — MP3, WAV, MP4, MOV · Max {MAX_FILE_MB} MB</Typography>
+                <Button variant="outlined" onClick={e => { e.stopPropagation(); loadDemoAudio(); }} disabled={loading} sx={{ borderRadius: '12px', borderColor: `${AC}66`, color: AC, fontWeight: 800 }}>
+                  {loading ? 'Loading…' : 'Try Demo Audio'}
+                </Button>
               </>
             )}
           </Box>
         </>
-      )}
-
-      {/* Video URL zone */}
-      {tab === 2 && (
-        <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Paste YouTube or Video URL here..."
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '12px',
-                color: '#fff',
-                bgcolor: 'rgba(255,255,255,0.02)',
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                '&:hover fieldset': { borderColor: '#0ea5e9' },
-                '&.Mui-focused fieldset': { borderColor: '#0ea5e9' },
-              }
-            }}
-          />
-          <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
-            Supported formats: YouTube, Vimeo, Direct MP4 links
-          </Typography>
-        </Box>
-      )}
-
-
-      {/* Record zone */}
-      {tab === 1 && (
-        <Box sx={{ ...GLASS, p: 3, mb: 3 }}>
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+      );
+    }
+    if (tab === 1) {
+      return (
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
             <Button
               variant={isRecording ? 'contained' : 'outlined'}
               startIcon={isRecording ? <Stop /> : <Mic />}
               onClick={toggleRecording}
               sx={{
-                borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 2.5,
+                borderRadius: '12px', textTransform: 'none', fontWeight: 800, px: 3,
                 ...(isRecording
-                   ? { background: 'rgba(239,68,68,0.8)', color: '#fff', borderColor: 'transparent', '&:hover': { background: 'rgba(220,38,38,0.9)' } }
-                   : { borderColor: '#0ea5e9', color: '#0ea5e9', '&:hover': { background: 'rgba(14,165,233,0.08)' } }),
+                  ? { background: 'rgba(239,68,68,0.9)', color: '#fff' }
+                  : { borderColor: AC, color: AC, '&:hover': { background: 'rgba(232,160,32,0.08)' } }),
               }}
             >
               {isRecording ? 'Stop Recording' : 'Start Recording'}
             </Button>
             {isRecording && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444', animation: 'pulse 1s infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } } }} />
-                <Typography sx={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>Recording…</Typography>
-              </Box>
+                <Typography sx={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 700 }}>Recording…</Typography>
+              </Stack>
             )}
             {audioURL && !isRecording && (
               <>
-                <Button variant="outlined" size="small" startIcon={isPlaying ? <Pause /> : <PlayArrow />} onClick={togglePlay}
-                  sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', '&:hover': { borderColor: '#8b5cf6', color: '#8b5cf6' } }}>
+                <Button variant="outlined" size="small" startIcon={isPlaying ? <Pause /> : <PlayArrow />} onClick={togglePlay} sx={{ borderRadius: '10px', fontWeight: 700, borderColor: 'rgba(17,17,17,0.15)' }}>
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-                <IconButton onClick={discardRecording} size="small" sx={{ color: '#ef4444', '&:hover': { background: 'rgba(239,68,68,0.1)' } }}>
-                  <DeleteOutline fontSize="small" />
-                </IconButton>
+                <IconButton onClick={discardRecording} size="small" sx={{ color: '#ef4444' }}><DeleteOutline fontSize="small" /></IconButton>
                 <audio ref={player} src={audioURL} onEnded={() => setIsPlaying(false)} style={{ display: 'none' }} />
               </>
             )}
           </Stack>
-        </Box>
-      )}
+          {!blob && !isRecording && (
+            <Typography sx={{ fontSize: '0.8rem', color: 'rgba(17,17,17,0.45)', fontWeight: 600 }}>Use your microphone to capture audio for transcription.</Typography>
+          )}
+        </Stack>
+      );
+    }
+    return null;
+  };
 
-      {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+  return (
+    <Box sx={{ p: { xs: 1.5, md: 3 }, minHeight: '100vh', background: 'transparent', maxWidth: 1200, mx: 'auto' }}>
 
-      <Button
-        variant="contained" size="large" onClick={handleSubmit}
-        disabled={loading || (tab === 0 ? !file : !blob)}
-        startIcon={<Send />}
-        sx={{
-          borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-          background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.2)',
-          '&:hover': { background: 'linear-gradient(135deg,#0284c7,#8b5cf6)', boxShadow: '0 6px 28px rgba(14,165,233,0.35)', transform: 'translateY(-1px)' },
-          '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
-        }}
-      >
-        {loading ? 'Processing…' : 'Transcribe'}
-      </Button>
+      <AvoicesBackdropLoader open={loading} message="Transcribing audio…" submessage="Extracting speech and formatting your transcript" />
+
+      {successMsg && <Alert severity="success" onClose={() => setSuccessMsg(null)} sx={{ mb: 2, borderRadius: '12px' }}>{successMsg}</Alert>}
+
+      <Box data-tour="studio-mode" sx={{ mb: 2, borderBottom: '1px solid rgba(17,17,17,0.07)' }}>
+        <Tabs value={tab} onChange={handleTabChange} variant={isMobile ? 'fullWidth' : 'standard'} sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2 } }}>
+          {[
+            { label: 'Upload', icon: <CloudUpload sx={{ fontSize: 17 }} /> },
+            { label: 'Record', icon: <Mic sx={{ fontSize: 17 }} /> },
+          ].map(({ label, icon }, i) => (
+            <Tab key={i} label={!isMobile ? tabLabels[i] : label} icon={icon} iconPosition="start" sx={{
+              textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
+              color: tab === i ? AC : 'rgba(17,17,17,0.4)', '&.Mui-selected': { color: AC },
+            }} />
+          ))}
+        </Tabs>
+      </Box>
+
+      <Stepper data-tour="studio-flow" activeStep={activeStep} orientation="vertical" sx={STEPPER_SX}>
+
+        <Step>
+          <StepLabel>Step 1: {tab === 0 ? 'Upload Media' : 'Record Audio'}</StepLabel>
+          <StepContent>
+            <Paper data-tour="studio-input" elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'rgba(17,17,17,0.6)', mb: 2, fontWeight: 600 }}>
+                Provide the {tab === 0 ? 'audio or video file' : 'recording'} you want to transcribe.
+              </Typography>
+              {renderInputStep()}
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={activeStep === 0} nextDisabled={!hasContent} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 2: Language & Output Format</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1.5 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#111111' }}>Output settings</Typography>
+                <UsageTip title="Language: the language spoken in your media — this drives accuracy. Format: JSON for apps, Plain Text to read, SRT/VTT for subtitles, Verbose JSON for word-level timestamps." />
+              </Stack>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+                    <Select value={sourceLang} label="Source Language" onChange={e => setSourceLang(e.target.value)} sx={SELECT_SX}>
+                      {LANGUAGES.map(l => <MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel sx={LABEL_SX}>Response Format</InputLabel>
+                    <Select value={responseFormat} label="Response Format" onChange={e => setResponseFormat(e.target.value)} sx={SELECT_SX}>
+                      {FORMAT_OPTIONS.map(f => (
+                        <MenuItem key={f.value} value={f.value}>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{f.label}</Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(17,17,17,0.5)' }}>{f.desc}</Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={false} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 3: Review & Transcribe</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack spacing={1.5} sx={{ p: 2, background: 'rgba(232,160,32,0.05)', borderRadius: '12px', border: `1px solid ${AC}30`, mb: 2 }}>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Mode:</strong> {tabLabels[tab]}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Language:</strong> {LANGUAGES.find(l => l.value === sourceLang)?.label || sourceLang}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Format:</strong> {FORMAT_OPTIONS.find(f => f.value === responseFormat)?.label}</Typography>
+                {tab === 0 && file && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>File:</strong> {file.name}</Typography>}
+                {tab === 1 && blob && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Recording:</strong> Ready</Typography>}
+              </Stack>
+              <Button
+                variant="contained" fullWidth startIcon={<AutoAwesome />}
+                onClick={handleSubmit}
+                disabled={loading || !hasContent || isLowBalance}
+                sx={{ background: G, py: 1.5, borderRadius: '12px', fontWeight: 900, boxShadow: '0 4px 20px rgba(232,160,32,0.25)' }}
+              >
+                {loading ? 'Processing…' : isLowBalance ? 'Insufficient Credits' : 'Start Transcription'}
+              </Button>
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={!docId} nextLabel="View Results" />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 4: View & Edit Transcript</StepLabel>
+          <StepContent>
+            {docId ? (
+              <Box sx={{ mb: 2, mt: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, px: 0.5 }}>
+                  <CheckCircleOutline sx={{ color: '#10b981', fontSize: 22 }} />
+                  <Typography sx={{ fontWeight: 800, color: '#111111', fontSize: '0.95rem' }}>
+                    Transcription complete — review and edit below
+                  </Typography>
+                </Stack>
+                <ViewAudioComponent
+                  audioId={docId}
+                  embedded
+                  onError={e => notify(getFriendlyErrorMessage(e), 'error')}
+                />
+                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                  <Button variant="outlined" onClick={handleBack} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Back</Button>
+                  <Button variant="outlined" onClick={() => setDrawerOpen(true)} sx={{ borderRadius: '12px', fontWeight: 800, px: 3, borderColor: `${AC}66`, color: AC }}>Open in panel</Button>
+                  <Button variant="outlined" onClick={handleReset} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Start Over</Button>
+                </Stack>
+              </Box>
+            ) : (
+              <Paper elevation={0} sx={{ p: 4, mb: 2, ...GLASS, mt: 1, textAlign: 'center' }}>
+                <Typography sx={{ color: 'rgba(17,17,17,0.4)', mb: 3 }}>Complete Step 3 to generate a transcript.</Typography>
+                <Stack direction="row" spacing={2} justifyContent="center">
+                  <Button variant="outlined" onClick={handleBack} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Back</Button>
+                  <Button variant="outlined" onClick={handleReset} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Start Over</Button>
+                </Stack>
+              </Paper>
+            )}
+          </StepContent>
+        </Step>
+
+      </Stepper>
 
       <Snackbar open={snack.open} autoHideDuration={5000} onClose={() => setSnack(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px', fontWeight: 600 }}>{snack.msg}</Alert>
+        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px' }}>{snack.msg}</Alert>
       </Snackbar>
 
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
-        {docId && <ViewAudioComponent audioId={docId} onError={e => { notify(e.message, 'error'); setDrawerOpen(false); }} />}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, borderLeft: '1px solid rgba(17,17,17,0.07)' } }}>
+        {docId && <ViewAudioComponent audioId={docId} onError={e => { notify(getFriendlyErrorMessage(e), 'error'); setDrawerOpen(false); }} />}
       </Drawer>
 
       <UpgradePromptModal open={upgradeModal.open} onClose={() => setUpgradeModal({ open: false, data: null })}

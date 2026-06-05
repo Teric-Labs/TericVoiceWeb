@@ -3,9 +3,12 @@
  * Maps API/network errors to user-friendly messages.
  */
 
+const AXIOS_NOISE = /^Request failed with status code \d+$/i;
+
 const API_ERROR_MESSAGES = {
   400: 'Invalid request. Please check your input and try again.',
   401: 'Your session has expired. Please log in again.',
+  402: 'Insufficient credits for this action. Please upgrade your plan to continue.',
   403: 'You have reached your usage limit. Please upgrade your plan to continue.',
   404: 'The requested resource was not found.',
   408: 'The request timed out. Please check your connection and try again.',
@@ -23,6 +26,26 @@ const NETWORK_MESSAGES = {
   'ECONNABORTED': 'Connection timed out. Please try again.',
 };
 
+function isTechnicalMessage(message) {
+  if (!message || typeof message !== 'string') return true;
+  const trimmed = message.trim();
+  if (AXIOS_NOISE.test(trimmed)) return true;
+  if (/^AxiosError/i.test(trimmed)) return true;
+  if (/^Network Error$/i.test(trimmed)) return true;
+  if (/^timeout of \d+ms exceeded$/i.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Dispatch a global snackbar notification (handled by GlobalSnackbar).
+ */
+export function notifyUser({ message, type = 'error', title }) {
+  if (!message) return;
+  window.dispatchEvent(new CustomEvent('app-notification', {
+    detail: { type, message, title },
+  }));
+}
+
 /**
  * Returns a user-friendly error message from any error object.
  * @param {Error|object} error
@@ -30,10 +53,18 @@ const NETWORK_MESSAGES = {
  * @returns {{ message: string, shouldUpgrade: boolean, isNetwork: boolean }}
  */
 export function parseError(error, fallback = 'Something went wrong. Please try again.') {
+  if (error?.friendlyMessage && !isTechnicalMessage(error.friendlyMessage)) {
+    return {
+      message: error.friendlyMessage,
+      shouldUpgrade: Boolean(error.shouldUpgrade),
+      isNetwork: Boolean(error.isNetwork),
+    };
+  }
+
   const status = error?.response?.status;
   const serverMsg = error?.response?.data?.message || error?.response?.data?.detail;
-  const isUpgrade = status === 403 ||
-    (serverMsg && (serverMsg.includes('limit') || serverMsg.includes('subscription')));
+  const isUpgrade = status === 402 || status === 403 ||
+    (serverMsg && (serverMsg.includes('limit') || serverMsg.includes('subscription') || serverMsg.includes('credit')));
 
   // Network errors
   if (!error.response) {
@@ -54,14 +85,34 @@ export function parseError(error, fallback = 'Something went wrong. Please try a
   }
 
   // Server-provided message (sanitised)
-  if (serverMsg && serverMsg.length < 200) {
+  if (serverMsg && typeof serverMsg === 'string' && serverMsg.length < 200 && !isTechnicalMessage(serverMsg)) {
     return { message: serverMsg, shouldUpgrade: isUpgrade, isNetwork: false };
   }
 
-  // Client-provided message
-  if (error?.message && error.message.length < 200 && !error.message.includes('Error:')) {
-    return { message: error.message, shouldUpgrade: false, isNetwork: false };
+  // Client-provided message (skip axios boilerplate)
+  if (
+    error?.message &&
+    error.message.length < 200 &&
+    !error.message.includes('Error:') &&
+    !isTechnicalMessage(error.message)
+  ) {
+    return { message: error.message, shouldUpgrade: isUpgrade, isNetwork: false };
   }
 
-  return { message: fallback, shouldUpgrade: false, isNetwork: false };
+  return { message: fallback, shouldUpgrade: isUpgrade, isNetwork: false };
+}
+
+/** Shorthand: friendly string only. */
+export function getFriendlyErrorMessage(error, fallback) {
+  return parseError(error, fallback).message;
+}
+
+/** Parse error, show snackbar, return friendly message. */
+export function notifyApiError(error, fallback) {
+  const parsed = parseError(error, fallback);
+  notifyUser({
+    type: parsed.shouldUpgrade ? 'warning' : 'error',
+    message: parsed.message,
+  });
+  return parsed.message;
 }

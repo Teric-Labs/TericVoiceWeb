@@ -17,7 +17,7 @@ const Footer = () => {
       sx={{
         borderTop: '1px solid #7B89AB',
         backgroundColor: 'primary.main',
-        color: 'white',
+        color: '#111111',
         mx: 'auto',
         padding: 3,
       }}
@@ -60,11 +60,11 @@ const Footer = () => {
           <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 2 }}>
             PAGES
           </Typography>
-          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: 'white', my: 0.5 }} >PRODUCTS</Link></Box>
-          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: 'white', my: 0.5 }} >SOLUTIONS</Link></Box>
-          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: 'white', my: 0.5 }} >BLOG</Link></Box>
-          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: 'white', my: 0.5 }} >SIGNIN</Link></Box>
-          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: 'white', my: 0.5 }} >SIGNUP</Link></Box>
+          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: '#111111', my: 0.5 }} >PRODUCTS</Link></Box>
+          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: '#111111', my: 0.5 }} >SOLUTIONS</Link></Box>
+          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: '#111111', my: 0.5 }} >BLOG</Link></Box>
+          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: '#111111', my: 0.5 }} >SIGNIN</Link></Box>
+          <Box sx={{ display: 'flex',alignItems: 'center',cursor: 'pointer', my: 1,}}><Link to="/projects" variant="body2" sx={{ color: '#111111', my: 0.5 }} >SIGNUP</Link></Box>
         </Grid>
 
         <Grid item xs={12} md={3}>
@@ -98,19 +98,16 @@ const Footer = () => {
           <Typography variant="body2" sx={{ my: 0.5 }}>
             Reach out to us for Consultancy
           </Typography>
-          <Box sx={{display:"flex", alignItems:"center", cursor:"pointer"}}>
-                <Phone/>
-                <Typography variant="body2" sx={{my:1}}> +256705451834 or +256702560814</Typography>
-            </Box>
+
 
             <Box sx={{display:"flex", alignItems:"center", cursor:"pointer"}}>
                 <Place/>
                 <Typography variant="body2" sx={{my:1}}>Location: Makerere University, Kampala, Uganda</Typography>
             </Box>
 
-            <Box sx={{display:"flex", alignItems:"center", cursor:"pointer"}}>
+            <Box sx={{display:"flex", alignItems:"center", cursor:"pointer"}} onClick={() => window.open('mailto:phosaico@gmail.com')}>
                 <Email/>
-                <Typography variant="body2" sx={{my:1}}>tobiusaolo21@gmail.com</Typography>
+                <Typography variant="body2" sx={{my:1}}>phosaico@gmail.com</Typography>
             </Box>
         </Grid>
       </Grid>

@@ -10,7 +10,7 @@ const AudioPlayerComponent = ({ audioSrc, onTimeUpdate }) => {
   const styles = {
     audioPlayer: {
       borderRadius: "12px",
-      backgroundColor: "rgba(25, 118, 210, 0.04)",
+      backgroundColor: "rgba(232, 160, 32, 0.04)",
       "& .rhap_main-controls-button": {
         color: theme.palette.primary.main,
       },

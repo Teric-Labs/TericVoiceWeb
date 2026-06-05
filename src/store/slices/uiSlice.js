@@ -2,12 +2,12 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   theme: {
-    mode: 'dark',
-    primaryColor: '#8b5cf6',
-    secondaryColor: '#a855f7',
-    backgroundColor: '#09090b',
-    textColor: '#f8fafc',
-    surfaceColor: '#18181b',
+    mode: 'light',
+    primaryColor: '#E8A020',
+    secondaryColor: '#C47F10',
+    backgroundColor: '#ffffff',
+    textColor: '#111111',
+    surfaceColor: '#F8F6F0',
   },
   sidebar: {
     open: false,

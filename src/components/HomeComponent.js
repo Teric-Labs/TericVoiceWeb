@@ -25,13 +25,13 @@ const TABS = [
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   minHeight: 48,
-  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  borderBottom: '1px solid rgba(232, 160, 32, 0.15)',
   '& .MuiTabs-indicator': {
-    height: 1,
+    height: 2,
     borderRadius: 0,
-    background: '#ffffff',
+    background: '#E8A020',
   },
-  '& .MuiTabs-scrollButtons': { color: 'rgba(255,255,255,0.4)' },
+  '& .MuiTabs-scrollButtons': { color: 'rgba(17, 17, 17, 0.4)' },
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -39,18 +39,18 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
   fontWeight: 600,
   fontSize: '0.85rem',
-  color: 'rgba(255,255,255,0.45)',
+  color: 'rgba(17, 17, 17, 0.5)',
   gap: 6,
   minWidth: 'auto',
   px: 2,
   letterSpacing: '0.01em',
   transition: 'color 0.2s ease',
   '&.Mui-selected': {
-    color: '#ffffff',
+    color: '#111111',
     fontWeight: 600,
   },
   '& .MuiTab-iconWrapper': { marginBottom: 0 },
-  '&:hover': { color: 'rgba(255,255,255,0.75)' },
+  '&:hover': { color: 'rgba(17, 17, 17, 0.8)' },
 }));
 
 export default function HomeComponent() {
@@ -60,11 +60,11 @@ export default function HomeComponent() {
   return (
     <Box sx={{ width: '100%' }}>
       <Box sx={{
-        background: '#09090b',
+        background: 'transparent',
         borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid rgba(17, 17, 17, 0.08)',
         overflow: 'hidden',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        boxShadow: '0 8px 32px rgba(17, 17, 17, 0.04)',
       }}>
         {/* Tab bar */}
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 0, background: 'transparent' }}>

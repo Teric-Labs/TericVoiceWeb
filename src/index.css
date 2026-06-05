@@ -1,17 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-primary: #0a0a0f;           /* Deep Slate - Minimalist Base */
-  --bg-secondary: #0f172a;         /* Navy Slate - Secondary Layers */
-  --text-primary: #f8fafc;         /* Pure Slate White */
-  --text-secondary: #94a3b8;       /* Subtle Muted Slate */
-  --accent-primary: #0ea5e9;       /* Cerulean Blue - Action Color */
-  --accent-secondary: #8b5cf6;     /* Royal Purple - High Fidelity Accent */
-  --accent-glow: rgba(14, 165, 233, 0.4);
-  
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  /* ── Brand Palette (from PHOSAI logo) ────────────────────────────────── */
+  --gold:          #E8A020;   /* Sun-ray amber – primary accent             */
+  --gold-light:    #F5B844;   /* Lighter gold for hover highlights           */
+  --gold-dark:     #C47F10;   /* Deeper gold for pressed / darker states     */
+  --gold-glow:     rgba(232, 160, 32, 0.35);
+
+  --black:         #111111;   /* Africa silhouette – primary dark surface    */
+  --black-mid:     #1A1A1A;   /* Slightly lighter dark surface               */
+  --black-soft:    #222222;   /* Cards / panels on dark bg                   */
+
+  --offwhite:      #F8F6F0;   /* Logo background – primary light surface     */
+  --offwhite-mid:  #F0EDE5;   /* Secondary light surface                     */
+  --offwhite-dark: #E0D9CC;   /* Borders / dividers on light bg              */
+
+  /* ── Semantic aliases ────────────────────────────────────────────────── */
+  --bg-primary:    #ffffff;
+  --bg-secondary:  var(--offwhite);
+  --text-primary:  var(--black);
+  --text-secondary: rgba(17,17,17,0.6);
+  --accent-primary: var(--gold);
+  --accent-secondary: var(--gold-dark);
+  --accent-glow:   var(--gold-glow);
+
+  --glass-bg:      rgba(248,246,240,0.6);
+  --glass-border:  rgba(232,160,32,0.18);
+  --glass-shadow:  0 8px 32px 0 rgba(0,0,0,0.08);
 }
 
 body {
@@ -19,20 +34,29 @@ body {
   font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-primary);
+  background-color: #FAFAF8;
   color: var(--text-primary);
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.08), transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08), transparent 40%);
-  background-attachment: fixed;
+  background-image: none;
   min-height: 100vh;
+}
+
+/* Subtle dot grid for marketing hero sections (ElevenLabs-style) */
+.marketing-dot-grid {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 85%);
+}
+
+.public-page {
+  background-color: #FAFAF8;
 }
 
 code {
   font-family: 'Fira Code', 'Cascadia Code', monospace;
 }
 
-/* Elite Glassmorphism Utilities */
+/* ── Glassmorphism Utilities ─────────────────────────────────────────── */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
@@ -44,32 +68,32 @@ code {
 }
 
 .glass-panel:hover {
-  border-color: rgba(14, 165, 233, 0.2);
+  border-color: rgba(232,160,32,0.35);
   transform: translateY(-2px);
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .btn-premium {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: #fff;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--black);
   font-weight: 800;
   border-radius: 50px;
-  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 25px var(--gold-glow);
   transition: all 0.3s ease;
 }
 
 .btn-premium:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 12px 35px rgba(232,160,32,0.55);
 }
 
-/* Suppress Webpack Dev Server Error Overlay (Nuclear Option) */
+/* ── Suppress Webpack Dev Server Error Overlay ───────────────────────── */
 #webpack-dev-server-client-overlay,
 #webpack-dev-server-client-overlay-div,
 [id^='webpack-dev-server-client-overlay'] {

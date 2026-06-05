@@ -78,7 +78,7 @@ const rotate = keyframes`
 `;
 
 // Floating background elements
-const FloatingElement = ({ size, position, delay, color = '#0ea5e9' }) => (
+const FloatingElement = ({ size, position, delay, color = '#f59e0b' }) => (
   <Box
     sx={{
       position: 'absolute',
@@ -409,146 +409,24 @@ const categorizedEndpoints = {
   ],
 };
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#0ea5e9',
-      light: '#38bdf8',
-      dark: '#0284c7',
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: '#8b5cf6',
-      light: '#a78bfa',
-      dark: '#6d28d9',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#09090b',
-      paper: 'rgba(15, 23, 42, 0.4)',
-    },
-    text: {
-      primary: '#f8fafc',
-      secondary: '#94a3b8',
-    },
-  },
-  typography: {
-    fontFamily: '"General Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 700,
-      color: '#0ea5e9',
-    },
-    h5: {
-      fontWeight: 600,
-      color: '#0ea5e9',
-    },
-    h6: {
-      fontWeight: 600,
-      color: '#0ea5e9',
-    },
-  },
-  shape: {
-    borderRadius: 16,
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          width: 320,
-          padding: '24px',
-          backgroundColor: 'rgba(9, 9, 11, 0.8)',
-          backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-        },
-      },
-    },
-    MuiAccordion: {
-      styleOverrides: {
-        root: {
-          '&:before': {
-            display: 'none',
-          },
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(8px)',
-          boxShadow: 'none',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          marginBottom: '12px',
-          '&:hover': {
-            borderColor: 'rgba(14, 165, 233, 0.4)',
-            boxShadow: '0 0 16px rgba(14, 165, 233, 0.1)',
-            transition: 'all 0.3s ease-in-out',
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '8px',
-          backgroundColor: 'rgba(14, 165, 233, 0.15)',
-          color: '#38bdf8',
-          fontWeight: 600,
-          border: '1px solid rgba(14, 165, 233, 0.3)',
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 600,
-          borderRadius: '12px',
-          boxShadow: '0 4px 14px 0 rgba(14, 165, 233, 0.3)',
-          '&:hover': {
-            boxShadow: '0 6px 20px rgba(14, 165, 233, 0.4)',
-            transform: 'translateY(-1px)',
-          },
-          transition: 'all 0.2s',
-        },
-        contained: {
-          background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #0284c7, #7c3aed)',
-          },
-        },
-      },
-    },
-  },
-});
-
-const ParameterCard = ({ name, details, theme }) => (
+const ParameterCard = ({ name, details }) => (
   <Card 
     variant="outlined" 
     sx={{ 
       mb: 2,
       position: 'relative',
       '&:hover': {
-        borderColor: '#0ea5e9',
-        backgroundColor: alpha('#0ea5e9', 0.02),
+        borderColor: '#f59e0b',
+        backgroundColor: alpha('#f59e0b', 0.02),
       },
       transition: 'all 0.2s ease-in-out',
       borderRadius: '12px',
-      border: '1px solid rgba(14, 165, 233, 0.1)',
+      border: '1px solid rgba(245, 158, 11, 0.1)',
     }}
   >
     <CardContent>
       <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-        <Typography variant="subtitle1" fontWeight="bold" color="#0ea5e9">
+        <Typography variant="subtitle1" fontWeight="bold" color="#f59e0b">
           {name}
         </Typography>
         <Chip
@@ -557,8 +435,8 @@ const ParameterCard = ({ name, details, theme }) => (
           size="small"
           sx={{ 
             fontWeight: 500,
-            backgroundColor: details.required ? alpha('#0ea5e9', 0.1) : alpha('#666666', 0.1),
-            color: details.required ? '#0ea5e9' : '#666666',
+            backgroundColor: details.required ? alpha('#f59e0b', 0.1) : alpha('#666666', 0.1),
+            color: details.required ? '#f59e0b' : '#666666',
           }}
         />
         <Chip
@@ -566,8 +444,8 @@ const ParameterCard = ({ name, details, theme }) => (
           variant="outlined"
           size="small"
           sx={{ 
-            borderColor: '#0ea5e9',
-            color: '#0ea5e9',
+            borderColor: '#f59e0b',
+            color: '#f59e0b',
           }}
         />
       </Stack>
@@ -832,10 +710,10 @@ const CodeBlock = ({ code, language }) => {
             position: 'absolute',
             right: 8,
             top: 8,
-            color: 'white',
-            backgroundColor: 'rgba(14, 165, 233, 0.8)',
+            color: '#111111',
+            backgroundColor: 'rgba(245, 158, 11, 0.8)',
             '&:hover': {
-              backgroundColor: '#0ea5e9',
+              backgroundColor: '#f59e0b',
             },
           }}
         >
@@ -877,7 +755,7 @@ const Documentation = () => {
 
   const NavigationContent = () => (
     <Box sx={{ height: '100%', overflowY: 'auto' }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#f59e0b' }}>
         API Services
       </Typography>
       <List sx={{ py: 0 }}>
@@ -885,9 +763,9 @@ const Documentation = () => {
           <React.Fragment key={category}>
             <ListSubheader
               sx={{
-                bgcolor: 'rgba(14, 165, 233, 0.05)',
+                bgcolor: 'rgba(245, 158, 11, 0.05)',
                 fontWeight: 'bold',
-                color: '#0ea5e9',
+                color: '#f59e0b',
                 borderRadius: '8px',
                 mb: 1,
               }}
@@ -904,11 +782,11 @@ const Documentation = () => {
                   borderRadius: 1,
                   mb: 0.5,
                   '&.Mui-selected': {
-                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                    color: '#0ea5e9',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    color: '#f59e0b',
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                    backgroundColor: 'rgba(245, 158, 11, 0.05)',
                   },
                 }}
               >
@@ -926,7 +804,7 @@ const Documentation = () => {
                 />
               </ListItem>
             ))}
-            <Divider sx={{ my: 2, borderColor: 'rgba(14, 165, 233, 0.1)' }} />
+            <Divider sx={{ my: 2, borderColor: 'rgba(245, 158, 11, 0.1)' }} />
           </React.Fragment>
         ))}
       </List>
@@ -934,19 +812,18 @@ const Documentation = () => {
   );
 
   return (
-    <ThemeProvider theme={theme}>
       <Box sx={{ 
         display: 'flex', 
         minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)',
+        background: 'transparent',
         position: 'relative',
         overflow: 'hidden',
       }}>
         {/* Floating background elements */}
         <FloatingElement size="120px" position={{ top: '10%', left: '5%' }} delay="0s" />
-        <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#8b5cf6" />
+        <FloatingElement size="80px" position={{ top: '60%', left: '10%' }} delay="1s" color="#d97706" />
         <FloatingElement size="100px" position={{ top: '20%', right: '15%' }} delay="0.5s" />
-        <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#38bdf8" />
+        <FloatingElement size="60px" position={{ bottom: '30%', right: '5%' }} delay="1.5s" color="#fbbf24" />
         <FloatingElement size="140px" position={{ bottom: '10%', left: '20%' }} delay="2s" />
         
         {/* Main gradient overlay */}
@@ -957,7 +834,7 @@ const Documentation = () => {
             left: 0,
             right: 0,
             height: '100%',
-            background: 'radial-gradient(ellipse at center, rgba(14, 165, 233, 0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at center, rgba(245, 158, 11, 0.1) 0%, transparent 70%)',
             zIndex: 1,
           }}
         />
@@ -965,16 +842,15 @@ const Documentation = () => {
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, position: 'relative', zIndex: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} lg={9}>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', background: 'rgba(17, 17, 17, 0.95)', backdropFilter: 'blur(10px)' }}>
                 <Box sx={{mb:5, p:4}}>
                   <Box sx={{mb:4}}>
                     <Typography 
                       variant="h4" 
                       sx={{ 
                         fontWeight: 700, 
-                        color: '#0ea5e9', 
                         mb: 2,
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #0ea5e9 50%, #0d47a1 100%)',
+                        background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #b45309 100%)',
                         backgroundSize: '200% 200%',
                         WebkitBackgroundClip: 'text',
                         backgroundClip: 'text',
@@ -985,7 +861,7 @@ const Documentation = () => {
                         transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
                       }}
                     >
-                      A-Voices API Documentation
+                      Avoices API Documentation
                     </Typography>
                     <Typography 
                       sx={{ 
@@ -1002,7 +878,7 @@ const Documentation = () => {
                     </Typography>
                     
                     <Stack sx={{ mb: 6 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#0ea5e9', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#f59e0b', mb: 2 }}>
                         Core Features
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -1011,8 +887,8 @@ const Documentation = () => {
                             key={feature}
                             label={feature} 
                             sx={{ 
-                              backgroundColor: 'rgba(14, 165, 233, 0.1)', 
-                              color: '#0ea5e9',
+                              backgroundColor: 'rgba(245, 158, 11, 0.1)', 
+                              color: '#f59e0b',
                               animation: `${slideUp} 0.6s ease-out forwards`,
                               animationDelay: `${index * 0.1}s`,
                               opacity: 0,
@@ -1026,23 +902,23 @@ const Documentation = () => {
                 
                 {Object.entries(categorizedEndpoints).map(([category, endpoints]) => (
                   <Box key={category} sx={{ mb: 4 }}>
-                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
+                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#f59e0b' }}>
                       {category}
                     </Typography>
                     <List sx={{ py: 0 }}>
                       {endpoints.map((endpoint, index) => (
                         <Accordion
-                          key={index}
-                          id={endpoint.path.replace(/\//g, '_')}
-                          sx={{ mb: 2, borderRadius: '12px !important' }}
+                           key={index}
+                           id={endpoint.path.replace(/\//g, '_')}
+                           sx={{ mb: 2, borderRadius: '12px !important' }}
                         >
                           <AccordionSummary 
-                            expandIcon={<ExpandMoreIcon sx={{ color: '#0ea5e9' }} />}
+                            expandIcon={<ExpandMoreIcon sx={{ color: '#f59e0b' }} />}
                             sx={{
-                              backgroundColor: 'rgba(14, 165, 233, 0.02)',
+                              backgroundColor: 'rgba(245, 158, 11, 0.02)',
                               borderRadius: '12px',
                               '&:hover': {
-                                backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.05)',
                               },
                             }}
                           >
@@ -1051,9 +927,9 @@ const Documentation = () => {
                                 label={endpoint.method}
                                 color="primary"
                                 size="small"
-                                sx={{ mr: 2, fontWeight: 'bold', backgroundColor: '#0ea5e9' }}
+                                sx={{ mr: 2, fontWeight: 'bold', backgroundColor: '#f59e0b' }}
                               />
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#0ea5e9' }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#f59e0b' }}>
                                 {endpoint.path}
                               </Typography>
                             </Box>
@@ -1063,15 +939,15 @@ const Documentation = () => {
                               {endpoint.description}
                             </Typography>
                             
-                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold', color: '#0ea5e9' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 2, fontWeight: 'bold', color: '#f59e0b' }}>
                               Parameters
                             </Typography>
                             <ParametersSection parameters={endpoint.parameters} />
 
-                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold', color: '#0ea5e9' }}>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold', color: '#f59e0b' }}>
                               Code Examples
                             </Typography>
-                            <Box sx={{ borderBottom: 1, borderColor: 'rgba(14, 165, 233, 0.1)', mb: 2 }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'rgba(245, 158, 11, 0.1)', mb: 2 }}>
                               <Tabs 
                                 value={selectedTab}
                                 onChange={handleTabChange}
@@ -1082,11 +958,11 @@ const Documentation = () => {
                                     color: '#666666',
                                     fontWeight: 600,
                                     '&.Mui-selected': {
-                                      color: '#0ea5e9',
+                                      color: '#f59e0b',
                                     },
                                   },
                                   '& .MuiTabs-indicator': {
-                                    backgroundColor: '#0ea5e9',
+                                    backgroundColor: '#f59e0b',
                                   },
                                 }}
                               >
@@ -1129,9 +1005,9 @@ const Documentation = () => {
                     borderRadius: '16px',
                     maxHeight: 'calc(100vh - 32px)',
                     overflowY: 'auto',
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: 'rgba(17, 17, 17, 0.95)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(14, 165, 233, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.1)',
                   }}
                 >
                   <NavigationContent />
@@ -1151,9 +1027,9 @@ const Documentation = () => {
                   position: 'fixed',
                   bottom: 16,
                   right: 16,
-                  backgroundColor: '#0ea5e9',
+                  backgroundColor: '#f59e0b',
                   '&:hover': {
-                    backgroundColor: '#0284c7',
+                    backgroundColor: '#d97706',
                   },
                 }}
               >
@@ -1170,7 +1046,6 @@ const Documentation = () => {
           )}
         </Container>
       </Box>
-    </ThemeProvider>
   );
 };
 

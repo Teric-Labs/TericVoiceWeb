@@ -4,11 +4,12 @@
  */
 
 import axios from 'axios';
+import { parseError, notifyUser } from '../utils/errors';
 
 // Base configuration
-export const BASE_URL = 'https://phosai-backend-api-fq4x.onrender.com';
-const REQUEST_TIMEOUT = 60000; // 60 seconds for long operations
-const LONG_REQUEST_TIMEOUT = 300000; // 5 minutes for document processing operations
+export const BASE_URL = (process.env.REACT_APP_API_URL || 'https://phosai-backend-api-fq4x.onrender.com').replace(/\/$/, '');
+const REQUEST_TIMEOUT = 0; // Disabled timeouts for sync operations
+const LONG_REQUEST_TIMEOUT = 0; // Disabled timeouts for long operations
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -27,6 +28,10 @@ apiClient.interceptors.request.use(
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user.uid || user.userId;
     if (userId) {
+      config.headers = config.headers || {};
+      if (!config.headers['user-id']) {
+        config.headers['user-id'] = userId;
+      }
       if (config.data instanceof FormData) {
         // Only inject if not already set by the calling function
         if (!config.data.has('user_id')) {
@@ -43,21 +48,42 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+function enrichAxiosError(error) {
+  const parsed = parseError(error);
+  error.friendlyMessage = parsed.message;
+  error.shouldUpgrade = parsed.shouldUpgrade;
+  error.isNetwork = parsed.isNetwork;
+  return error;
+}
+
 // Response interceptor for error handling and subscription checks
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 403) {
-      // Handle subscription limit exceeded
-      const message = error.response.data?.message || 'Usage limit exceeded';
-      if (message.includes('Usage limit exceeded') || message.includes('subscription')) {
-        // Trigger upgrade prompt
-        window.dispatchEvent(new CustomEvent('subscription-limit-exceeded', {
-          detail: { message, endpoint: error.config?.url }
-        }));
-      }
+  (error) => {
+    if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
+      notifyUser({
+        type: 'error',
+        message: 'Processing is taking longer than expected and timed out. Please try again.',
+      });
+      return Promise.reject(enrichAxiosError(error));
     }
-    return Promise.reject(error);
+
+    const enriched = enrichAxiosError(error);
+
+    if (error.response?.status === 402 || error.response?.status === 403) {
+      notifyUser({
+        type: 'warning',
+        message: enriched.friendlyMessage,
+      });
+      window.dispatchEvent(new CustomEvent('subscription-limit-exceeded', {
+        detail: {
+          message: enriched.friendlyMessage,
+          status: error.response.status,
+          endpoint: error.config?.url,
+        },
+      }));
+    }
+    return Promise.reject(enriched);
   }
 );
 
@@ -195,6 +221,32 @@ export const subscriptionAPI = {
   syncFirebaseUsers: async () => {
     const response = await apiClient.post('/api/sync-firebase-users');
     return response.data;
+  },
+
+  // --- NEW CREDIT SYSTEM APIs ---
+
+  // Get current credit balance
+  getBalance: async (userId) => {
+    const response = await apiClient.get(`/api/credits/balance/${userId}`);
+    return response.data;
+  },
+
+  // Get credit ledger (transaction history) with optional pagination
+  getLedger: async (userId, page = 1, limit = 20) => {
+    const response = await apiClient.get(`/api/credits/ledger/${userId}?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  // Get credit consumption analytics
+  getAnalytics: async (userId) => {
+    const response = await apiClient.get(`/api/credits/analytics/${userId}`);
+    return response.data;
+  },
+
+  // Estimate cost for a service before execution
+  estimateCost: async (service, quantity) => {
+    const response = await apiClient.post('/api/credits/estimate', { service, quantity });
+    return response.data;
   }
 };
 
@@ -240,7 +292,17 @@ export const transcriptionAPI = {
   getAudio: async (docId) => {
     const response = await apiClient.post('/get_audio', { doc_id: docId });
     return response.data;
-  }
+  },
+
+  // Save edited transcript text
+  updateTranscript: async (docId, userId, transcript) => {
+    const response = await apiClient.post('/update_transcript/', {
+      doc_id: docId,
+      user_id: userId,
+      transcript,
+    });
+    return response.data;
+  },
 };
 
 /**
@@ -262,9 +324,9 @@ export const videoAPI = {
     return response.data;
   },
 
-  // Get video
+  // Get video by doc_id (uses /get_audio_data which queries video_store by doc_id)
   getVideo: async (docId) => {
-    const response = await apiClient.post('/get_video', { doc_id: docId });
+    const response = await apiClient.post('/get_audio_data', { doc_id: docId });
     return response.data;
   },
 
@@ -281,7 +343,84 @@ export const videoAPI = {
       timeout: LONG_REQUEST_TIMEOUT
     });
     return response.data;
-  }
+  },
+
+  // Finalize dubbing: re-upload video + synthesised segment payload → server muxes with ffmpeg
+  finalizeDubbing: async (docId, segments, userId, videoFile, options = {}) => {
+    const {
+      videoDurationMins = 1.0,
+      originalVolume = 0.0,
+      burnSubtitles = false,
+      trimStartMs = 0,
+      trimEndMs = 0,
+      background = false,
+    } = options;
+
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('doc_id', docId);
+    formData.append('segments_json', JSON.stringify(segments));
+    formData.append('video_duration_mins', String(videoDurationMins));
+    formData.append('original_volume', String(originalVolume));
+    formData.append('burn_subtitles', String(burnSubtitles));
+    formData.append('trim_start_ms', String(trimStartMs));
+    formData.append('trim_end_ms', String(trimEndMs));
+    formData.append('background', String(background));
+    formData.append('video_file', videoFile);
+
+    const response = await apiClient.post('/finalize_dubbing/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
+    return response.data;
+  },
+
+  // Finalize image slideshow: ordered images + segment scripts → server synthesises audio & compiles 1080p MP4
+  finalizeImageSlideshow: async (segments, userId, imageFiles, options = {}) => {
+    const { bgmTrack = null } = options;
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('segments_json', JSON.stringify(segments));
+    if (bgmTrack) formData.append('bgm_track', bgmTrack);
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+    const response = await apiClient.post('/finalize_image_slideshow/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT
+    });
+    return response.data;
+  },
+
+  getBgmTracks: async () => {
+    const response = await apiClient.get('/api/bgm-tracks');
+    return response.data;
+  },
+
+  getJobStatus: async (jobId) => {
+    const response = await apiClient.get(`/api/jobs/${jobId}`);
+    return response.data;
+  },
+
+  // Mux rendered narration onto uploaded video (replaces original audio)
+  finalizeNarrationVideo: async (docId, userId, videoFile, options = {}) => {
+    const { bgmTrack = null } = options;
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('doc_id', docId);
+    formData.append('video_file', videoFile);
+    if (bgmTrack) formData.append('bgm_track', bgmTrack);
+    const response = await apiClient.post('/finalize_narration_video/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: LONG_REQUEST_TIMEOUT,
+    });
+    return response.data;
+  },
+
+  listUserJobs: async (userId, limit = 50) => {
+    const response = await apiClient.get(`/api/jobs/user/${userId}`, { params: { limit } });
+    return response.data;
+  },
 };
 
 /**
@@ -498,6 +637,25 @@ export const ttsAPI = {
   getDocumentVoices: async (userId) => {
     const response = await apiClient.post('/get_document_voices', { user_id: userId });
     return response.data;
+  },
+
+  // Batch render professional voiceover narration from script blocks
+  renderVoiceover: async (blocks, userId, title = 'Untitled Narration', bgmTrack = null) => {
+    // blocks: [{ text, speaker_id, language, pitch, rate }]
+    const body = {
+      user_id: userId,
+      blocks: blocks.map((b) => ({
+        text: b.text,
+        speaker_id: b.speaker_id || b.voice,
+        language: b.language || 'en',
+        pitch: typeof b.pitch === 'number' ? b.pitch : 0,
+        rate: typeof b.rate === 'number' ? b.rate : 1.0,
+      })),
+      title: title,
+    };
+    if (bgmTrack) body.bgm_track = bgmTrack;
+    const response = await apiClient.post('/render_voiceover/', body, { timeout: LONG_REQUEST_TIMEOUT });
+    return response.data;
   }
 };
 
@@ -624,6 +782,30 @@ export const dataAPI = {
   // Get all videos for user
   getVideos: async (userId) => {
     const response = await apiClient.post('/get_video', { user_id: userId });
+    return response.data;
+  },
+
+  // Get all dubbed videos for user
+  getDubbedVideos: async (userId) => {
+    const response = await apiClient.post('/get_dubbed_videos', { user_id: userId });
+    return response.data;
+  },
+
+  // Get a single dubbing project by doc id
+  getDubbedVideo: async (docId) => {
+    const response = await apiClient.get(`/get_dubbed_video/${docId}`);
+    return response.data;
+  },
+
+  // Get all voiceover renders for user
+  getVoiceovers: async (userId) => {
+    const response = await apiClient.post('/get_voiceovers', { user_id: userId });
+    return response.data;
+  },
+
+  // Get a single voiceover project by doc id
+  getVoiceover: async (docId) => {
+    const response = await apiClient.get(`/get_voiceover/${docId}`);
     return response.data;
   },
 
@@ -996,25 +1178,27 @@ export const getCurrentUser = () => {
   }
 };
 
-// Handle API errors with subscription awareness
+// Handle API errors with subscription awareness (never expose raw status codes)
 export const handleAPIError = (error, endpoint) => {
-  if (error.response?.status === 403) {
-    const message = error.response.data?.message || 'Usage limit exceeded';
+  const parsed = parseError(error);
+  if (parsed.shouldUpgrade) {
     return {
       type: 'subscription_limit',
-      message,
+      message: parsed.message,
       endpoint,
-      shouldUpgrade: true
+      shouldUpgrade: true,
     };
   }
 
   return {
     type: 'general_error',
-    message: error.message || 'An error occurred',
+    message: parsed.message,
     endpoint,
-    shouldUpgrade: false
+    shouldUpgrade: false,
   };
 };
+
+export { getFriendlyErrorMessage, notifyApiError } from '../utils/errors';
 
 // Export all APIs as a single object
 const api = {

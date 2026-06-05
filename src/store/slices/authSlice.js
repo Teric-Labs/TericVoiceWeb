@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { BASE_URL } from '../../services/api';
 
 // Async thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://127.0.0.1:8000/login', credentials);
+      const response = await axios.post(`${BASE_URL}/login`, credentials);
       const userData = response.data[0];
       localStorage.setItem('user', JSON.stringify({
         username: userData.username,
@@ -23,7 +24,7 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://127.0.0.1:8000/register', userData);
+      const response = await axios.post(`${BASE_URL}/register`, userData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');

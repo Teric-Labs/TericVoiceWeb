@@ -13,7 +13,6 @@ import {
   Chip,
   IconButton,
   Fade,
-  LinearProgress,
   List,
   ListItem,
   ListItemIcon,
@@ -37,8 +36,19 @@ import {
   FlashOn as FlashIcon,
 } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
-import { subscriptionAPI } from '../services/api';
+import { PLANS } from '../constants/plans';
+import { AvoicesProgress } from './progress';
 import PaymentModal from './PaymentModal';
+
+const toDisplayTier = (plan) => ({
+  ...plan,
+  price: plan.monthlyRaw ?? 0,
+  feature_descriptions: (plan.features || [])
+    .filter((f) => f.included)
+    .map((f) => f.label),
+});
+
+const PAID_PLANS = PLANS.filter((p) => p.id !== 'free_trial').map(toDisplayTier);
 
 // Enhanced animations
 const shimmer = keyframes`
@@ -57,8 +67,8 @@ const float = keyframes`
 `;
 
 const glow = keyframes`
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
 `;
 
 // Styled components
@@ -67,7 +77,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     borderRadius: '24px',
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-    border: '1px solid rgba(14, 165, 233, 0.1)',
+    border: '1px solid rgba(245, 158, 11, 0.1)',
     maxWidth: '900px',
     width: '90vw',
     maxHeight: '90vh',
@@ -76,8 +86,8 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 }));
 
 const GradientCard = styled(Card)(({ theme }) => ({
-  background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-  color: 'white',
+  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  color: '#111111',
   borderRadius: '20px',
   position: 'relative',
   overflow: 'hidden',
@@ -88,7 +98,7 @@ const GradientCard = styled(Card)(({ theme }) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)',
+    background: 'linear-gradient(45deg, transparent 30%, rgba(17, 17, 17, 0.1) 50%, transparent 70%)',
     backgroundSize: '200% 200%',
     animation: `${shimmer} 3s ease-in-out infinite`,
   },
@@ -96,12 +106,12 @@ const GradientCard = styled(Card)(({ theme }) => ({
 
 const FeatureCard = styled(Card)(({ theme }) => ({
   borderRadius: '16px',
-  border: '1px solid rgba(139, 92, 246, 0.1)',
+  border: '1px solid rgba(245, 158, 11, 0.1)',
   transition: 'all 0.3s ease',
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: '0 12px 24px rgba(139, 92, 246, 0.15)',
-    border: '1px solid rgba(139, 92, 246, 0.3)',
+    boxShadow: '0 12px 24px rgba(245, 158, 11, 0.15)',
+    border: '1px solid rgba(245, 158, 11, 0.3)',
   },
 }));
 
@@ -111,12 +121,12 @@ const UpgradeButton = styled(Button)(({ theme }) => ({
   fontSize: '1.1rem',
   fontWeight: 700,
   textTransform: 'none',
-  background: 'linear-gradient(45deg, #a855f7, #8b5cf6)',
-  boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)',
+  background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+  boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)',
   animation: `${glow} 2s ease-in-out infinite`,
   '&:hover': {
-    background: 'linear-gradient(45deg, #9333ea, #7c3aed)',
-    boxShadow: '0 12px 24px rgba(139, 92, 246, 0.4)',
+    background: 'linear-gradient(45deg, #d97706, #b45309)',
+    boxShadow: '0 12px 24px rgba(245, 158, 11, 0.4)',
     transform: 'translateY(-2px)',
   },
 }));
@@ -133,9 +143,11 @@ const UpgradePromptModal = () => {
   const [endpoint, setEndpoint] = useState('');
   const [tier] = useState('free_trial');
 
-  const [pricingTiers, setPricingTiers] = useState([]);
+  const [pricingTiers, setPricingTiers] = useState(PAID_PLANS);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTier, setSelectedTier] = useState(null);
+  const [selectedTier, setSelectedTier] = useState(
+    PAID_PLANS.find((p) => p.popular) || PAID_PLANS[0] || null
+  );
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [successSnack, setSuccessSnack] = useState({ open: false, message: '' });
 
@@ -150,23 +162,24 @@ const UpgradePromptModal = () => {
     return () => window.removeEventListener('subscription-limit-exceeded', handleLimitExceeded);
   }, []);
 
-  const loadPricingTiers = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await subscriptionAPI.getPricingTiers();
-      const tiers = response.pricing_tiers || [];
-      setPricingTiers(tiers);
-      const currentTierIndex = tiers.findIndex(t => t.id === tier);
-      if (currentTierIndex >= 0 && currentTierIndex < tiers.length - 1) {
-        setSelectedTier(tiers[currentTierIndex + 1]);
-      } else {
-        setSelectedTier(tiers.find(t => t.popular) || tiers[1]);
-      }
-    } catch {
-      // keep empty list, user can retry
-    } finally {
-      setIsLoading(false);
+  const loadPricingTiers = useCallback(() => {
+    setIsLoading(true);
+    const allTiers = PLANS.map(toDisplayTier);
+    const paid = allTiers.filter((p) => p.id !== 'free_trial');
+    setPricingTiers(paid);
+
+    const currentTierIndex = allTiers.findIndex((t) => t.id === tier);
+    const nextTier =
+      currentTierIndex >= 0 && currentTierIndex < allTiers.length - 1
+        ? allTiers[currentTierIndex + 1]
+        : paid.find((p) => p.popular) || paid[0];
+
+    if (nextTier && nextTier.id !== 'free_trial') {
+      setSelectedTier(nextTier);
+    } else {
+      setSelectedTier(paid.find((p) => p.popular) || paid[0] || null);
     }
+    setIsLoading(false);
   }, [tier]);
 
   useEffect(() => {
@@ -175,14 +188,15 @@ const UpgradePromptModal = () => {
     }
   }, [open, loadPricingTiers]);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     if (!selectedTier) return;
-    
-    try {
-      // Open payment modal instead of direct upgrade
-      setShowPaymentModal(true);
-    } catch (error) {
+
+    if (selectedTier.monthly === 'Custom' || selectedTier.ctaPath?.startsWith('mailto:')) {
+      window.open(selectedTier.ctaPath || 'mailto:phosaico@gmail.com?subject=Enterprise%20Plus%20Inquiry', '_blank');
+      return;
     }
+
+    setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = (upgradedTier) => {
@@ -212,10 +226,10 @@ const UpgradePromptModal = () => {
   const getTierColor = (tierId) => {
     switch (tierId) {
       case 'free_trial': return '#9e9e9e';
-      case 'classic': return '#0ea5e9';
-      case 'classic_pro': return '#7b1fa2';
-      case 'enterprise_plus': return '#f57c00';
-      default: return '#0ea5e9';
+      case 'classic': return '#f59e0b';
+      case 'classic_pro': return '#d97706';
+      case 'enterprise_plus': return '#b45309';
+      default: return '#f59e0b';
     }
   };
 
@@ -235,7 +249,7 @@ const UpgradePromptModal = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <FloatingIcon>
                   <Avatar sx={{ 
-                    bgcolor: 'rgba(255,255,255,0.2)', 
+                    bgcolor: 'rgba(17, 17, 17, 0.2)', 
                     width: 56, 
                     height: 56,
                     animation: `${pulse} 2s ease-in-out infinite`
@@ -256,9 +270,9 @@ const UpgradePromptModal = () => {
                 onClick={onClose}
                 aria-label="Close upgrade modal"
                 sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+                  color: '#111111',
+                  bgcolor: 'rgba(17, 17, 17, 0.1)',
+                  '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.2)' }
                 }}
               >
                 <CloseIcon />
@@ -267,7 +281,7 @@ const UpgradePromptModal = () => {
             
             {/* Usage Status */}
             <Paper sx={{ 
-              bgcolor: 'rgba(255,255,255,0.1)', 
+              bgcolor: 'rgba(17, 17, 17, 0.1)', 
               p: 3, 
               borderRadius: '16px',
               backdropFilter: 'blur(10px)'
@@ -279,24 +293,13 @@ const UpgradePromptModal = () => {
                 <Chip 
                   label={`${currentUsage}/${limit}`} 
                   sx={{ 
-                    bgcolor: 'rgba(255,255,255,0.2)', 
-                    color: 'white',
+                    bgcolor: 'rgba(17, 17, 17, 0.2)', 
+                    color: '#111111',
                     fontWeight: 600
                   }} 
                 />
               </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={getUsagePercentage()} 
-                sx={{ 
-                  height: 8, 
-                  borderRadius: 4,
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: 'white'
-                  }
-                }} 
-              />
+              <AvoicesProgress variant="determinate" value={getUsagePercentage()} size="md" tone="quota" showValue />
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
                 {getUsagePercentage()}% of your monthly limit used
               </Typography>
@@ -312,16 +315,16 @@ const UpgradePromptModal = () => {
 
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <LinearProgress sx={{ width: '100%' }} />
+            <AvoicesProgress variant="indeterminate" size="sm" sx={{ width: '100%' }} />
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {pricingTiers.slice(1).map((tier) => (
+            {pricingTiers.map((tier) => (
               <Grid item xs={12} md={6} lg={3} key={tier.id}>
                 <FeatureCard
                   sx={{
                     cursor: 'pointer',
-                    border: selectedTier?.id === tier.id ? '2px solid #0ea5e9' : '1px solid rgba(14, 165, 233, 0.1)',
+                    border: selectedTier?.id === tier.id ? '2px solid #f59e0b' : '1px solid rgba(245, 158, 11, 0.1)',
                     transform: selectedTier?.id === tier.id ? 'scale(1.02)' : 'scale(1)',
                   }}
                   onClick={() => setSelectedTier(tier)}
@@ -380,7 +383,7 @@ const UpgradePromptModal = () => {
         )}
 
         {/* Benefits Section */}
-        <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(14, 165, 233, 0.05)', borderRadius: '16px' }}>
+        <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(245, 158, 11, 0.05)', borderRadius: '16px' }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
             🎯 Why Upgrade?
           </Typography>
@@ -448,12 +451,12 @@ const UpgradePromptModal = () => {
             )}
             <UpgradeButton
               onClick={handleUpgrade}
-              disabled={!selectedTier}
+              disabled={!selectedTier || isLoading}
               variant="contained"
               size="large"
               startIcon={<RocketIcon />}
             >
-              Upgrade Now
+              {selectedTier?.monthly === 'Custom' ? 'Contact Sales' : 'Upgrade Now'}
             </UpgradeButton>
           </Stack>
         </Box>

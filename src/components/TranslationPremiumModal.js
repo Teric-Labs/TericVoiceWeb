@@ -72,7 +72,7 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
         {/* Header */}
         <Box
           sx={{
-            background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+            background: 'linear-gradient(45deg, #f59e0b, #d97706)',
             p: 3,
             position: 'relative'
           }}
@@ -83,15 +83,15 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
               position: 'absolute',
               right: 8,
               top: 8,
-              color: 'white'
+              color: '#111111'
             }}
           >
             <Close />
           </IconButton>
-          <Typography variant="h5" sx={{ color: 'white', fontWeight: 600, mb: 1 }}>
+          <Typography variant="h5" sx={{ color: '#111111', fontWeight: 600, mb: 1 }}>
             Upgrade Your Translation Experience
           </Typography>
-          <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+          <Typography variant="body1" sx={{ color: 'rgba(17, 17, 17, 0.9)' }}>
             Access advanced translation tools and premium features
           </Typography>
         </Box>
@@ -121,8 +121,8 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
-                      color: 'white',
+                      background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+                      color: '#111111',
                       height: 'fit-content'
                     }}
                   >
@@ -170,9 +170,9 @@ const TranslationPremiumModal = ({ isOpen, onClose }) => {
               fontWeight: 600,
               borderRadius: 2,
               textTransform: 'none',
-              background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+              background: 'linear-gradient(45deg, #f59e0b, #d97706)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #0284c7, #38bdf8)'
+                background: 'linear-gradient(45deg, #d97706, #fbbf24)'
               }
             }}
           >

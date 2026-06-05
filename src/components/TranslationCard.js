@@ -16,17 +16,18 @@ import {
   translateText, translateDocument,
 } from '../store/slices/translationSlice';
 import DocumentTranslationDrawer from './DocumentTranslationDrawer';
+import { ActivityStrip } from './progress';
 
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+const G = 'linear-gradient(135deg, #f59e0b, #d97706)';
+const GLASS = { background: 'rgba(248, 246, 240, 0.65)', border: '1px solid rgba(232, 160, 32, 0.15)', borderRadius: '14px' };
 const SELECT_SX = {
-  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+  borderRadius: '12px', color: '#111111', fontSize: '0.9rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(17, 17, 17, 0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#f59e0b' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#f59e0b' },
+  '& .MuiSvgIcon-root': { color: 'rgba(17, 17, 17, 0.5)' },
 };
-const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
+const LABEL_SX = { color: 'rgba(17, 17, 17, 0.5)', '&.Mui-focused': { color: '#f59e0b' } };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_TEXT_LENGTH = 5000;
@@ -116,7 +117,7 @@ const TranslationCard = () => {
     <>
       <Box>
         {/* Tabs */}
-        <Box sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <Box sx={{ mb: 3, borderBottom: '1px solid rgba(17,17,17,0.08)' }}>
           <Tabs
             value={activeTab}
             onChange={(_, v) => dispatch(setActiveTab(v))}
@@ -124,7 +125,7 @@ const TranslationCard = () => {
           >
             {['Text Translation', 'Document Translation'].map((label, i) => (
               <Tab key={i} label={label}
-                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: activeTab === i ? '#0ea5e9' : 'rgba(255,255,255,0.4)', '&.Mui-selected': { color: '#0ea5e9' } }}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40, color: activeTab === i ? '#f59e0b' : 'rgba(17,17,17,0.4)', '&.Mui-selected': { color: '#f59e0b' } }}
               />
             ))}
           </Tabs>
@@ -136,12 +137,12 @@ const TranslationCard = () => {
             <FormControl fullWidth size="small">
               <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
               <Select value={sourceLanguage} label="Source Language" onChange={e => dispatch(setSourceLanguage(e.target.value))} sx={SELECT_SX}>
-                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#111111', '&:hover': { color: '#f59e0b' } }}>{l.label}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <IconButton onClick={handleSwapLanguages} sx={{ width: 36, height: 36, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9', '&:hover': { background: 'rgba(14,165,233,0.25)' } }}>
+            <IconButton onClick={handleSwapLanguages} sx={{ width: 36, height: 36, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', '&:hover': { background: 'rgba(245,158,11,0.25)' } }}>
               <SwapHoriz fontSize="small" />
             </IconButton>
           </Grid>
@@ -149,7 +150,7 @@ const TranslationCard = () => {
             <FormControl fullWidth size="small">
               <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
               <Select value={targetLanguage} label="Target Language" onChange={e => dispatch(setTargetLanguage(e.target.value))} sx={SELECT_SX}>
-                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#0ea5e9' } }}>{l.label}</MenuItem>)}
+                {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#111111', '&:hover': { color: '#f59e0b' } }}>{l.label}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
@@ -171,14 +172,14 @@ const TranslationCard = () => {
               sx={{
                 '& .MuiOutlinedInput-root': { 
                   borderRadius: '20px', 
-                  color: '#f8fafc', 
-                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  color: '#111111', 
+                  backgroundColor: 'rgba(17,17,17,0.02)',
                   fontSize: '1rem',
                   lineHeight: 1.6,
                   padding: '20px',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' }, 
-                  '&:hover fieldset': { borderColor: 'rgba(14, 165, 233, 0.4)' }, 
-                  '&.Mui-focused fieldset': { borderColor: '#0ea5e9', borderWidth: '2px' } 
+                  '& fieldset': { borderColor: 'rgba(17, 17, 17, 0.08)' }, 
+                  '&:hover fieldset': { borderColor: 'rgba(245, 158, 11, 0.4)' }, 
+                  '&.Mui-focused fieldset': { borderColor: '#f59e0b', borderWidth: '2px' } 
                 },
                 '& .MuiInputLabel-root': { ...LABEL_SX, transform: 'translate(20px, 20px) scale(1)', '&.Mui-input-shrink': { transform: 'translate(14px, -9px) scale(0.75)' } },
                 '& .MuiFormHelperText-root': { color: '#64748b', textAlign: 'right', fontWeight: 500 },
@@ -190,30 +191,30 @@ const TranslationCard = () => {
             <Box
               sx={{
                 border: '1.5px dashed',
-                borderColor: selectedFile ? '#0ea5e9' : 'rgba(255,255,255,0.12)',
+                borderColor: selectedFile ? '#f59e0b' : 'rgba(17,17,17,0.12)',
                 borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
-                background: selectedFile ? 'rgba(14,165,233,0.05)' : 'rgba(255,255,255,0.02)',
+                background: selectedFile ? 'rgba(245,158,11,0.05)' : 'rgba(17,17,17,0.02)',
                 transition: 'all 0.25s ease',
-                '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
+                '&:hover': { borderColor: '#f59e0b', background: 'rgba(245,158,11,0.04)' },
               }}
               onClick={() => document.getElementById('transl-file-input')?.click()}
             >
               {selectedFile ? (
                 <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
-                  <CheckCircle sx={{ color: '#0ea5e9', fontSize: 22 }} />
-                  <Box sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>{selectedFile.name}</Box>
+                  <CheckCircle sx={{ color: '#f59e0b', fontSize: 22 }} />
+                  <Box sx={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem' }}>{selectedFile.name}</Box>
                 </Stack>
               ) : (
                 <>
-                  <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <CloudUpload sx={{ fontSize: 26, color: '#0ea5e9' }} />
+                  <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                    <CloudUpload sx={{ fontSize: 26, color: '#f59e0b' }} />
                   </Box>
-                  <Box sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload document</Box>
+                  <Box sx={{ color: '#111111', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>Click to upload document</Box>
                   <Box sx={{ color: '#64748b', fontSize: '0.8rem' }}>PDF, DOC, DOCX, TXT · Max 10MB</Box>
                   <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
                     {SUPPORTED_FILE_TYPES.map(t => (
                       <Chip key={t.type} label={t.type} size="small"
-                        sx={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)', fontSize: '0.7rem' }} />
+                        sx={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)', fontSize: '0.7rem' }} />
                     ))}
                   </Stack>
                 </>
@@ -221,10 +222,10 @@ const TranslationCard = () => {
               <input id="transl-file-input" type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} style={{ display: 'none' }} />
             </Box>
             {translatedText && (
-              <Box sx={{ ...GLASS, p: 2.5, mt: 2, borderColor: 'rgba(14, 165, 233, 0.25)', background: 'rgba(14, 165, 233, 0.05)' }}>
+              <Box sx={{ ...GLASS, p: 2.5, mt: 2, borderColor: 'rgba(245, 158, 11, 0.25)', background: 'rgba(245, 158, 11, 0.05)' }}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircle sx={{ color: '#0ea5e9', fontSize: 18 }} />
-                  <Box sx={{ color: '#0ea5e9', fontWeight: 600, fontSize: '0.9rem' }}>Translation Completed Successfully</Box>
+                  <CheckCircle sx={{ color: '#f59e0b', fontSize: 18 }} />
+                  <Box sx={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem' }}>Translation Completed Successfully</Box>
                 </Stack>
                 <Box sx={{ color: '#64748b', fontSize: '0.8rem', mt: 0.5 }}>Results are displayed in the drawer on the right</Box>
               </Box>
@@ -238,7 +239,7 @@ const TranslationCard = () => {
           </Alert>
         )}
 
-        {loading && <LinearProgress sx={{ mb: 2.5, borderRadius: 4, height: 5, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />}
+        <ActivityStrip active={loading} />
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button
@@ -247,9 +248,9 @@ const TranslationCard = () => {
             startIcon={<Translate />}
             sx={{
               borderRadius: '50px', textTransform: 'none', fontWeight: 700, px: 4, py: 1.3,
-              background: G, boxShadow: '0 4px 20px rgba(14,165,233,0.2)',
-              '&:hover': { background: 'linear-gradient(135deg,#0284c7,#8b5cf6)', boxShadow: '0 6px 28px rgba(14,165,233,0.35)', transform: 'translateY(-1px)' },
-              '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', boxShadow: 'none' },
+              background: G, boxShadow: '0 4px 20px rgba(245,158,11,0.2)',
+              '&:hover': { background: 'linear-gradient(135deg,#fbbf24,#d97706)', boxShadow: '0 6px 28px rgba(245,158,11,0.35)', transform: 'translateY(-1px)' },
+              '&.Mui-disabled': { background: 'rgba(17, 17, 17, 0.08)', color: 'rgba(17,17,17,0.3)', boxShadow: 'none' },
             }}
           >
             {loading ? 'Translating…' : 'Translate'}

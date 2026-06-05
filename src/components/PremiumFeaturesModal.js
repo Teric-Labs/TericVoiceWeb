@@ -72,7 +72,7 @@ const PremiumFeaturesModal = ({ isOpen, onClose }) => {
         {/* Header */}
         <Box
           sx={{
-            background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+            background: 'linear-gradient(45deg, #E8A020, #C47F10)',
             p: 3,
             position: 'relative'
           }}
@@ -83,15 +83,15 @@ const PremiumFeaturesModal = ({ isOpen, onClose }) => {
               position: 'absolute',
               right: 8,
               top: 8,
-              color: 'white'
+              color: '#111111'
             }}
           >
             <Close />
           </IconButton>
-          <Typography variant="h5" sx={{ color: 'white', fontWeight: 600, mb: 1 }}>
+          <Typography variant="h5" sx={{ color: '#111111', fontWeight: 600, mb: 1 }}>
             Unlock Premium Features
           </Typography>
-          <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+          <Typography variant="body1" sx={{ color: 'rgba(17, 17, 17, 0.9)' }}>
             Enhance your text-to-speech experience with our premium features
           </Typography>
         </Box>
@@ -121,8 +121,8 @@ const PremiumFeaturesModal = ({ isOpen, onClose }) => {
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
-                      color: 'white',
+                      background: 'linear-gradient(45deg, #E8A020, #C47F10)',
+                      color: '#111111',
                       height: 'fit-content'
                     }}
                   >
@@ -168,9 +168,9 @@ const PremiumFeaturesModal = ({ isOpen, onClose }) => {
               fontWeight: 600,
               borderRadius: 2,
               textTransform: 'none',
-              background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
+              background: 'linear-gradient(45deg, #E8A020, #C47F10)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #0284c7, #38bdf8)'
+                background: 'linear-gradient(45deg, #0284c7, #F5B844)'
               }
             }}
           >

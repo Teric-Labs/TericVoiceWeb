@@ -1,18 +1,15 @@
-import React from "react";
-import { Box} from '@mui/material';
-import MainComponent from "./MainComponent";
+import React from 'react';
+import { Box } from '@mui/material';
+import PublicPageLayout from './marketing/PublicPageLayout';
+import MainComponent from './MainComponent';
 import '../App.css';
-import AppBarComponent from "./AppBarComponent";
-import FooterComponent from "./FooterComponent";
 
-const LandingPage = () => {
-  return (
-    <Box>
-      <AppBarComponent/>
-      <MainComponent/>
-      <FooterComponent/>
+const LandingPage = () => (
+  <PublicPageLayout noPad>
+    <Box sx={{ bgcolor: 'transparent' }}>
+      <MainComponent />
     </Box>
-  );
-}
+  </PublicPageLayout>
+);
 
 export default LandingPage;

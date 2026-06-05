@@ -33,28 +33,32 @@ import 'react-h5-audio-player/lib/styles.css';
     <Card sx={{
       minWidth: 275,
       margin: '20px',
-      boxShadow: theme.shadows[3],
-      transition: '0.3s',
+      border: '1px solid rgba(232, 160, 32, 0.15)',
+      backgroundColor: 'transparent',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+      borderRadius: '16px',
+      transition: 'all 0.3s ease-in-out',
       '&:hover': {
-        boxShadow: theme.shadows[5]
+        boxShadow: '0 8px 24px rgba(232, 160, 32, 0.08)',
+        transform: 'translateY(-2px)',
       },
       '.rhap_container': {
         backgroundColor: 'transparent',
-        color: '#FFFFFF',
+        color: '#111111',
         boxShadow: 'none',
         '.rhap_main-controls-button': {
-          color: '#FFFFFF',
+          color: theme.palette.primary.main,
         },
         '.rhap_progress-bar': {
-          backgroundColor: theme.palette.grey[800],
+          backgroundColor: '#e2e8f0',
           '.rhap_progress-filled': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: theme.palette.primary.main,
           },
         },
         '.rhap_volume-bar': {
-          backgroundColor: theme.palette.grey[800],
+          backgroundColor: '#e2e8f0',
           '.rhap_volume-indicator': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: theme.palette.primary.main,
           },
         },
       }
@@ -63,18 +67,18 @@ import 'react-h5-audio-player/lib/styles.css';
         <Box sx={{
           display: 'flex',
           justifyContent: 'center',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'rgba(232, 160, 32, 0.1)',
           borderRadius: '20px',
           px: 2,
-          py: 1,
-          color: '#121212',
+          py: 0.8,
+          color: '#111111',
           marginBottom: '20px',
         }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
             {title}
           </Typography>
         </Box>
-        <Typography sx={{ marginBottom: 2, color: 'grey' }}>
+        <Typography sx={{ marginBottom: 2, color: 'text.secondary', fontSize: '0.85rem' }}>
           Language: {language}
         </Typography>
         {audioUrl && <AudioPlayer src={audioUrl} autoPlay onPlay={e => console.log("onPlay")} />}

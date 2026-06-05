@@ -111,7 +111,7 @@ const CarouselComponent = () => {
                     <Typography
                       variant="h4"
                       sx={{
-                        color: 'white',
+                        color: '#111111',
                         fontWeight: 700,
                         textAlign: 'center',
                         mb: 2,
@@ -127,7 +127,7 @@ const CarouselComponent = () => {
                     <Paper
                       elevation={0}
                       sx={{
-                        bgcolor: 'rgba(255,255,255,0.9)',
+                        bgcolor: 'rgba(17, 17, 17, 0.9)',
                         backdropFilter: 'blur(10px)',
                         p: { xs: 2, sm: 3 },
                         mx: 'auto',
@@ -165,8 +165,8 @@ const CarouselComponent = () => {
           left: 16,
           top: '50%',
           transform: 'translateY(-50%)',
-          bgcolor: 'rgba(255,255,255,0.8)',
-          '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+          bgcolor: 'rgba(17, 17, 17, 0.8)',
+          '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.9)' },
           opacity: 0,
           transition: 'opacity 0.3s ease',
           zIndex: 2,
@@ -182,8 +182,8 @@ const CarouselComponent = () => {
           right: 16,
           top: '50%',
           transform: 'translateY(-50%)',
-          bgcolor: 'rgba(255,255,255,0.8)',
-          '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+          bgcolor: 'rgba(17, 17, 17, 0.8)',
+          '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.9)' },
           opacity: 0,
           transition: 'opacity 0.3s ease',
           zIndex: 2,
@@ -210,7 +210,7 @@ const CarouselComponent = () => {
             onClick={() => handleStepChange(index)}
             sx={{
               p: 0.5,
-              color: 'white',
+              color: '#111111',
               '&:hover': { bgcolor: 'transparent' },
             }}
           >

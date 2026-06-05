@@ -1,30 +1,31 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Box, Typography, Tabs, Tab, FormControl, Select, MenuItem,
-  Button, TextField, Snackbar, Alert, Drawer, LinearProgress, InputLabel,
+  Button, TextField, Snackbar, Alert, Drawer,
+  Stepper, Step, StepLabel, StepContent, Paper,
+  Chip, InputLabel, Grid, Stack,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
   AudioFile as AudioFileIcon,
   Movie as MovieIcon,
   Article as ArticleIcon,
-  Send as SendIcon,
-  CheckCircle,
+  CheckCircle, CheckCircleOutline, AutoAwesome, Notes,
 } from '@mui/icons-material';
 import ViewSummaryComponent from './ViewSummaryComponent';
-import { summarizationAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
-import UpgradePromptModal from './UpgradePromptModal';
-
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
-const GLASS = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' };
+import { summarizationAPI, subscriptionAPI, getFriendlyErrorMessage } from '../services/api';
+import { AC, G, GLASS, STEPPER_SX } from '../utils/mediaVault';
+import CreditEstimateChip from './CreditEstimateChip';
+import { AvoicesBackdropLoader } from './progress';
+import useFileDrop from '../hooks/useFileDrop';
+import { useStudioTour } from './onboarding';
+import { TOUR_IDS, summarizeTour } from './onboarding/tours';
 const SELECT_SX = {
-  borderRadius: '12px', color: '#f8fafc', fontSize: '0.9rem',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
-  '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.5)' },
+  borderRadius: '12px', color: '#111111',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(17, 17, 17, 0.15)' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: AC },
 };
-const LABEL_SX = { color: 'rgba(255,255,255,0.5)', '&.Mui-focused': { color: '#0ea5e9' } };
+const LABEL_SX = { color: 'rgba(17, 17, 17, 0.5)', '&.Mui-focused': { color: AC } };
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -38,62 +39,100 @@ const languageOptions = [
 ];
 
 const ALLOWED_FILE_TYPES = {
-  document: { extensions: ['.pdf', '.doc', '.docx', '.txt'], message: 'Please upload a PDF, DOC, DOCX, or TXT file' },
-  audio:    { extensions: ['.wav', '.mp3'], message: 'Please upload a WAV or MP3 file' },
-  video:    { extensions: ['.mp4', '.avi', '.mov'], message: 'Please upload an MP4, AVI, or MOV file' },
+  document: { extensions: ['.pdf', '.doc', '.docx', '.txt'], accept: '.pdf,.doc,.docx,.txt', message: 'Please upload a PDF, DOC, DOCX, or TXT file' },
+  audio: { extensions: ['.wav', '.mp3'], accept: '.wav,.mp3', message: 'Please upload a WAV or MP3 file' },
+  video: { extensions: ['.mp4', '.avi', '.mov'], accept: '.mp4,.avi,.mov', message: 'Please upload an MP4, AVI, or MOV file' },
 };
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const SUMMARIZATION_COST = 2;
 
-const TAB_ICONS = [
-  <ArticleIcon sx={{ fontSize: 17 }} />,
-  <CloudUploadIcon sx={{ fontSize: 17 }} />,
-  <AudioFileIcon sx={{ fontSize: 17 }} />,
-  <MovieIcon sx={{ fontSize: 17 }} />,
+const TAB_CONFIG = [
+  { label: 'Paste Text', icon: <ArticleIcon sx={{ fontSize: 17 }} />, step1: 'Enter Text Content' },
+  { label: 'Document', icon: <CloudUploadIcon sx={{ fontSize: 17 }} />, step1: 'Upload Document' },
+  { label: 'Audio', icon: <AudioFileIcon sx={{ fontSize: 17 }} />, step1: 'Upload Audio' },
+  { label: 'Video', icon: <MovieIcon sx={{ fontSize: 17 }} />, step1: 'Upload Video' },
 ];
-const TAB_LABELS = ['Paste Text', 'Upload Document', 'Upload Audio', 'Upload Video'];
+
+function StepNav({ onBack, onNext, backDisabled, nextDisabled, nextLabel = 'Next' }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+      <Button disabled={backDisabled} onClick={onBack} sx={{ borderRadius: '10px', fontWeight: 800, textTransform: 'none', color: 'rgba(17,17,17,0.6)' }}>Back</Button>
+      <Button variant="contained" onClick={onNext} disabled={nextDisabled} sx={{ background: G, borderRadius: '10px', fontWeight: 800, textTransform: 'none', boxShadow: '0 4px 18px rgba(232, 160, 32, 0.25)' }}>{nextLabel}</Button>
+    </Stack>
+  );
+}
 
 const SummarizationCard = () => {
+  useStudioTour(TOUR_IDS.summarize, summarizeTour);
   const [user, setUser] = useState({ username: '', userId: '' });
   const [activeTab, setActiveTab] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
   const [sourceLanguage, setSourceLanguage] = useState('en');
   const [textContent, setTextContent] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [wordCount, setWordCount] = useState('250'); // Default to Standard Analysis
-  const [translationId, setTranslationId] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [wordCount, setWordCount] = useState('250');
+  const [summaryId, setSummaryId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: '', sev: 'success' });
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeData, setUpgradeData] = useState(null);
+  const [userBalance, setUserBalance] = useState(null);
 
   const fileInputRef = useRef(null);
+  const isLowBalance = userBalance !== null && userBalance < SUMMARIZATION_COST;
+  const hasContent = activeTab === 0 ? !!textContent.trim() : !!uploadedFile;
 
   const notify = useCallback((msg, sev = 'success') => setSnack({ open: true, msg, sev }), []);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (stored) { try { setUser(JSON.parse(stored)); } catch {} }
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+        const uid = parsed.uid || parsed.userId;
+        if (uid) {
+          subscriptionAPI.getBalance(uid)
+            .then(data => setUserBalance(data.balance ?? data.credit_balance ?? null))
+            .catch(() => {});
+        }
+      } catch { /* ignore */ }
+    }
   }, []);
 
   const handleTabChange = useCallback((_, newValue) => {
     setActiveTab(newValue);
+    setActiveStep(0);
     setUploadedFile(null);
     setTextContent('');
-    setTranslationId(null);
+    setSummaryId(null);
     setError(null);
+    setSuccessMsg(null);
   }, []);
+
+  const handleNext = () => setActiveStep(s => s + 1);
+  const handleBack = () => setActiveStep(s => Math.max(0, s - 1));
+
+  const handleReset = () => {
+    setActiveStep(0);
+    setTextContent('');
+    setUploadedFile(null);
+    setSummaryId(null);
+    setError(null);
+    setSuccessMsg(null);
+  };
 
   const handleFileUpload = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
     const fileExtension = `.${file.name.split('.').pop().toLowerCase()}`;
     const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
-    const allowedTypes = ALLOWED_FILE_TYPES[fileType];
-    if (!allowedTypes.extensions.includes(fileExtension)) {
+    const allowed = ALLOWED_FILE_TYPES[fileType];
+    if (!allowed.extensions.includes(fileExtension)) {
       setUploadedFile(null);
-      notify(allowedTypes.message, 'error');
+      notify(allowed.message, 'error');
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
@@ -105,24 +144,27 @@ const SummarizationCard = () => {
     notify(`File selected: ${file.name}`);
   }, [activeTab, notify]);
 
+  const dropAccept = useMemo(() => {
+    const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
+    return ALLOWED_FILE_TYPES[fileType]?.extensions || [];
+  }, [activeTab]);
+
+  const { isDragOver, dropProps } = useFileDrop(
+    files => handleFileUpload({ target: { files } }),
+    { multiple: false, accept: dropAccept },
+  );
+
   const handleSubmit = useCallback(async () => {
     if (!sourceLanguage || (!user.userId && !user.uid)) {
-      setError('Please fill in all required fields');
+      setError('Please log in and select a language');
       return;
     }
     const userId = user.uid || user.userId;
-    setTranslationId(null);
-    setIsDrawerOpen(false);
+    setSummaryId(null);
     setIsProcessing(true);
     setError(null);
+    setSuccessMsg(null);
     try {
-      const usageResult = await checkUsageBeforeRequest('summarize');
-      if (!usageResult.allowed) {
-        setUpgradeData({ currentUsage: usageResult.current_usage || 0, limit: usageResult.limit || 0, endpoint: 'summarize', tier: usageResult.tier || 'free_trial' });
-        setShowUpgradeModal(true);
-        setIsProcessing(false);
-        return;
-      }
       let response;
       const count = wordCount || '250';
       switch (activeTab) {
@@ -131,228 +173,228 @@ const SummarizationCard = () => {
           response = await summarizationAPI.summarizeText(textContent, sourceLanguage, userId, count);
           break;
         case 1:
-          if (!uploadedFile) throw new Error('Please select a document to upload');
+          if (!uploadedFile) throw new Error('Please select a document');
           response = await summarizationAPI.summarizeDocument(uploadedFile, sourceLanguage, userId, count);
           break;
         case 2:
-          if (!uploadedFile) throw new Error('Please select an audio file to upload');
+          if (!uploadedFile) throw new Error('Please select an audio file');
           response = await summarizationAPI.summarizeUpload(uploadedFile, sourceLanguage, userId, count);
           break;
         case 3:
-          if (!uploadedFile) throw new Error('Please select a video file to upload');
+          if (!uploadedFile) throw new Error('Please select a video file');
           response = await summarizationAPI.summarizeAudioFromVideo(uploadedFile, sourceLanguage, userId, count);
           break;
         default:
-          throw new Error('Invalid tab selection');
+          throw new Error('Invalid input mode');
       }
-      if (response?.doc_id) {
-        setTranslationId(response.doc_id);
-        setIsDrawerOpen(true);
-        notify('Summary generated successfully');
+      const docId = response?.doc_id || response?.data?.doc_id;
+      if (docId) {
+        setSummaryId(docId);
+        subscriptionAPI.getBalance(userId).then(data => {
+          setUserBalance(data.balance ?? data.credit_balance ?? null);
+          window.dispatchEvent(new CustomEvent('refresh-balance'));
+        }).catch(() => {});
+        setSuccessMsg('Summary generated successfully!');
+        setActiveStep(3);
+        window.dispatchEvent(new CustomEvent('library-updated'));
       } else {
         throw new Error('No document ID received from server');
       }
     } catch (err) {
-      const errorMessage = handleAPIError(err);
-      setError(errorMessage);
-      if (err.response?.status === 403) window.dispatchEvent(new CustomEvent('show-upgrade-modal'));
+      if (err.response?.status === 402) {
+        window.dispatchEvent(new CustomEvent('subscription-limit-exceeded', {
+          detail: { message: err.response?.data?.detail || 'Insufficient credits.', status: 402 },
+        }));
+        setError(err.response?.data?.detail || 'Insufficient credits for summarization.');
+      } else {
+        setError(getFriendlyErrorMessage(err, 'An error occurred during summarization'));
+      }
     } finally {
       setIsProcessing(false);
     }
-  }, [sourceLanguage, user.userId, user.uid, activeTab, textContent, uploadedFile, notify]);
+  }, [sourceLanguage, user.userId, user.uid, activeTab, textContent, uploadedFile, wordCount]);
 
-  const renderFileUpload = useCallback(() => {
+  const renderFileUpload = () => {
     const fileType = activeTab === 1 ? 'document' : activeTab === 2 ? 'audio' : 'video';
-    const allowedTypes = ALLOWED_FILE_TYPES[fileType];
+    const allowed = ALLOWED_FILE_TYPES[fileType];
     return (
       <Box
-        sx={{
-          border: '1.5px dashed',
-          borderColor: uploadedFile ? '#10b981' : 'rgba(255,255,255,0.12)',
-          borderRadius: '14px', p: 4, textAlign: 'center', cursor: 'pointer',
-          background: uploadedFile ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
-          transition: 'all 0.25s ease',
-          '&:hover': { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.04)' },
-        }}
         onClick={() => fileInputRef.current?.click()}
+        {...dropProps}
+        sx={{
+          border: '1px dashed', borderColor: isDragOver ? AC : uploadedFile ? '#10b981' : 'rgba(17,17,17,0.12)',
+          borderRadius: '16px', p: 4, textAlign: 'center', cursor: 'pointer',
+          background: isDragOver ? 'rgba(232,160,32,0.1)' : uploadedFile ? 'rgba(16,185,129,0.05)' : 'rgba(17,17,17,0.02)',
+          transition: 'all 0.25s ease',
+          '&:hover': { borderColor: AC, background: 'rgba(232,160,32,0.04)' },
+        }}
       >
         {uploadedFile ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={1.5}>
             <CheckCircle sx={{ color: '#10b981', fontSize: 22 }} />
-            <Typography sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{uploadedFile.name}</Typography>
-          </Box>
+            <Typography sx={{ color: '#10b981', fontWeight: 700 }}>{uploadedFile.name}</Typography>
+          </Stack>
         ) : (
           <>
-            <Box sx={{ width: 52, height: 52, borderRadius: '14px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-              <CloudUploadIcon sx={{ fontSize: 26, color: '#8b5cf6' }} />
+            <Box sx={{ width: 60, height: 60, borderRadius: '16px', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <CloudUploadIcon sx={{ fontSize: 30, color: AC }} />
             </Box>
-            <Typography sx={{ color: '#f8fafc', fontWeight: 600, fontSize: '0.95rem', mb: 0.5 }}>
-              Click to upload or drag and drop
-            </Typography>
-            <Typography sx={{ color: '#64748b', fontSize: '0.8rem' }}>
-              Supports {allowedTypes.extensions.join(', ')} (Max 500MB)
-            </Typography>
+            <Typography sx={{ color: '#111111', fontWeight: 700, mb: 0.5 }}>Click to upload or drag and drop</Typography>
+            <Typography sx={{ color: 'rgba(17,17,17,0.5)', fontSize: '0.8rem' }}>{allowed.extensions.join(', ')} · Max 500MB</Typography>
           </>
         )}
-        <input ref={fileInputRef} type="file" accept={allowedTypes.extensions.join(',')} onChange={handleFileUpload} style={{ display: 'none' }} />
+        <input ref={fileInputRef} type="file" accept={allowed.accept} onChange={handleFileUpload} style={{ display: 'none' }} />
       </Box>
     );
-  }, [activeTab, handleFileUpload, uploadedFile]);
+  };
+
+  const langLabel = languageOptions.find(o => o.value === sourceLanguage)?.label;
 
   return (
-    <>
-      <Box sx={{ p: 0.5 }}>
-        {/* Tabs Control */}
-        <Box sx={{ mb: 3, background: 'rgba(255,255,255,0.03)', borderRadius: '16px', p: 0.5, border: '1px solid rgba(255,255,255,0.05)' }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-                minHeight: 44,
-                '& .MuiTabs-indicator': { display: 'none' },
-                '& .MuiTab-root': {
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    borderRadius: '12px',
-                    minHeight: 40,
-                    color: 'rgba(255,255,255,0.5)',
-                    transition: 'all 0.2s ease',
-                    '&.Mui-selected': {
-                        color: '#fff',
-                        background: G,
-                        boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)'
-                    }
-                }
-            }}
-          >
-            {TAB_LABELS.map((label, i) => (
-              <Tab key={i} label={label} icon={TAB_ICONS[i]} iconPosition="start" />
-            ))}
-          </Tabs>
-        </Box>
+    <Box sx={{ p: { xs: 1.5, md: 3 }, minHeight: '100vh', background: 'transparent', maxWidth: 1200, mx: 'auto' }}>
 
-        {/* Configuration Row */}
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel sx={LABEL_SX}>Target Language</InputLabel>
-            <Select value={sourceLanguage} label="Target Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
-              {languageOptions.map(o => <MenuItem key={o.value} value={o.value} sx={{ color: 'rgba(255,255,255,0.8)' }}>{o.label}</MenuItem>)}
-            </Select>
-          </FormControl>
+      <AvoicesBackdropLoader open={isProcessing} message="Analyzing content…" submessage="Building your summary" />
 
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <TextField
-              size="small"
-              label="Target Word Count"
-              type="number"
-              value={wordCount}
-              onChange={e => setWordCount(e.target.value)}
-              InputProps={{ inputProps: { min: 10, max: 2000 } }}
-              sx={{
-                ...SELECT_SX,
-                '& .MuiInputLabel-root': LABEL_SX,
-                '& .MuiOutlinedInput-root': {
-                   borderRadius: '12px',
-                   '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                   '&:hover fieldset': { borderColor: '#0ea5e9' },
-                   '&.Mui-focused fieldset': { borderColor: '#0ea5e9' }
-                }
-              }}
-            />
-          </FormControl>
-          
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500, display: { xs: 'none', lg: 'block' } }}>
-            Summary will be optimized for this region's context and length.
-          </Typography>
-        </Box>
+      {error && <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: '12px' }}>{typeof error === 'string' ? error : error?.message}</Alert>}
+      {successMsg && <Alert severity="success" onClose={() => setSuccessMsg(null)} sx={{ mb: 2, borderRadius: '12px' }}>{successMsg}</Alert>}
 
-        {/* Input Area */}
-        <Box sx={{ mb: 3 }}>
-          {activeTab === 0 ? (
-            <TextField
-              fullWidth multiline rows={8}
-              placeholder="Paste the transcription or text you want to condense into an ethical, meaningful summary..."
-              value={textContent}
-              onChange={e => setTextContent(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': { 
-                    borderRadius: '20px', 
-                    color: '#f8fafc', 
-                    background: 'rgba(255,255,255,0.02)',
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' }, 
-                    '&:hover fieldset': { borderColor: '#0ea5e9' }, 
-                    '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } 
-                },
-                '& .MuiInputBase-input::placeholder': { color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' },
-              }}
-            />
-          ) : (
-            <Box sx={{ ...GLASS, overflow: 'hidden' }}>
-                {renderFileUpload()}
-            </Box>
-          )}
-        </Box>
-
-        {error && (
-          <Alert severity="error" onClose={() => setError(null)}
-            sx={{ mb: 2.5, borderRadius: '16px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-            {typeof error === 'string' ? error : error?.message || 'An error occurred'}
-          </Alert>
-        )}
-
-        {isProcessing && (
-            <Box sx={{ mb: 3 }}>
-                <LinearProgress sx={{ borderRadius: 4, height: 6, background: 'rgba(255,255,255,0.07)', '& .MuiLinearProgress-bar': { background: G } }} />
-                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#0ea5e9', textAlign: 'center', fontWeight: 600 }}>
-                    AI NARRATOR IS ANALYZING CONTENT...
-                </Typography>
-            </Box>
-        )}
-
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Button
-            variant="contained" size="large" onClick={handleSubmit}
-            disabled={isProcessing || !sourceLanguage || (activeTab === 0 && !textContent.trim()) || (activeTab !== 0 && !uploadedFile)}
-            startIcon={<ArticleIcon />}
-            sx={{
-              borderRadius: '50px', textTransform: 'none', fontWeight: 800, px: 6, py: 1.8,
-              fontSize: '1rem',
-              background: G, boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': { background: 'linear-gradient(135deg,#0ea5e9,#8b5cf6)', boxShadow: '0 12px 40px rgba(139,92,246,0.5)', transform: 'translateY(-2px)' },
-              '&.Mui-disabled': { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)', boxShadow: 'none' },
-            }}
-          >
-            {isProcessing ? 'DEEP ANALYSIS IN PROGRESS...' : 'GENERATE AI SUMMARY'}
-          </Button>
-        </Box>
+      <Box sx={{ mb: 2, borderBottom: '1px solid rgba(17,17,17,0.07)' }}>
+        <Tabs
+          data-tour="studio-mode"
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2 } }}
+        >
+          {TAB_CONFIG.map(({ label, icon }, i) => (
+            <Tab key={i} label={label} icon={icon} iconPosition="start" sx={{
+              textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', minHeight: 40,
+              color: activeTab === i ? AC : 'rgba(17,17,17,0.4)', '&.Mui-selected': { color: AC },
+            }} />
+          ))}
+        </Tabs>
       </Box>
 
+      <Stepper data-tour="studio-flow" activeStep={activeStep} orientation="vertical" sx={STEPPER_SX}>
+
+        <Step>
+          <StepLabel>Step 1: {TAB_CONFIG[activeTab].step1}</StepLabel>
+          <StepContent>
+            <Paper data-tour="studio-input" elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'rgba(17,17,17,0.6)', mb: 2, fontWeight: 600 }}>
+                {activeTab === 0
+                  ? 'Paste the transcription or text you want condensed into a clear summary.'
+                  : `Upload your ${activeTab === 1 ? 'document' : activeTab === 2 ? 'audio file' : 'video file'} for AI analysis.`}
+              </Typography>
+              {activeTab === 0 ? (
+                <TextField
+                  fullWidth multiline minRows={8} maxRows={14}
+                  placeholder="Paste the content you want summarized…"
+                  value={textContent}
+                  onChange={e => setTextContent(e.target.value)}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', color: '#111111', lineHeight: 1.65 } }}
+                />
+              ) : renderFileUpload()}
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={activeStep === 0} nextDisabled={!hasContent} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 2: Language & Summary Length</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel sx={LABEL_SX}>Source Language</InputLabel>
+                    <Select value={sourceLanguage} label="Source Language" onChange={e => setSourceLanguage(e.target.value)} sx={SELECT_SX}>
+                      {languageOptions.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth size="small" label="Target Word Count" type="number"
+                    value={wordCount} onChange={e => setWordCount(e.target.value)}
+                    InputProps={{ inputProps: { min: 10, max: 2000 } }}
+                    sx={{ '& .MuiInputLabel-root': LABEL_SX, '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                  />
+                </Grid>
+              </Grid>
+              <Typography sx={{ fontSize: '0.75rem', color: 'rgba(17,17,17,0.45)', mt: 2, fontWeight: 600 }}>
+                Summary length is optimized for your selected language and context.
+              </Typography>
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={false} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 3: Review & Generate Summary</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack spacing={1.5} sx={{ p: 2, background: 'rgba(232,160,32,0.05)', borderRadius: '12px', border: `1px solid ${AC}30`, mb: 2 }}>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Mode:</strong> {TAB_CONFIG[activeTab].label}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Language:</strong> {langLabel}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Target length:</strong> ~{wordCount} words</Typography>
+                {activeTab === 0 && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Input:</strong> {textContent.trim().split(/\s+/).filter(Boolean).length} words</Typography>}
+                {uploadedFile && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>File:</strong> {uploadedFile.name}</Typography>}
+                <Box><CreditEstimateChip service="summarization" quantity={1} balance={userBalance} /></Box>
+              </Stack>
+              <Button
+                variant="contained" fullWidth startIcon={<AutoAwesome />}
+                onClick={handleSubmit}
+                disabled={isProcessing || !hasContent || !sourceLanguage || isLowBalance}
+                sx={{ background: G, py: 1.5, borderRadius: '12px', fontWeight: 900, boxShadow: '0 4px 20px rgba(232,160,32,0.25)' }}
+              >
+                {isProcessing ? 'Analyzing…' : isLowBalance ? 'Insufficient Credits' : 'Generate AI Summary'}
+              </Button>
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={!summaryId} nextLabel="View Summary" />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 4: View Summary</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 4, mb: 2, ...GLASS, mt: 1, textAlign: 'center' }}>
+              <CheckCircleOutline sx={{ fontSize: 64, color: '#10b981', mb: 2 }} />
+              <Typography variant="h5" sx={{ fontWeight: 900, color: '#111111', mb: 1 }}>Summary Ready!</Typography>
+              <Typography sx={{ fontSize: '0.9rem', color: 'rgba(17,17,17,0.6)', mb: 4 }}>
+                Your AI-generated summary is ready to read and export.
+              </Typography>
+              {summaryId ? (
+                <Button variant="contained" onClick={() => setIsDrawerOpen(true)} sx={{ background: G, px: 4, py: 1.5, borderRadius: '12px', fontWeight: 900, mb: 3 }}>
+                  Open Summary
+                </Button>
+              ) : (
+                <Typography sx={{ color: 'rgba(17,17,17,0.4)', mb: 3 }}>Complete Step 3 to generate a summary.</Typography>
+              )}
+              <Stack direction="row" spacing={2} justifyContent="center">
+                <Button variant="outlined" onClick={handleBack} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Back</Button>
+                <Button variant="outlined" onClick={handleReset} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Start Over</Button>
+              </Stack>
+            </Paper>
+          </StepContent>
+        </Step>
+
+      </Stepper>
+
       <Snackbar open={snack.open} autoHideDuration={5000} onClose={() => setSnack(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px', fontWeight: 600 }}>{snack.msg}</Alert>
+        <Alert severity={snack.sev} variant="filled" onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ borderRadius: '12px' }}>{snack.msg}</Alert>
       </Snackbar>
 
-      <Drawer anchor="right" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)' } }}>
-        {translationId && (
+      <Drawer anchor="right" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 600 }, borderLeft: '1px solid rgba(17,17,17,0.08)' } }}>
+        {summaryId && (
           <ViewSummaryComponent
-            translationId={translationId}
-            onError={err => { notify(err.message, 'error'); setIsDrawerOpen(false); }}
+            translationId={summaryId}
+            onError={err => { notify(getFriendlyErrorMessage(err), 'error'); setIsDrawerOpen(false); }}
           />
         )}
       </Drawer>
-
-      <UpgradePromptModal
-        open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        currentUsage={upgradeData?.currentUsage || 0}
-        limit={upgradeData?.limit || 0}
-        endpoint={upgradeData?.endpoint || 'summarize'}
-        tier={upgradeData?.tier || 'free_trial'}
-      />
-    </>
+    </Box>
   );
 };
 

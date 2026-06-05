@@ -104,7 +104,6 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
         display: "block", 
         mb: 2,
         p: 2,
-        backgroundColor: '#f8fafc',
         borderRadius: 1,
         '&:hover': {
           backgroundColor: '#f1f5f9'
@@ -135,21 +134,20 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
       sx={{
         '& .MuiDrawer-paper': {
           width: { xs: '100%', sm: '600px' },
-          backgroundColor: '#ffffff',
         },
       }}
     >
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box sx={{ 
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
           p: 3,
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" sx={{ color: 'white', fontWeight: 600 }}>
+            <Typography variant="h5" sx={{ color: '#111111', fontWeight: 600 }}>
               Voice Recognition Results
             </Typography>
-            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <IconButton onClick={onClose} sx={{ color: '#111111' }}>
               <Close />
             </IconButton>
           </Box>
@@ -158,12 +156,12 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
             <Chip
               icon={<Timer sx={{ color: 'white !important' }} />}
               label={`Duration: ${processedData.duration}`}
-              sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}
+              sx={{ backgroundColor: 'rgba(17, 17, 17, 0.2)', color: '#111111' }}
             />
             <Chip
               icon={<VolumeUp sx={{ color: 'white !important' }} />}
               label={`${processedData.quality}% Accuracy`}
-              sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}
+              sx={{ backgroundColor: 'rgba(17, 17, 17, 0.2)', color: '#111111' }}
             />
           </Stack>
         </Box>
@@ -175,18 +173,17 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
             <Paper elevation={0} sx={{ 
               p: 3, 
               mb: 3, 
-              backgroundColor: '#ffffff',
+              backgroundColor: 'background.paper',
               borderRadius: 2,
               border: '1px solid #e2e8f0'
             }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0f172a' }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#111111' }}>
                 Original Audio
               </Typography>
               <AudioPlayer
                 src={processedData.audio_link[0].audio_file_url}
                 style={{ 
                   borderRadius: '8px',
-                  backgroundColor: '#f8fafc'
                 }}
                 customVolumeControls={[]} 
                 customAdditionalControls={[]}
@@ -197,7 +194,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
 
           {/* Transcriptions */}
           <Paper elevation={0} sx={{ 
-            backgroundColor: '#ffffff',
+            backgroundColor: 'background.paper',
             borderRadius: 2,
             border: '1px solid #e2e8f0',
             mb: 3
@@ -213,7 +210,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                   <AccordionSummary
                     expandIcon={<ExpandMore />}
                     sx={{ 
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: 'background.paper',
                       borderBottom: '1px solid #e2e8f0'
                     }}
                   >
@@ -224,7 +221,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                       <Chip 
                         size="small" 
                         label="Preview" 
-                        sx={{ backgroundColor: 'rgba(14,165,233,0.08)', color: '#0ea5e9' }}
+                        sx={{ backgroundColor: 'rgba(232, 160, 32,0.08)', color: '#E8A020' }}
                       />
                     </Box>
                   </AccordionSummary>
@@ -275,7 +272,7 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
             onClick={() => setIsPremiumExpanded(!isPremiumExpanded)}
             sx={{
               p: 2.5,
-              color: '#0ea5e9',
+              color: '#E8A020',
               textTransform: 'none',
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -283,12 +280,12 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
               alignItems: 'center',
               gap: 2,
               '&:hover': {
-                backgroundColor: 'rgba(14, 165, 233, 0.04)',
+                backgroundColor: 'rgba(232, 160, 32, 0.04)',
               }
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Bolt sx={{ fontSize: 24, color: '#0ea5e9' }} />
+              <Bolt sx={{ fontSize: 24, color: '#E8A020' }} />
               <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 600 }}>
                 Unlock Full Transcription Features
               </Typography>
@@ -305,8 +302,8 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
           </Button>
 
           <Collapse in={isPremiumExpanded}>
-            <Box sx={{ p: 4, backgroundColor: '#f8fafc' }}>
-              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#0f172a' }}>
+            <Box sx={{ p: 4, backgroundColor: 'background.paper' }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#111111' }}>
                 Enhance Your Transcription Experience
               </Typography>
               
@@ -316,11 +313,11 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                     p: 2.5, 
                     borderRadius: 2,
                     border: '1px solid #e2e8f0',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'background.default',
                     position: 'relative',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': { 
-                      borderColor: '#0ea5e9',
+                      borderColor: '#E8A020',
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }
@@ -329,8 +326,8 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                       <Box sx={{ 
                         p: 1.5, 
                         borderRadius: 1.5, 
-                        background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
-                        color: 'white'
+                        background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
+                        color: '#111111'
                       }}>
                         {feature.icon}
                       </Box>
@@ -344,8 +341,8 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                               size="small"
                               label={feature.highlight}
                               sx={{ 
-                                backgroundColor: 'rgba(14,165,233,0.08)',
-                                color: '#0ea5e9',
+                                backgroundColor: 'rgba(232, 160, 32,0.08)',
+                                color: '#E8A020',
                                 fontWeight: 600,
                                 fontSize: '0.75rem'
                               }}
@@ -374,9 +371,9 @@ const VoiceRecognitionResult = ({ results, isOpen, onClose }) => {
                   fontWeight: 600,
                   fontSize: '1.1rem',
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%)',
+                  background: 'linear-gradient(135deg, #E8A020 0%, #C47F10 100%)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)'
+                    background: 'linear-gradient(135deg, #0284c7 0%, #F5B844 100%)'
                   }
                 }}
               >

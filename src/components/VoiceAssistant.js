@@ -268,7 +268,7 @@ const VoiceAssistant = ({ agentId }) => {
           borderRadius: 4,
           position: 'relative',
           backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(17, 17, 17, 0.1)',
           transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
           animation: `${float} 6s ease-in-out infinite`,
           '&:hover': {
@@ -283,9 +283,9 @@ const VoiceAssistant = ({ agentId }) => {
             <IconButton
               onClick={() => setVolume(prev => prev === 1 ? 0.5 : 1)}
               sx={{
-                color: 'white',
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' }
+                color: '#111111',
+                bgcolor: 'rgba(17, 17, 17, 0.1)',
+                '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.2)' }
               }}
             >
               <VolumeUp />
@@ -295,9 +295,9 @@ const VoiceAssistant = ({ agentId }) => {
             <IconButton
               onClick={(e) => setAnchorEl(e.currentTarget)}
               sx={{
-                color: 'white',
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' }
+                color: '#111111',
+                bgcolor: 'rgba(17, 17, 17, 0.1)',
+                '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.2)' }
               }}
             >
               <LanguageIcon />
@@ -315,7 +315,7 @@ const VoiceAssistant = ({ agentId }) => {
               mt: 1,
               bgcolor: 'rgba(45, 45, 45, 0.9)',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(17, 17, 17, 0.1)',
               borderRadius: 2
             }
           }}
@@ -326,8 +326,8 @@ const VoiceAssistant = ({ agentId }) => {
               onClick={() => handleLanguageSelect(language)}
               selected={targetLanguage === language.code}
               sx={{
-                color: 'white',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                color: '#111111',
+                '&:hover': { bgcolor: 'rgba(17, 17, 17, 0.1)' },
                 '&.Mui-selected': {
                   bgcolor: 'rgba(68, 121, 170, 0.3)',
                   '&:hover': { bgcolor: 'rgba(68, 121, 170, 0.4)' }
@@ -355,7 +355,7 @@ const VoiceAssistant = ({ agentId }) => {
           <Typography
             variant="h5"
             sx={{
-              color: '#fff',
+              color: '#111111',
               textTransform: 'uppercase',
               fontWeight: 600,
               letterSpacing: '1px',
@@ -375,7 +375,7 @@ const VoiceAssistant = ({ agentId }) => {
               color: status === 'recording' ? '#ff4444' :
                      status === 'processing' ? '#ffaa00' :
                      status === 'speaking' ? '#44ff44' :
-                     'rgba(255, 255, 255, 0.7)',
+                     'rgba(17, 17, 17, 0.7)',
               display: 'flex',
               alignItems: 'center',
               gap: 1
@@ -414,7 +414,7 @@ const VoiceAssistant = ({ agentId }) => {
                   height: `${bar.height}%`,
                   bgcolor: isPlaying
                     ? `rgba(68, 121, 170, ${0.3 + (bar.height / 100) * 0.7})`
-                    : 'rgba(255, 255, 255, 0.1)',
+                    : 'rgba(17, 17, 17, 0.1)',
                   borderRadius: '3px',
                   transition: 'all 0.2s ease',
                   animation: isPlaying ? `${speak} 1s ease-in-out infinite` : 'none',
@@ -432,10 +432,10 @@ const VoiceAssistant = ({ agentId }) => {
               gap: 1,
               p: 1,
               borderRadius: 2,
-              bgcolor: 'rgba(255, 255, 255, 0.1)'
+              bgcolor: 'rgba(17, 17, 17, 0.1)'
             }}
           >
-            <Typography sx={{ color: 'white', opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ color: '#111111', opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
               {selectedLanguageInfo.flag}
               <span style={{ fontSize: '0.9rem' }}>{selectedLanguageInfo.label}</span>
             </Typography>
@@ -457,7 +457,7 @@ const VoiceAssistant = ({ agentId }) => {
                     : 'linear-gradient(-45deg, #4444ff, #6666ff, #4444ff, #6666ff)',
                   backgroundSize: '400% 400%',
                   animation: `${gradientShift} 3s ease infinite`,
-                  color: 'white',
+                  color: '#111111',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   '&:hover': {
@@ -488,7 +488,7 @@ const VoiceAssistant = ({ agentId }) => {
                   <CircularProgress 
                     size={48} 
                     thickness={5}
-                    sx={{ color: 'white' }} 
+                    sx={{ color: '#111111' }} 
                   />
                 ) : (
                   <Box sx={{
@@ -532,7 +532,7 @@ const VoiceAssistant = ({ agentId }) => {
               variant="h6"
               sx={{
                 mt: 4,
-                color: 'white',
+                color: '#111111',
                 fontWeight: 500,
                 opacity: 0.8,
                 textAlign: 'center',

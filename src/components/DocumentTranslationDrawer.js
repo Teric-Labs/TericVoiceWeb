@@ -35,10 +35,8 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: '100%',
     maxWidth: '650px',
-    backgroundColor: '#09090b', // Zinc 950
-    color: '#fafafa',
     boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.5)',
-    borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+    borderLeft: '1px solid rgba(17, 17, 17, 0.08)',
     [theme.breakpoints.down('md')]: {
       width: '100%',
       maxWidth: '100%',
@@ -52,8 +50,8 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
 
 const HeaderBox = styled(Box)(({ theme }) => ({
   padding: '32px 24px',
-  background: 'linear-gradient(to bottom, #18181b, #09090b)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+  background: theme.palette.mode === 'dark' ? 'linear-gradient(to bottom, #18181b, #111111)' : theme.palette.background.paper,
+  borderBottom: '1px solid rgba(17, 17, 17, 0.08)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -64,7 +62,7 @@ const ContentBox = styled(Box)(({ theme }) => ({
   padding: '32px 24px',
   height: 'calc(100vh - 100px)',
   overflow: 'auto',
-  backgroundColor: '#09090b',
+  backgroundColor: theme.palette.mode === 'dark' ? '#111111' : '#ffffff',
   '&::-webkit-scrollbar': {
     width: '8px',
   },
@@ -72,42 +70,42 @@ const ContentBox = styled(Box)(({ theme }) => ({
     background: 'transparent',
   },
   '&::-webkit-scrollbar-thumb': {
-    background: 'rgba(255, 255, 255, 0.1)',
+    background: 'rgba(17, 17, 17, 0.1)',
     borderRadius: '10px',
   },
   '&::-webkit-scrollbar-thumb:hover': {
-    background: 'rgba(255, 255, 255, 0.2)',
+    background: 'rgba(17, 17, 17, 0.2)',
   },
 }));
 
 const ResultPaper = styled(Paper)(({ theme }) => ({
   padding: '24px',
   marginBottom: '20px',
-  backgroundColor: '#18181b', // Zinc 900
+  backgroundColor: theme.palette.mode === 'dark' ? '#1e1b18' : '#ffffff',
   borderRadius: '16px',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+  border: '1px solid rgba(17, 17, 17, 0.08)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 4px 20px rgba(0, 0, 0, 0.3)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
   transition: 'transform 0.2s ease, border-color 0.2s ease',
   '&:hover': {
-    borderColor: 'rgba(139, 92, 246, 0.3)', // Purple secondary
+    borderColor: 'rgba(232, 160, 32, 0.3)', // Purple secondary
   }
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
-    backgroundColor: '#09090b',
+    backgroundColor: theme.palette.background.paper,
     borderRadius: '12px',
-    color: '#f8fafc',
+    color: theme.palette.text.primary,
     fontSize: '0.95rem',
     lineHeight: 1.6,
     '& fieldset': {
-      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderColor: 'rgba(17, 17, 17, 0.1)',
     },
     '&:hover fieldset': {
-      borderColor: 'rgba(139, 92, 246, 0.4)',
+      borderColor: 'rgba(232, 160, 32, 0.4)',
     },
     '&.Mui-focused fieldset': {
-      borderColor: '#8b5cf6',
+      borderColor: '#C47F10',
       borderWidth: '2px',
     },
   },
@@ -120,22 +118,22 @@ const ActionButton = styled(Button)(({ theme }) => ({
   padding: '10px 20px',
   fontSize: '0.85rem',
   transition: 'all 0.2s ease',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  color: '#e2e8f0',
+  border: '1px solid rgba(17, 17, 17, 0.1)',
+  color: theme.palette.text.secondary,
   '&:hover': {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-    borderColor: '#8b5cf6',
-    color: '#a78bfa',
+    backgroundColor: 'rgba(232, 160, 32, 0.1)',
+    borderColor: '#C47F10',
+    color: '#E8A020',
     transform: 'translateY(-1px)',
   },
 }));
 
 const LanguageChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: 'rgba(139, 92, 246, 0.15)',
-  color: '#a78bfa',
+  backgroundColor: 'rgba(232, 160, 32, 0.15)',
+  color: '#F5B844',
   fontWeight: 600,
   borderRadius: '8px',
-  border: '1px solid rgba(139, 92, 246, 0.3)',
+  border: '1px solid rgba(232, 160, 32, 0.3)',
   height: '24px',
   fontSize: '0.7rem',
 }));
@@ -262,22 +260,22 @@ const DocumentTranslationDrawer = ({
             width: 52,
             height: 52,
             borderRadius: '16px',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            color: '#8b5cf6'
+            backgroundColor: 'rgba(232, 160, 32, 0.1)',
+            border: '1px solid rgba(232, 160, 32, 0.2)',
+            color: '#C47F10'
           }}>
             <Translate fontSize="medium" />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#fafafa', letterSpacing: '-0.01em' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
               Translation Workspace
             </Typography>
-            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {fileName || 'Processing Results'}
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} sx={{ color: '#64748b', '&:hover': { color: '#fafafa', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+        <IconButton onClick={onClose} sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary', backgroundColor: 'rgba(17, 17, 17, 0.05)' } }}>
           <Close />
         </IconButton>
       </HeaderBox>
@@ -294,7 +292,7 @@ const DocumentTranslationDrawer = ({
             height: '300px',
             gap: 3
           }}>
-            <CircularProgress size={48} thickness={4} sx={{ color: '#8b5cf6' }} />
+            <CircularProgress size={48} thickness={4} sx={{ color: '#C47F10' }} />
             <Typography variant="body1" sx={{ color: '#94a3b8', fontWeight: 500 }}>
               Refining your translation...
             </Typography>
@@ -350,14 +348,14 @@ const DocumentTranslationDrawer = ({
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Description sx={{ color: '#94a3b8', fontSize: 22 }} />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f1f5f9' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
                         Source Text
                       </Typography>
                     </Box>
                   <IconButton
                     size="small"
                     onClick={() => toggleSection('original')}
-                    sx={{ color: '#64748b', '&:hover': { color: '#8b5cf6' } }}
+                    sx={{ color: '#64748b', '&:hover': { color: '#C47F10' } }}
                   >
                     {expandedSections.original ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
@@ -394,12 +392,12 @@ const DocumentTranslationDrawer = ({
             {/* Translations */}
             {translationData.translations && Object.keys(translationData.translations).length > 0 && (
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#f8fafc', fontSize: '1.1rem' }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#111111', fontSize: '1.1rem' }}>
                   Target Translations
                 </Typography>
                 
                 {Object.entries(translationData.translations).map(([language, content], index) => (
-                  <ResultPaper key={language} sx={{ borderColor: 'rgba(139, 92, 246, 0.15)' }}>
+                  <ResultPaper key={language} sx={{ borderColor: 'rgba(232, 160, 32, 0.15)' }}>
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -407,10 +405,10 @@ const DocumentTranslationDrawer = ({
                       mb: 2.5
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Box sx={{ color: '#8b5cf6', display: 'flex' }}>
+                        <Box sx={{ color: '#C47F10', display: 'flex' }}>
                           <Language sx={{ fontSize: 24 }} />
                         </Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f1f5f9' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
                           {getLanguageName(language)}
                         </Typography>
                         <LanguageChip 
@@ -421,7 +419,7 @@ const DocumentTranslationDrawer = ({
                       <IconButton
                         size="small"
                         onClick={() => toggleSection(language)}
-                        sx={{ color: '#64748b', '&:hover': { color: '#8b5cf6' } }}
+                        sx={{ color: '#64748b', '&:hover': { color: '#C47F10' } }}
                       >
                         {expandedSections[language] !== false ? <ExpandLess /> : <ExpandMore />}
                       </IconButton>
@@ -537,7 +535,7 @@ const DocumentTranslationDrawer = ({
       <Box sx={{
         position: 'sticky',
         bottom: 0,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'background.paper',
         borderTop: '1px solid #e2e8f0',
         padding: '20px',
         display: 'flex',
@@ -556,20 +554,20 @@ const DocumentTranslationDrawer = ({
             minWidth: '140px',
             height: '48px',
             fontSize: '16px',
-            background: 'linear-gradient(45deg, #0ea5e9, #0284c7)',
-            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+            background: 'linear-gradient(45deg, #E8A020, #0284c7)',
+            boxShadow: '0 4px 12px rgba(232, 160, 32, 0.3)',
             transition: 'all 0.3s ease-in-out',
             pointerEvents: 'auto', // Ensure it's clickable
             cursor: 'pointer',
             zIndex: 1001, // Ensure it's above everything
             '&:hover': {
-              background: 'linear-gradient(45deg, #0284c7, #0ea5e9)',
+              background: 'linear-gradient(45deg, #0284c7, #E8A020)',
               transform: 'translateY(-2px)',
-              boxShadow: '0 6px 16px rgba(14, 165, 233, 0.4)',
+              boxShadow: '0 6px 16px rgba(232, 160, 32, 0.4)',
             },
             '&:active': {
               transform: 'translateY(0px)',
-              boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)',
+              boxShadow: '0 2px 8px rgba(232, 160, 32, 0.3)',
             },
           }}
         >

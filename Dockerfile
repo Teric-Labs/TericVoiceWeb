@@ -7,6 +7,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+# CRA reads REACT_APP_* from .env at build time
+COPY .env .env
+
 # Copy source and build
 COPY . .
 # Set CI=false to prevent warnings from failing the build

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import useFileDrop from "../hooks/useFileDrop";
 import {
   Box,
   Card,
@@ -12,7 +13,6 @@ import {
   FormControl,
   Chip,
   Snackbar,
-  LinearProgress,
   Alert,
   Container,
   Drawer
@@ -22,6 +22,7 @@ import LanguageIcon from '@mui/icons-material/Language';
 import SendIcon from '@mui/icons-material/Send';
 import { voiceToVoiceAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
 import ViewVoxComponent from './ViewVoxComponent';
+import { AvoicesJobProgress, AvoicesBackdropLoader } from './progress';
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -96,6 +97,11 @@ const Voice2VoiceCard = () => {
     }
   };
 
+  const { isDragOver, dropProps } = useFileDrop(
+    files => handleFileSelection(files[0]),
+    { accept: ['audio/'], multiple: false },
+  );
+
   const validateForm = () => {
     if (!sourceLanguage) {
       setError("Please select a source language");
@@ -154,8 +160,8 @@ const Voice2VoiceCard = () => {
       setIsDrawerOpen(true);
       showNotification('Voice translation completed successfully!');
     } catch (error) {
-      const errorMessage = handleAPIError(error);
-      setError(errorMessage);
+      const errorInfo = handleAPIError(error);
+      setError(errorInfo.message);
       
       if (error.response?.status === 403) {
         window.dispatchEvent(new CustomEvent('show-upgrade-modal'));
@@ -221,7 +227,7 @@ const Voice2VoiceCard = () => {
                               key={value}
                               label={option?.label || value}
                               size="small"
-                              sx={{ backgroundColor: 'primary.main', color: 'white' }}
+                              sx={{ backgroundColor: 'primary.main', color: '#111111' }}
                             />
                           );
                         })}
@@ -263,16 +269,18 @@ const Voice2VoiceCard = () => {
                 Upload Audio File
               </Typography>
               <Box
+                {...dropProps}
                 sx={{
                   border: '2px dashed',
                   borderColor: 'primary.main',
                   borderRadius: '12px',
                   p: 4,
                   textAlign: 'center',
-                  backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                  backgroundColor: isDragOver ? 'rgba(232, 160, 32, 0.1)' : 'rgba(232, 160, 32, 0.03)',
                   cursor: 'pointer',
+                  transition: 'background-color 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                    backgroundColor: 'rgba(232, 160, 32, 0.06)',
                   },
                 }}
                 onClick={() => fileInputRef.current?.click()}
@@ -293,7 +301,7 @@ const Voice2VoiceCard = () => {
                 />
               </Box>
               {selectedFile && (
-                <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.05)', borderRadius: '8px' }}>
+                <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(232, 160, 32, 0.08)', borderRadius: '8px' }}>
                   <Typography variant="body2">
                     Selected: {selectedFile.name}
                   </Typography>
@@ -304,16 +312,10 @@ const Voice2VoiceCard = () => {
             {/* Progress */}
             {loading && (
               <Box sx={{ mb: 4 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Processing... {progress}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
+                <AvoicesJobProgress value={progress} label="Processing voice translation" />
               </Box>
             )}
+            <AvoicesBackdropLoader open={loading} progress={progress} message="Translating Voice…" submessage="High-fidelity voice translation in progress." />
 
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>

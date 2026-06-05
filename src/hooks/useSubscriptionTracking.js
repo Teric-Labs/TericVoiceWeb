@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { subscriptionAPI, getCurrentUser } from '../services/api';
+import { subscriptionAPI, getCurrentUser, getFriendlyErrorMessage } from '../services/api';
 
 export const useSubscriptionTracking = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -24,7 +24,7 @@ export const useSubscriptionTracking = () => {
       setSubscriptionStatus(status);
       return status;
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -41,7 +41,7 @@ export const useSubscriptionTracking = () => {
       setUsageStats(stats);
       return stats;
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -56,7 +56,7 @@ export const useSubscriptionTracking = () => {
       const result = await subscriptionAPI.checkUsage(endpoint);
       return result;
     } catch (err) {
-      return { allowed: false, message: err.message };
+      return { allowed: false, message: getFriendlyErrorMessage(err) };
     }
   }, [user.uid]);
 
@@ -138,7 +138,7 @@ export const useUsageCheck = (endpoint) => {
       
       return result.allowed;
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
       setCanUse(false);
       return false;
     } finally {

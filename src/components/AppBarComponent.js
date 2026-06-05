@@ -1,35 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Toolbar, Box, Button, IconButton, Drawer,
   List, ListItem, ListItemText, useMediaQuery, useTheme,
-  Container,
+  Container, Divider,
 } from '@mui/material';
-import { Menu as MenuIcon, Close as CloseIcon, GraphicEq } from '@mui/icons-material';
+import { Menu as MenuIcon, Close as CloseIcon, GraphicEq, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
+import { subscriptionAPI } from '../services/api';
+import { M_AC, M_GRADIENT, M_BLACK, M_BORDER, M_SURFACE } from './marketing/marketingTokens';
 
 const NAV_LINKS = [
-  { label: 'Features', path: '/#features' },
-  { label: 'Pricing', path: '/pricing' },
-  { label: 'Docs', path: '/documentation' },
+  { label: 'Features',  path: '/#features' },
+  { label: 'Pricing',   path: '/pricing' },
+  { label: 'Docs',      path: '/documentation' },
   { label: 'Languages', path: '/language-support' },
 ];
 
-const GRADIENT = 'linear-gradient(135deg, #8b5cf6, #a855f7)';
-const BTN_COLOR = '#ffffff';
-const BTN_TEXT = '#000000';
+const navLinkSx = (active) => ({
+  color: active ? M_BLACK : 'rgba(17, 17, 17, 0.65)',
+  fontWeight: active ? 700 : 500,
+  fontSize: '0.9rem',
+  px: 1.75,
+  py: 0.75,
+  borderRadius: '8px',
+  minWidth: 'auto',
+  textTransform: 'none',
+  position: 'relative',
+  '&:hover': {
+    color: M_BLACK,
+    background: 'rgba(17, 17, 17, 0.04)',
+  },
+  ...(active && {
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      bottom: 4,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 16,
+      height: 2,
+      borderRadius: 1,
+      bgcolor: M_AC,
+    },
+  }),
+});
 
 export default function AppBarComponent() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [balance, setBalance] = useState(null);
+  const [user, setUser] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fetchBalance = () => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+        const uid = parsed.uid || parsed.userId;
+        if (uid) {
+          subscriptionAPI.getBalance(uid)
+            .then(data => setBalance(data.balance ?? data.credit_balance ?? 0))
+            .catch(() => {});
+        }
+      } catch (e) {
+        console.error('AppBar: User parse failed', e);
+      }
+    }
+  };
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    fetchBalance();
+    window.addEventListener('refresh-balance', fetchBalance);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('refresh-balance', fetchBalance);
+    };
   }, []);
+
+  const isActive = (path) => {
+    if (path === '/#features') return location.pathname === '/' && location.hash === '#features';
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   return (
     <>
@@ -37,80 +95,115 @@ export default function AppBarComponent() {
         position="fixed"
         elevation={0}
         sx={{
-          background: scrolled ? 'rgba(9, 9, 11, 0.8)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(16px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          transition: 'all 0.3s ease',
+          background: scrolled
+            ? 'rgba(255, 255, 255, 0.88)'
+            : 'rgba(250, 250, 248, 0.72)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: scrolled ? `1px solid ${M_BORDER}` : '1px solid transparent',
+          transition: 'background 0.25s ease, border-color 0.25s ease',
         }}
       >
-        <Container maxWidth="xl">
-          <Toolbar disableGutters sx={{ height: 72, justifyContent: 'space-between' }}>
-            {/* Logo */}
+        <Container maxWidth="lg">
+          <Toolbar disableGutters sx={{ height: 64, justifyContent: 'space-between' }}>
+
             <Box
               component={Link}
               to="/"
-              sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none', flexShrink: 0 }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.25, textDecoration: 'none', flexShrink: 0 }}
             >
               <Box sx={{
-                width: 38, height: 38, borderRadius: '10px', background: GRADIENT,
+                width: 36, height: 36, borderRadius: '10px',
+                background: M_GRADIENT,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(139,92,246,0.45)',
               }}>
-                <GraphicEq sx={{ color: '#fff', fontSize: 20 }} />
+                <GraphicEq sx={{ color: M_BLACK, fontSize: 18 }} />
               </Box>
               <Box sx={{
-                fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em',
-                background: GRADIENT,
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                fontWeight: 800, fontSize: '1.15rem', letterSpacing: '-0.03em', color: M_BLACK,
               }}>
                 A·VOICES
               </Box>
             </Box>
 
-            {/* Desktop Nav */}
             {!isMobile && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
                 {NAV_LINKS.map(({ label, path }) => (
-                  <Button key={label} component={Link} to={path} variant="text" sx={{
-                    color: 'rgba(255,255,255,0.78)', fontWeight: 600, fontSize: '0.92rem',
-                    px: 2, borderRadius: '50px',
-                    '&:hover': { color: '#fff', background: 'rgba(255,255,255,0.08)' },
-                  }}>
+                  <Button
+                    key={label}
+                    component={Link}
+                    to={path}
+                    variant="text"
+                    sx={navLinkSx(isActive(path))}
+                  >
                     {label}
                   </Button>
                 ))}
               </Box>
             )}
 
-            {/* CTA row */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              {!isMobile && (
-                <Button variant="text" component={Link} to="/get-started" sx={{
-                  color: 'rgba(255,255,255,0.72)', fontWeight: 600,
-                  '&:hover': { color: '#fff', background: 'rgba(255,255,255,0.06)' },
-                }}>
-                  Sign In
-                </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {user ? (
+                <>
+                  {!isMobile && (
+                    <Box
+                      onClick={() => navigate('/dashboard/subscription')}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 0.75,
+                        px: 1.75, py: 0.65, borderRadius: '999px',
+                        bgcolor: 'rgba(232, 160, 32, 0.08)',
+                        border: '1px solid rgba(232, 160, 32, 0.2)',
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'rgba(232, 160, 32, 0.12)' },
+                      }}
+                    >
+                      <WalletIcon sx={{ fontSize: 17, color: M_AC }} />
+                      <Box sx={{ fontWeight: 700, color: M_AC, fontSize: '0.85rem' }}>
+                        {balance !== null ? `${balance.toFixed(0)} credits` : '…'}
+                      </Box>
+                    </Box>
+                  )}
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate('/dashboard')}
+                    sx={{
+                      background: M_GRADIENT, color: M_BLACK, fontWeight: 700,
+                      px: 2.5, py: 0.9, borderRadius: '999px', textTransform: 'none', fontSize: '0.88rem',
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: '0 4px 16px rgba(232, 160, 32, 0.3)' },
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {!isMobile && (
+                    <Button
+                      component={Link}
+                      to="/get-started"
+                      variant="text"
+                      sx={{ ...navLinkSx(false), fontWeight: 600 }}
+                    >
+                      Sign in
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate('/get-started')}
+                    sx={{
+                      background: M_GRADIENT, color: M_BLACK, fontWeight: 700,
+                      px: 2.5, py: 0.9, borderRadius: '999px', textTransform: 'none', fontSize: '0.88rem',
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: '0 4px 16px rgba(232, 160, 32, 0.3)' },
+                    }}
+                  >
+                    Get started
+                  </Button>
+                </>
               )}
-              <Button
-                variant="contained"
-                onClick={() => navigate('/get-started')}
-                sx={{
-                  background: BTN_COLOR, color: BTN_TEXT, fontWeight: 600,
-                  px: { xs: 2.5, md: 3 }, py: 1.15, borderRadius: '50px',
-                  boxShadow: '0 4px 14px rgba(255,255,255,0.1)', fontSize: '0.9rem',
-                  textTransform: 'none',
-                  '&:hover': {
-                    background: '#e4e4e7',
-                    boxShadow: '0 6px 20px rgba(255,255,255,0.15)',
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-              >
-                Get Started Free
-              </Button>
               {isMobile && (
-                <IconButton onClick={() => setMobileOpen(true)} sx={{ color: '#fff', ml: 0.5 }} aria-label="Open menu">
+                <IconButton onClick={() => setMobileOpen(true)} sx={{ color: M_BLACK }} aria-label="Open menu">
                   <MenuIcon />
                 </IconButton>
               )}
@@ -119,32 +212,52 @@ export default function AppBarComponent() {
         </Container>
       </AppBar>
 
-      {/* Mobile Drawer */}
-      <Drawer anchor="right" open={mobileOpen} onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 280, background: '#0f0f2d', borderLeft: '1px solid rgba(255,255,255,0.07)', px: 2, pt: 2 } }}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        PaperProps={{
+          sx: {
+            width: 300,
+            bgcolor: M_SURFACE,
+            borderLeft: `1px solid ${M_BORDER}`,
+          },
+        }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box sx={{ fontWeight: 800, fontSize: '1.1rem', background: GRADIENT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            A·VOICES
-          </Box>
-          <IconButton onClick={() => setMobileOpen(false)} sx={{ color: 'rgba(255,255,255,0.6)' }}>
+        <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ fontWeight: 800, fontSize: '1.1rem', color: M_BLACK }}>A·VOICES</Box>
+          <IconButton onClick={() => setMobileOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
         </Box>
-        <List disablePadding>
-          {[...NAV_LINKS, { label: 'Sign In', path: '/get-started' }].map(({ label, path }) => (
-            <ListItem key={label} component={Link} to={path} onClick={() => setMobileOpen(false)}
-              sx={{ borderRadius: '12px', mb: 0.5, textDecoration: 'none', color: 'rgba(255,255,255,0.8)', '&:hover': { background: 'rgba(139,92,246,0.12)', color: '#fff' } }}
+        <Divider sx={{ borderColor: M_BORDER }} />
+        <List sx={{ px: 1.5, py: 2 }}>
+          {[...NAV_LINKS, { label: 'Sign in', path: '/get-started' }].map(({ label, path }) => (
+            <ListItem
+              key={label}
+              component={Link}
+              to={path}
+              onClick={() => setMobileOpen(false)}
+              sx={{
+                borderRadius: '10px', mb: 0.5, textDecoration: 'none',
+                color: M_BLACK,
+                bgcolor: isActive(path) ? 'rgba(232, 160, 32, 0.08)' : 'transparent',
+              }}
             >
-              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 600, fontSize: '1rem' }} />
+              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }} />
             </ListItem>
           ))}
         </List>
-        <Box sx={{ mt: 3, px: 1 }}>
-          <Button fullWidth component={Link} to="/get-started" onClick={() => setMobileOpen(false)}
-            sx={{ background: BTN_COLOR, color: BTN_TEXT, py: 1.5, borderRadius: '50px', fontWeight: 600, textTransform: 'none', fontSize: '1rem', boxShadow: '0 4px 14px rgba(255,255,255,0.1)' }}
+        <Box sx={{ px: 2.5, pb: 3 }}>
+          <Button
+            fullWidth
+            onClick={() => { setMobileOpen(false); navigate('/get-started'); }}
+            sx={{
+              background: M_GRADIENT, color: M_BLACK, py: 1.35, borderRadius: '999px',
+              fontWeight: 700, textTransform: 'none',
+            }}
           >
-            Get Started Free
+            Get started free
           </Button>
         </Box>
       </Drawer>

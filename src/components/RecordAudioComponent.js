@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Button, Select, MenuItem, FormControl, InputLabel,
-  Box, Grid, LinearProgress, Snackbar, Alert, Typography, useTheme, Stack
+  Box, Grid, Snackbar, Alert, Typography, useTheme, Stack
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
@@ -11,6 +11,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LanguageIcon from '@mui/icons-material/Language';
 import WaveSurfer from 'wavesurfer.js';
 import { transcriptionAPI, checkUsageBeforeRequest, handleAPIError } from '../services/api';
+import { AvoicesProgress, AvoicesBackdropLoader } from './progress';
 
 const languageOptions = [
   { label: 'English',     value: 'en' },
@@ -22,8 +23,8 @@ const languageOptions = [
   { label: 'French',      value: 'fr' },
 ];
 
-const GLASS = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' };
-const G = 'linear-gradient(135deg, #0ea5e9, #8b5cf6)';
+const GLASS = { background: 'rgba(17, 17, 17,0.03)', border: '1px solid rgba(17, 17, 17,0.07)', borderRadius: '20px' };
+const G = 'linear-gradient(135deg, #E8A020, #C47F10)';
 
 const RecordAudioComponent = () => {
   const theme = useTheme();
@@ -44,9 +45,9 @@ const RecordAudioComponent = () => {
     
     const waveSurferInstance = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: 'rgba(255,255,255,0.1)',
-      progressColor: '#0ea5e9',
-      cursorColor: '#0ea5e9',
+      waveColor: 'rgba(17, 17, 17, 0.1)',
+      progressColor: '#E8A020',
+      cursorColor: '#E8A020',
       barWidth: 2,
       responsive: true,
       height: 80,
@@ -127,8 +128,12 @@ const RecordAudioComponent = () => {
   return (
     <Box sx={{ ...GLASS, p: { xs: 2.5, md: 4 }, position: 'relative', overflow: 'hidden' }}>
       {loading && (
-        <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, borderRadius: '20px 20px 0 0', '& .MuiLinearProgress-bar': { background: G } }} />
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+          <AvoicesProgress variant="indeterminate" size="xs" sx={{ borderRadius: '20px 20px 0 0' }} />
+        </Box>
       )}
+
+      <AvoicesBackdropLoader open={loading} message="Uploading Audio…" submessage="Please wait while we process your recording." />
 
       <Snackbar open={showBanner} autoHideDuration={6000} onClose={() => setShowBanner(false)} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert onClose={() => setShowBanner(false)} severity={bannerMessage.includes('successfully') ? 'success' : 'error'} sx={{ width: '100%', borderRadius: '12px' }}>
@@ -138,16 +143,16 @@ const RecordAudioComponent = () => {
 
       <Grid container spacing={4} alignItems="center">
         <Grid item xs={12}>
-          <Typography variant="h5" sx={{ fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
-            Neural <span style={{ color: '#0ea5e9' }}>Recording Studio</span>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: '#111111', letterSpacing: '-0.02em' }}>
+            Neural <span style={{ color: '#E8A020' }}>Recording Studio</span>
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+          <Typography variant="caption" sx={{ color: 'rgba(17, 17, 17,0.3)', fontWeight: 500 }}>
             Capture high-fidelity audio for instant transcription
           </Typography>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: 'rgba(14, 165, 233, 0.4)', transition: '0.2s' }, '&.Mui-focused fieldset': { borderColor: '#0ea5e9' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)', '&.Mui-focused': { color: '#0ea5e9' } } }}>
+          <FormControl fullWidth variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: '#111111', '& fieldset': { borderColor: 'rgba(17, 17, 17, 0.1)' }, '&:hover fieldset': { borderColor: 'rgba(232, 160, 32, 0.4)', transition: '0.2s' }, '&.Mui-focused fieldset': { borderColor: '#E8A020' } }, '& .MuiInputLabel-root': { color: 'rgba(17, 17, 17, 0.4)', '&.Mui-focused': { color: '#E8A020' } } }}>
             <InputLabel id="language-label">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LanguageIcon fontSize="small" />
@@ -173,7 +178,7 @@ const RecordAudioComponent = () => {
               sx={{ 
                 py: 2, px: 6, borderRadius: '50px', fontWeight: 800,
                 background: isRecording ? '#f43f5e' : G,
-                boxShadow: isRecording ? '0 0 20px rgba(244,63,94,0.3)' : '0 0 20px rgba(14,165,233,0.3)',
+                boxShadow: isRecording ? '0 0 20px rgba(244,63,94,0.3)' : '0 0 20px rgba(232, 160, 32,0.3)',
                 '&:hover': { background: isRecording ? '#e11d48' : G, transform: 'translateY(-2px)', transition: '0.2s' }
               }}
             >
@@ -183,12 +188,12 @@ const RecordAudioComponent = () => {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={{ p: 3, background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <Box sx={{ p: 3, background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid rgba(17, 17, 17, 0.05)' }}>
             <Box ref={waveformRef} sx={{ mb: 3, opacity: isRecording ? 1 : 0.4 }} />
             {audioBlob && (
               <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
                 <Button variant="outlined" onClick={handlePlayPause} startIcon={isPlaying ? <StopIcon /> : <PlayArrowIcon />} 
-                  sx={{ borderRadius: '50px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', '&:hover': { borderColor: '#0ea5e9' } }}>
+                  sx={{ borderRadius: '50px', borderColor: 'rgba(17, 17, 17, 0.1)', color: '#111111', '&:hover': { borderColor: '#E8A020' } }}>
                   {isPlaying ? 'PAUSE' : 'PLAY'}
                 </Button>
                 <Button variant="outlined" color="error" onClick={handleDiscardRecording} startIcon={<DeleteOutlineIcon />} 

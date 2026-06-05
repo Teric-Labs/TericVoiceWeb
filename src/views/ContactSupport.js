@@ -4,7 +4,7 @@ import ContactComponent from "../components/ContactComponent";
 
 const ContactSupport =()=>{
     return(
-        <Box>
+        <Box sx={{ background: 'transparent', minHeight: '100vh', width: '100%' }}>
             <ContactComponent/>
         </Box>
     )

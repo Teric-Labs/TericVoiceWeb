@@ -1,121 +1,138 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Button, FormControl, Grid, IconButton, MenuItem,
-  Select, TextField, Alert, Stack, Chip, LinearProgress,
-  Typography, Tooltip, Menu,
+  Select, TextField, Alert, Stack, Chip,
+  Typography, Tooltip, Menu, Tab, Tabs,
+  Stepper, Step, StepLabel, StepContent, Paper,
 } from '@mui/material';
 import {
-  Translate, CloudUpload, SwapHoriz, 
-  ContentCopy, GetApp, CheckCircle, 
-  Description, PictureAsPdf,
-  AutoAwesome, History, Storage
+  Translate, CloudUpload, SwapHoriz,
+  ContentCopy, GetApp, CheckCircleOutline,
+  Description, PictureAsPdf, AutoAwesome, TextFields,
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
   setSourceLanguage, setTargetLanguage, setInputText, setTranslatedText,
   appendTranslatedChunk, setSelectedFile, translateText, translateDocument,
 } from '../store/slices/translationSlice';
-import { translationAPI, BASE_URL } from '../services/api';
-
-const G = 'linear-gradient(135deg, #8b5cf6, #a855f7)'; // Purple Gradient
-const GLASS = { 
-  background: 'rgba(255,255,255,0.03)', 
-  border: '1px solid rgba(255,255,255,0.06)', 
-  borderRadius: '16px',
-  backdropFilter: 'blur(10px)'
-};
+import { translationAPI, subscriptionAPI, BASE_URL, getFriendlyErrorMessage } from '../services/api';
+import { AC, G, GLASS, STEPPER_SX } from '../utils/mediaVault';
+import CreditEstimateChip from './CreditEstimateChip';
+import { AvoicesJobProgress } from './progress';
+import SendToStudioButton from './SendToStudioButton';
+import { consumePipeline } from '../utils/pipelineHandoff';
+import { useStudioTour } from './onboarding';
+import { TOUR_IDS, translateTour } from './onboarding/tours';
 
 const SUPPORTED_LANGUAGES = [
-  { value: 'en',  label: 'English' },
-  { value: 'lg',  label: 'Luganda' },
-  { value: 'sw',  label: 'Kiswahili' },
-  { value: 'ac',  label: 'Acholi' },
-  { value: 'at',  label: 'Ateso' },
+  { value: 'en', label: 'English' },
+  { value: 'lg', label: 'Luganda' },
+  { value: 'sw', label: 'Kiswahili' },
+  { value: 'ac', label: 'Acholi' },
+  { value: 'at', label: 'Ateso' },
   { value: 'nyn', label: 'Runyankore' },
 ];
+
+function StepNav({ onBack, onNext, backDisabled, nextDisabled, nextLabel = 'Next' }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+      <Button disabled={backDisabled} onClick={onBack} sx={{ borderRadius: '10px', fontWeight: 800, textTransform: 'none', color: 'rgba(17,17,17,0.6)' }}>Back</Button>
+      <Button variant="contained" onClick={onNext} disabled={nextDisabled} sx={{ background: G, borderRadius: '10px', fontWeight: 800, textTransform: 'none', boxShadow: '0 4px 18px rgba(232, 160, 32, 0.25)' }}>{nextLabel}</Button>
+    </Stack>
+  );
+}
 
 const TranslationStudio = () => {
   const dispatch = useAppDispatch();
   const {
     sourceLanguage, targetLanguage, inputText, translatedText,
-    selectedFile, isLoading
+    selectedFile, isLoading,
   } = useAppSelector(state => state.translation);
   const { user } = useAppSelector(state => state.auth);
 
+  useStudioTour(TOUR_IDS.translate, translateTour);
+
+  const [activeTab, setActiveTab] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
   const [exportAnchor, setExportAnchor] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState(null);
   const [progress, setProgress] = useState({ current: 0, total: 100, percentage: 0 });
   const [streamingActive, setStreamingActive] = useState(false);
   const [streamInfo, setStreamInfo] = useState('System Ready');
+  const [userBalance, setUserBalance] = useState(null);
   const translationEndRef = useRef(null);
-
-  // Synchronized Scrolling Logic (Optional Enhancement)
   const sourceRef = useRef(null);
   const targetRef = useRef(null);
 
-  // Real-time EventSource Streaming
+  const isTextMode = activeTab === 0;
+  const hasContent = isTextMode ? !!inputText.trim() : !!selectedFile;
+  const busy = isLoading || streamingActive;
+  const hasResult = !!translatedText?.trim();
+  const uid = user?.uid || user?.userId;
+  const isLowBalance = false;
+
+  useEffect(() => {
+    if (uid) {
+      subscriptionAPI.getBalance(uid)
+        .then(data => setUserBalance(data.balance ?? data.credit_balance ?? null))
+        .catch(() => {});
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    const handoff = consumePipeline('translate');
+    if (!handoff) return;
+    setActiveTab(0);
+    if (handoff.text) dispatch(setInputText(String(handoff.text)));
+    const langs = SUPPORTED_LANGUAGES.map(l => l.value);
+    if (handoff.sourceLang && langs.includes(handoff.sourceLang)) dispatch(setSourceLanguage(handoff.sourceLang));
+    if (handoff.text) {
+      setSuccessMsg('Text imported from your previous step — pick a target language and translate.');
+      setActiveStep(2);
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     let eventSource;
-    const uid = user?.uid || user?.userId;
-    
     if (streamingActive && uid) {
-        console.log(`[Studio] Re-initializing stream for UID: ${uid}`);
-        dispatch(setTranslatedText('')); 
-        setStreamInfo('Initializing Stream...');
-        
-        // Ensure we point to the exact same host as the API
-        const streamUrl = `${BASE_URL}/translate/stream/${uid}`;
-        console.log(`[Studio] Connecting SSE: ${streamUrl}`);
-        
-        eventSource = new EventSource(streamUrl);
+      dispatch(setTranslatedText(''));
+      setStreamInfo('Initializing Stream…');
+      const streamUrl = `${BASE_URL}/translate/stream/${uid}`;
+      eventSource = new EventSource(streamUrl);
 
-        eventSource.onopen = () => {
-            console.log(`[Studio] SSE Connected Successfully`);
-            setStreamInfo('Connected • Processing Document...');
-        };
+      eventSource.onopen = () => setStreamInfo('Connected · Processing…');
 
-        eventSource.onmessage = (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                if (data.chunk) {
-                    console.log(`[Studio] Received Chunk: ${data.chunk.substring(0, 30)}...`);
-                    dispatch(appendTranslatedChunk(data.chunk));
-                    if (translationEndRef.current) translationEndRef.current.scrollIntoView({ behavior: 'smooth' });
-                }
-                if (data.error) {
-                    console.error("[Studio] Backend Stream Error:", data.error);
-                    setStreamInfo(`Error: ${data.error}`);
-                    setStreamingActive(false);
-                }
-            } catch (err) { 
-                console.error("[Studio] Stream parse error:", err); 
-            }
-        };
-
-        eventSource.onerror = (err) => {
-            console.warn("[Studio] SSE Connection closed or completed.", err);
-            setStreamInfo('Stream Finalized');
-            eventSource.close();
+      eventSource.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.chunk) {
+            dispatch(appendTranslatedChunk(data.chunk));
+            if (translationEndRef.current) translationEndRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
+          if (data.error) {
+            setStreamInfo(`Error: ${data.error}`);
             setStreamingActive(false);
-        };
+          }
+        } catch { /* ignore parse errors */ }
+      };
 
-        return () => { if (eventSource) eventSource.close(); };
+      eventSource.onerror = () => {
+        setStreamInfo('Stream Finalized');
+        eventSource.close();
+        setStreamingActive(false);
+      };
+
+      return () => { if (eventSource) eventSource.close(); };
     }
-  }, [streamingActive, user, dispatch]);
+  }, [streamingActive, uid, dispatch]);
 
-  // Synchronized Scrolling Logic
-  const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-    
-    // We synchronize the other panel based on the percentage
-    const targetPanel = e.target === sourceRef.current ? targetRef.current : sourceRef.current;
-    if (targetPanel) {
-        targetPanel.scrollTop = scrollPercentage * (targetPanel.scrollHeight - targetPanel.clientHeight);
+  useEffect(() => {
+    if (!streamingActive && !isLoading && translatedText?.trim() && activeStep === 2) {
+      setActiveStep(3);
     }
-  };
+  }, [streamingActive, isLoading, translatedText, activeStep]);
 
-  // Regular Progress Polling
   useEffect(() => {
     let interval;
     if (isLoading && user?.userId) {
@@ -123,46 +140,79 @@ const TranslationStudio = () => {
         try {
           const status = await translationAPI.getTranslationStatus(user.userId);
           setProgress({ current: status.current || 0, total: status.total || 100, percentage: status.percentage || 0 });
-          if (status.status === 'completed') setStreamingActive(false);
-        } catch (e) { console.error("Status check error:", e); }
+          if (status.status === 'completed') {
+            setStreamingActive(false);
+            setActiveStep(3);
+          }
+        } catch { /* ignore */ }
       }, 2000);
     }
     return () => clearInterval(interval);
   }, [isLoading, user?.userId]);
 
+  const handleTabChange = (_, v) => {
+    setActiveTab(v);
+    setActiveStep(0);
+    setErrorMsg(null);
+    setSuccessMsg('');
+  };
+
+  const handleNext = () => setActiveStep(s => s + 1);
+  const handleBack = () => setActiveStep(s => Math.max(0, s - 1));
+
+  const handleReset = () => {
+    dispatch(setInputText(''));
+    dispatch(setSelectedFile(null));
+    dispatch(setTranslatedText(''));
+    setStreamingActive(false);
+    setStreamInfo('System Ready');
+    setActiveStep(0);
+    setSuccessMsg('');
+    setErrorMsg(null);
+  };
+
+  const swapLanguages = () => {
+    dispatch(setSourceLanguage(targetLanguage));
+    dispatch(setTargetLanguage(sourceLanguage));
+  };
+
   const handleTranslate = async () => {
     if (!user?.userId) return;
+    setErrorMsg(null);
+    setSuccessMsg('');
     try {
-      if (selectedFile) {
-        const result = await dispatch(translateDocument({ 
-          userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, file: selectedFile 
+      if (selectedFile && !isTextMode) {
+        const result = await dispatch(translateDocument({
+          userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, file: selectedFile,
         })).unwrap();
         if (result.status === 'started') setStreamingActive(true);
-      } else if (inputText) {
-        const result = await dispatch(translateText({ 
-          userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, text: inputText 
+      } else if (inputText.trim()) {
+        const result = await dispatch(translateText({
+          userId: user.userId, sourceLang: sourceLanguage, targetLang: targetLanguage, text: inputText,
         })).unwrap();
         if (result.status === 'started') {
           setStreamingActive(true);
         } else if (result.status === 'completed') {
           setStreamInfo('Translation Complete');
           setSuccessMsg('Translation loaded successfully');
-          // Clear any success message after a few seconds
-          setTimeout(() => setSuccessMsg(''), 5000);
+          setActiveStep(3);
         }
+        subscriptionAPI.getBalance(user.userId).then(data => {
+          setUserBalance(data.balance ?? data.credit_balance ?? null);
+          window.dispatchEvent(new CustomEvent('refresh-balance'));
+          window.dispatchEvent(new CustomEvent('library-updated'));
+        }).catch(() => {});
       }
-    } catch (e) { 
-        console.error("Translation fail:", e); 
-        setStreamInfo(`Error: ${e.message || 'Translation failed'}`);
+    } catch (e) {
+      if (e.response?.status === 402) {
+        setErrorMsg(e.response?.data?.detail || 'Insufficient credits');
+        window.dispatchEvent(new CustomEvent('subscription-limit-exceeded', {
+          detail: { message: e.response?.data?.detail, status: 402 },
+        }));
+      } else {
+        setErrorMsg(getFriendlyErrorMessage(e, 'Translation failed'));
+      }
     }
-  };
-
-  const handleClear = () => {
-    dispatch(setInputText(''));
-    dispatch(setSelectedFile(null));
-    dispatch(setTranslatedText(''));
-    setStreamingActive(false);
-    setStreamInfo('System Ready');
   };
 
   const handleExport = async (format) => {
@@ -171,13 +221,9 @@ const TranslationStudio = () => {
     try {
       const filename = selectedFile ? selectedFile.name.split('.')[0] : 'translation';
       let blob;
-      if (format === 'docx') {
-        blob = await translationAPI.exportToDocx(translatedText, filename);
-      } else if (format === 'pdf') {
-        blob = await translationAPI.exportToPdf(translatedText, filename);
-      } else {
-        blob = new Blob([translatedText], { type: 'text/plain' });
-      }
+      if (format === 'docx') blob = await translationAPI.exportToDocx(translatedText, filename);
+      else if (format === 'pdf') blob = await translationAPI.exportToPdf(translatedText, filename);
+      else blob = new Blob([translatedText], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -185,239 +231,189 @@ const TranslationStudio = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-      setSuccessMsg(`Expert Export Completed: ${format.toUpperCase()}`);
-    } catch (err) {
-      console.error('Export failed:', err);
+      setSuccessMsg(`Exported as ${format.toUpperCase()}`);
+    } catch {
+      setErrorMsg('Export failed');
     }
   };
 
+  const sourceLangLabel = SUPPORTED_LANGUAGES.find(l => l.value === sourceLanguage)?.label;
+  const targetLangLabel = SUPPORTED_LANGUAGES.find(l => l.value === targetLanguage)?.label;
+
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, minHeight: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-      {/* Expert Toolbar */}
-      <Box sx={{ 
-        ...GLASS, p: 2, mb: 3, 
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 2,
-        borderLeft: '4px solid #8b5cf6'
-      }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ flex: 1 }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Box sx={{ p: 1, borderRadius: '8px', background: G, display: 'flex' }}>
-              <AutoAwesome sx={{ color: '#fff', fontSize: 20 }} />
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
-                Translation Studio
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
-                Streaming Engine v2.0
-              </Typography>
-            </Box>
-          </Stack>
-          
-          <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, sm: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-start' } }}>
-            <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 }, flex: { xs: 1, sm: 'none' } }}>
-                <Select 
-                    value={sourceLanguage} 
-                    onChange={e => dispatch(setSourceLanguage(e.target.value))}
-                    sx={{ borderRadius: '8px', color: '#fff', fontSize: '0.85rem', bgcolor: 'rgba(255,255,255,0.05)', border: 'none' }}
-                >
-                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#8b5cf6' } }}>{l.label}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <IconButton onClick={() => dispatch(setSourceLanguage(targetLanguage))} sx={{ color: '#8b5cf6', p: 0.5 }}>
-                <SwapHoriz />
-            </IconButton>
-            <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 }, flex: { xs: 1, sm: 'none' } }}>
-                <Select 
-                    value={targetLanguage} 
-                    onChange={e => dispatch(setTargetLanguage(e.target.value))}
-                    sx={{ borderRadius: '8px', color: '#fff', fontSize: '0.85rem', bgcolor: 'rgba(255,255,255,0.05)' }}
-                >
-                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value} sx={{ color: '#fff', '&:hover': { color: '#8b5cf6' } }}>{l.label}</MenuItem>)}
-                </Select>
-            </FormControl>
-          </Stack>
-        </Stack>
+    <Box sx={{ p: { xs: 1.5, md: 3 }, minHeight: '100vh', background: 'transparent', maxWidth: 1200, mx: 'auto' }}>
 
-        <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="contained"
-            startIcon={<Translate />}
-            onClick={handleTranslate}
-            disabled={isLoading || streamingActive || (!inputText && !selectedFile)}
-            sx={{ 
-                borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 3,
-                background: G, boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-                '&:hover': { background: '#7c3aed' }
-            }}
-          >
-            {streamingActive ? 'Streaming...' : 'Start Expert Translation'}
-          </Button>
+      {errorMsg && <Alert severity="error" onClose={() => setErrorMsg(null)} sx={{ mb: 2, borderRadius: '12px' }}>{errorMsg}</Alert>}
+      {successMsg && <Alert severity="success" onClose={() => setSuccessMsg('')} sx={{ mb: 2, borderRadius: '12px' }}>{successMsg}</Alert>}
 
-          <Button
-            variant="outlined"
-            startIcon={<GetApp />}
-            onClick={(e) => setExportAnchor(e.currentTarget)}
-            disabled={!translatedText || streamingActive}
-            sx={{ 
-                borderRadius: '10px', textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: '#fff',
-                '&:hover': { borderColor: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)' }
-            }}
-          >
-            Export Final
-          </Button>
-          <Menu
-            anchorEl={exportAnchor}
-            open={Boolean(exportAnchor)}
-            onClose={() => setExportAnchor(null)}
-            PaperProps={{ sx: { bgcolor: '#18181b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', minWidth: 180, borderRadius: '12px' } }}
-          >
-            <MenuItem onClick={() => handleExport('docx')} sx={{ py: 1.5 }}><Description sx={{ mr: 1.5, color: '#3b82f6' }} /> MS Word</MenuItem>
-            <MenuItem onClick={() => handleExport('pdf')} sx={{ py: 1.5 }}><PictureAsPdf sx={{ mr: 1.5, color: '#ef4444' }} /> Adobe PDF</MenuItem>
-          </Menu>
-        </Stack>
+      <Box data-tour="studio-mode" sx={{ mb: 2, borderBottom: '1px solid rgba(17,17,17,0.07)' }}>
+        <Tabs value={activeTab} onChange={handleTabChange} sx={{ minHeight: 40, '& .MuiTabs-indicator': { background: G, height: 2 } }}>
+          <Tab label="Text Translation" icon={<TextFields sx={{ fontSize: 17 }} />} iconPosition="start" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 40, color: activeTab === 0 ? AC : 'rgba(17,17,17,0.4)', '&.Mui-selected': { color: AC } }} />
+          <Tab label="Document Translation" icon={<CloudUpload sx={{ fontSize: 17 }} />} iconPosition="start" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 40, color: activeTab === 1 ? AC : 'rgba(17,17,17,0.4)', '&.Mui-selected': { color: AC } }} />
+        </Tabs>
       </Box>
 
-      {/* Main Workspace Split */}
-      <Grid container spacing={3} sx={{ flexGrow: 1 }}>
-        {/* Source Panel */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Box 
-            ref={sourceRef} 
-            onScroll={handleScroll}
-            sx={{ 
-                ...GLASS, p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', 
-                height: '60vh', overflowY: 'auto' 
-            }}
-          >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>
-                    Source Material
-                </Typography>
-                <input type="file" id="studio-upload" style={{ display: 'none' }} onChange={(e) => dispatch(setSelectedFile(e.target.files[0]))} accept=".pdf,.docx,.doc,.txt" />
-                {selectedFile ? (
-                    <Chip label={selectedFile.name} onDelete={() => dispatch(setSelectedFile(null))} sx={{ bgcolor: 'rgba(56,189,248,0.1)', color: '#38bdf8' }} />
-                ) : (
-                    <Stack direction="row" spacing={1}>
-                        {inputText && (
-                            <Button variant="text" size="small" onClick={handleClear} sx={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '0.7rem' }}>
-                                Clear Text
-                            </Button>
-                        )}
-                        <Button variant="text" size="small" startIcon={<CloudUpload />} onClick={() => document.getElementById('studio-upload').click()} sx={{ color: '#38bdf8', textTransform: 'none' }}>
-                            Load Document
-                        </Button>
+      <Stepper data-tour="studio-flow" activeStep={activeStep} orientation="vertical" sx={STEPPER_SX}>
+
+        <Step>
+          <StepLabel>Step 1: {isTextMode ? 'Enter Source Text' : 'Upload Document'}</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'rgba(17,17,17,0.6)', mb: 2, fontWeight: 600 }}>
+                {isTextMode ? 'Paste or type the content you want translated.' : 'Upload a PDF, DOCX, or TXT file for translation.'}
+              </Typography>
+              {isTextMode ? (
+                <TextField
+                  multiline fullWidth minRows={8} maxRows={14}
+                  placeholder="Type or paste material here…"
+                  value={inputText}
+                  onChange={e => dispatch(setInputText(e.target.value))}
+                  disabled={!!selectedFile}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', color: '#111111', fontSize: '0.95rem', lineHeight: 1.7 } }}
+                />
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 3, border: '1px dashed rgba(17,17,17,0.12)', borderRadius: '16px', background: 'rgba(17,17,17,0.02)' }}>
+                  {selectedFile ? (
+                    <Stack spacing={1} alignItems="center">
+                      <Description sx={{ fontSize: 40, color: '#10b981' }} />
+                      <Typography sx={{ fontWeight: 800, color: '#111111' }}>{selectedFile.name}</Typography>
+                      <Button size="small" onClick={() => dispatch(setSelectedFile(null))} sx={{ fontWeight: 700, color: 'rgba(17,17,17,0.5)' }}>Remove file</Button>
                     </Stack>
+                  ) : (
+                    <>
+                      <CloudUpload sx={{ fontSize: 36, color: 'rgba(17,17,17,0.2)', mb: 1 }} />
+                      <input type="file" id="studio-upload" hidden onChange={e => dispatch(setSelectedFile(e.target.files[0]))} accept=".pdf,.docx,.doc,.txt" />
+                      <Button component="label" htmlFor="studio-upload" variant="contained" sx={{ background: G, borderRadius: '12px', fontWeight: 900, mt: 1 }}>
+                        Upload Document
+                      </Button>
+                      <Typography sx={{ fontSize: '0.75rem', color: 'rgba(17,17,17,0.4)', mt: 1.5 }}>PDF · DOCX · TXT</Typography>
+                    </>
+                  )}
+                </Box>
+              )}
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={activeStep === 0} nextDisabled={!hasContent} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 2: Select Languages</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
+                  <Select value={sourceLanguage} onChange={e => dispatch(setSourceLanguage(e.target.value))} sx={{ borderRadius: '12px', color: '#111111' }}>
+                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <IconButton onClick={swapLanguages} sx={{ color: AC, background: 'rgba(232,160,32,0.08)' }}><SwapHoriz /></IconButton>
+                <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
+                  <Select value={targetLanguage} onChange={e => dispatch(setTargetLanguage(e.target.value))} sx={{ borderRadius: '12px', color: '#111111' }}>
+                    {SUPPORTED_LANGUAGES.map(l => <MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Stack>
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={false} />
+          </StepContent>
+        </Step>
+
+        <Step>
+          <StepLabel>Step 3: Translate</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack spacing={1.5} sx={{ p: 2, background: 'rgba(232,160,32,0.05)', borderRadius: '12px', border: `1px solid ${AC}30`, mb: 2 }}>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Mode:</strong> {isTextMode ? 'Text' : 'Document'}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>From:</strong> {sourceLangLabel} → <strong>To:</strong> {targetLangLabel}</Typography>
+                {isTextMode && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>Characters:</strong> {inputText.trim().length}</Typography>}
+                {!isTextMode && selectedFile && <Typography sx={{ fontSize: '0.8rem', color: '#111111' }}><strong>File:</strong> {selectedFile.name}</Typography>}
+                {isTextMode && inputText.trim().length > 0 && (
+                  <Box><CreditEstimateChip service="text_translation" quantity={inputText.trim().length} balance={userBalance} /></Box>
                 )}
-            </Stack>
-            
-            <TextField
-              multiline fullWidth variant="standard"
-              placeholder="Type or paste material here for translation. Large texts will stream in real-time..."
-              value={inputText}
-              onChange={e => dispatch(setInputText(e.target.value))}
-              disabled={!!selectedFile}
-              InputProps={{ 
-                disableUnderline: true,
-                sx: { 
-                  color: '#e2e8f0', fontSize: '0.9rem', lineHeight: 1.8,
-                  fontFamily: '"JetBrains Mono", monospace',
-                } 
-              }}
-              sx={{ flexGrow: 1 }}
-            />
-          </Box>
-        </Grid>
+              </Stack>
+              <Button
+                variant="contained" fullWidth startIcon={<AutoAwesome />}
+                onClick={handleTranslate}
+                disabled={busy || !hasContent || isLowBalance}
+                sx={{ background: G, py: 1.5, borderRadius: '12px', fontWeight: 900, mb: 2 }}
+              >
+                {busy ? (streamingActive ? 'Streaming…' : 'Processing…') : 'Start Translation'}
+              </Button>
+              {(busy || streamingActive) && (
+                <AvoicesJobProgress
+                  value={progress.percentage}
+                  label={streamInfo.toUpperCase()}
+                  sublabel="Live stream"
+                />
+              )}
+              {hasResult && !busy && (
+                <Typography sx={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, mt: 1, textAlign: 'center' }}>✓ Translation ready</Typography>
+              )}
+            </Paper>
+            <StepNav onBack={handleBack} onNext={handleNext} backDisabled={false} nextDisabled={!hasResult && !busy} nextLabel="View Results" />
+          </StepContent>
+        </Step>
 
-        {/* Translation Panel (Real-time Stream) */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Box 
-            ref={targetRef} 
-            onScroll={handleScroll}
-            sx={{ 
-                ...GLASS, p: 3, flexGrow: 1, border: '1px solid rgba(139, 92, 246, 0.2)',
-                background: 'rgba(139, 92, 246, 0.02)', display: 'flex', flexDirection: 'column',
-                position: 'relative', height: '60vh', overflowY: 'auto'
-            }}
-          >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="overline" sx={{ color: '#a855f7', fontWeight: 800 }}>
-                    Expert Translation Result
-                </Typography>
+        <Step>
+          <StepLabel>Step 4: Review & Export</StepLabel>
+          <StepContent>
+            <Paper elevation={0} sx={{ p: 3, mb: 2, ...GLASS, mt: 1 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(17,17,17,0.3)' }}>Translation Result</Typography>
                 <Stack direction="row" spacing={1}>
-                    {streamingActive && <Chip size="small" label="Live Stream" sx={{ bgcolor: '#7c3aed', color: '#fff', fontSize: '0.65rem' }} />}
-                    <Tooltip title="Copy to Clipboard">
-                        <IconButton size="small" onClick={() => navigator.clipboard.writeText(translatedText)} sx={{ color: 'rgba(255,255,255,0.3)' }}>
-                            <ContentCopy fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
+                  {streamingActive && <Chip size="small" label="Live" sx={{ bgcolor: AC, color: '#fff', fontSize: '0.65rem', fontWeight: 800 }} />}
+                  <Tooltip title="Copy">
+                    <IconButton size="small" onClick={() => navigator.clipboard.writeText(translatedText)} disabled={!hasResult}><ContentCopy fontSize="small" /></IconButton>
+                  </Tooltip>
+                  <Button size="small" startIcon={<GetApp />} disabled={!hasResult} onClick={e => setExportAnchor(e.currentTarget)} sx={{ fontWeight: 800, color: AC, textTransform: 'none' }}>Export</Button>
+                  <SendToStudioButton
+                    targets={['synthesize', 'voiceover', 'dubbing']}
+                    disabled={!hasResult}
+                    getPayload={() => ({ text: translatedText, sourceLang: targetLanguage, targetLang: targetLanguage })}
+                  />
                 </Stack>
-            </Stack>
+              </Stack>
+              <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} PaperProps={{ sx: { borderRadius: '12px', minWidth: 160 } }}>
+                <MenuItem onClick={() => handleExport('docx')}><Description sx={{ mr: 1.5, color: '#3b82f6' }} /> Word</MenuItem>
+                <MenuItem onClick={() => handleExport('pdf')}><PictureAsPdf sx={{ mr: 1.5, color: '#ef4444' }} /> PDF</MenuItem>
+                <MenuItem onClick={() => handleExport('txt')}>Plain Text</MenuItem>
+              </Menu>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(17,17,17,0.35)', mb: 1, textTransform: 'uppercase' }}>Source</Typography>
+                  <Box ref={sourceRef} sx={{ p: 2, maxHeight: 280, overflowY: 'auto', borderRadius: '12px', background: 'rgba(17,17,17,0.03)', border: '1px solid rgba(17,17,17,0.06)' }}>
+                    <Typography sx={{ fontSize: '0.85rem', color: '#111111', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                      {isTextMode ? inputText : selectedFile ? `[Document: ${selectedFile.name}]` : '—'}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: AC, mb: 1, textTransform: 'uppercase' }}>Translation</Typography>
+                  <Box ref={targetRef} sx={{ p: 2, maxHeight: 280, overflowY: 'auto', borderRadius: '12px', background: 'rgba(232,160,32,0.04)', border: `1px solid ${AC}25` }}>
+                    <TextField
+                      multiline fullWidth variant="standard"
+                      placeholder="Translation will appear here…"
+                      value={translatedText}
+                      onChange={e => dispatch(setTranslatedText(e.target.value))}
+                      InputProps={{ disableUnderline: true, sx: { color: '#111111', fontSize: '0.9rem', lineHeight: 1.8 } }}
+                    />
+                    <div ref={translationEndRef} />
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+            <Paper elevation={0} sx={{ p: 4, ...GLASS, textAlign: 'center' }}>
+              <CheckCircleOutline sx={{ fontSize: 48, color: '#10b981', mb: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 900, mb: 3 }}>Translation Complete</Typography>
+              <Stack direction="row" spacing={2} justifyContent="center">
+                <Button variant="outlined" onClick={handleBack} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Back</Button>
+                <Button variant="outlined" onClick={handleReset} sx={{ borderRadius: '12px', fontWeight: 800, px: 3 }}>Start Over</Button>
+              </Stack>
+            </Paper>
+          </StepContent>
+        </Step>
 
-            <TextField
-              multiline fullWidth variant="standard"
-              placeholder="System ready... start translation to begin streaming."
-              value={translatedText}
-              onChange={e => dispatch(setTranslatedText(e.target.value))}
-              InputProps={{ 
-                disableUnderline: true,
-                sx: { 
-                    color: '#f8fafc', fontSize: '0.95rem', lineHeight: 2,
-                    fontFamily: '"Inter", sans-serif',
-                    height: '100%', whiteSpace: 'pre-wrap', overflow: 'auto'
-                } 
-              }}
-              sx={{ flexGrow: 1, '& .MuiInputBase-root': { alignItems: 'flex-start', height: '100%' } }}
-            />
-            <div ref={translationEndRef} />
-            
-            {(isLoading || streamingActive) && (
-               <Box sx={{ 
-                   position: 'absolute', bottom: 0, left: 0, right: 0, 
-                   p: 2, background: 'linear-gradient(to top, #09090b 80%, transparent)',
-                   borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px', zIndex: 10
-               }}>
-                   <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: '#a855f7', fontWeight: 800, fontSize: '0.7rem' }}>
-                            {streamInfo.toUpperCase()}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem' }}>
-                            {progress.percentage}% COMPLETE
-                        </Typography>
-                   </Stack>
-                   <LinearProgress 
-                        variant="determinate"
-                        value={progress.percentage}
-                        sx={{ borderRadius: 2, height: 4, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { background: G } }} 
-                   />
-               </Box>
-            )}
-          </Box>
-        </Grid>
-      </Grid>
-
-      {/* Persistence Info Bar */}
-      <Box sx={{ mt: 2, p: 1, px: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: 2 }}>
-         <Storage sx={{ fontSize: 14, color: '#10b981' }} />
-         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>
-            Cloud Persistence Active: Each translated chunk is securely stored in real-time.
-         </Typography>
-         <Box sx={{ flexGrow: 1 }} />
-         <History sx={{ fontSize: 14, color: '#3b82f6' }} />
-         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}>
-            View Translation History
-         </Typography>
-      </Box>
-
-      {/* Notifications */}
-      <Stack sx={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', width: 'auto', zIndex: 3000 }}>
-        {successMsg && (
-          <Alert icon={<CheckCircle fontSize="inherit" />} severity="success" sx={{ borderRadius: '12px', bgcolor: '#064e3b', color: '#10b981', minWidth: 300 }}>
-            {successMsg}
-          </Alert>
-        )}
-      </Stack>
+      </Stepper>
     </Box>
   );
 };

@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
-const BASE_URL = 'https://phosai-backend-api-fq4x.onrender.com';
+import { BASE_URL } from '../../services/api';
 
 export const uploadAudio = createAsyncThunk(
   'transcription/uploadAudio',

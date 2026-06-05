@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import useFileDrop from '../hooks/useFileDrop';
 import {
   Box,
   Container,
@@ -41,6 +42,7 @@ import {
 
 import { agentsAPI } from '../services/api';
 import { getCurrentUser } from '../services/api';
+import { AvoicesProgress } from './progress';
 
 const SIDEBAR_WIDTH = 300;
 
@@ -141,6 +143,11 @@ const Chats = ({ agentId }) => {
   const handleFileSelect = (event) => {
     setSelectedFiles(Array.from(event.target.files));
   };
+
+  const { isDragOver, dropProps } = useFileDrop(
+    files => setSelectedFiles(files),
+    { accept: ['.pdf', '.txt', '.docx'], multiple: true },
+  );
 
   // Simulated streaming effect for bot responses
   const streamResponse = async (response) => {
@@ -423,7 +430,11 @@ const Chats = ({ agentId }) => {
           style={{ display: 'none' }}
         />
 
-        <UploadZone onClick={() => fileInputRef.current?.click()}>
+        <UploadZone
+          onClick={() => fileInputRef.current?.click()}
+          {...dropProps}
+          sx={{ bgcolor: isDragOver ? 'rgba(232,160,32,0.1)' : undefined, borderColor: isDragOver ? 'primary.main' : undefined, transition: 'all 0.2s ease' }}
+        >
           <UploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
           <Typography variant="subtitle1" gutterBottom>
             Drop files here or click to upload
@@ -490,10 +501,7 @@ const Chats = ({ agentId }) => {
 
         {isUpdating && (
           <Box sx={{ mt: 2 }}>
-            <LinearProgress variant="indeterminate" />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              This may take a few minutes depending on file size
-            </Typography>
+            <AvoicesProgress variant="indeterminate" size="sm" label="Updating agent" sublabel="This may take a few minutes" />
           </Box>
         )}
       </Box>
@@ -514,8 +522,8 @@ const Chats = ({ agentId }) => {
                 
                 {isLoadingInfo ? (
                   <Box sx={{ flex: 1 }}>
-                    <Skeleton variant="text" width="200px" sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
-                    <Skeleton variant="text" width="150px" sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                    <Skeleton variant="text" width="200px" sx={{ bgcolor: 'rgba(17, 17, 17,0.3)' }} />
+                    <Skeleton variant="text" width="150px" sx={{ bgcolor: 'rgba(17, 17, 17, 0.2)' }} />
                   </Box>
                 ) : (
                   <Box sx={{ flex: 1 }}>

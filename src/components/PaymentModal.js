@@ -32,7 +32,7 @@ import {
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
-import { styled, keyframes } from '@mui/material/styles';
+import { keyframes } from '@mui/material/styles';
 import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { subscriptionAPI } from '../services/api';
@@ -214,7 +214,7 @@ const PaymentModalContent = ({
     const result = await subscriptionAPI.processPayment({
       tierId: selectedTier?.id,
       paymentMethodId: paymentMethod.id,
-      amount: (selectedTier?.price || 0) * 100,
+      amount: (selectedTier?.price ?? selectedTier?.monthlyRaw ?? 0) * 100,
       currency: 'USD',
       email: formData.email,
     });
@@ -225,28 +225,7 @@ const PaymentModalContent = ({
     return { success: false, error: result.error || 'Payment failed' };
   };
 
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
-  };
 
-  const formatExpiryDate = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
 
   const getTierIcon = (tierId) => {
     switch (tierId) {
@@ -259,10 +238,10 @@ const PaymentModalContent = ({
 
   const getTierColor = (tierId) => {
     switch (tierId) {
-      case 'classic': return '#0ea5e9';
+      case 'classic': return '#E8A020';
       case 'classic_pro': return '#9c27b0';
       case 'enterprise_plus': return '#f57c00';
-      default: return '#0ea5e9';
+      default: return '#E8A020';
     }
   };
 
@@ -288,7 +267,7 @@ const PaymentModalContent = ({
         
         {/* Card Payment Details — secured by Stripe */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3, bgcolor: 'rgba(14, 165, 233, 0.05)', borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
+          <Paper sx={{ p: 3, bgcolor: 'rgba(232, 160, 32, 0.05)', borderRadius: '16px', border: '1px solid rgba(232, 160, 32, 0.1)' }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
               <CreditCardIcon color="primary" />
               Card Payment Details
@@ -396,7 +375,7 @@ const PaymentModalContent = ({
       
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
+          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(232, 160, 32, 0.1)' }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Box sx={{ 
@@ -428,7 +407,7 @@ const PaymentModalContent = ({
         </Grid>
         
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(14, 165, 233, 0.1)' }}>
+          <Card sx={{ borderRadius: '16px', border: '1px solid rgba(232, 160, 32, 0.1)' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 Payment Summary
@@ -514,10 +493,16 @@ const PaymentModalContent = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      BackdropProps={{
+        sx: {
+          backgroundColor: 'rgba(0, 0, 0, 0.7)'
+        }
+      }}
       PaperProps={{
         sx: {
           borderRadius: '20px',
-          background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+          background: '#ffffff',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
           minHeight: '600px'
         }
       }}
@@ -528,18 +513,18 @@ const PaymentModalContent = ({
         alignItems: 'center',
         pb: 1,
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
+        color: '#111111',
         borderRadius: '20px 20px 0 0'
       }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Complete Your Purchase
         </Typography>
-        <IconButton onClick={onClose} sx={{ color: 'white' }}>
+        <IconButton onClick={onClose} sx={{ color: '#111111' }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 4 }}>
+      <DialogContent sx={{ p: 4, background: '#ffffff' }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -565,7 +550,7 @@ const PaymentModalContent = ({
         ) : null}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 0 }}>
+      <DialogActions sx={{ p: 3, pt: 0, background: '#ffffff' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <Button
             onClick={handleBack}

@@ -1,6 +1,7 @@
 import React, { useState, createContext, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { BASE_URL } from '../services/api';
 import { 
   Box, 
   Button, 
@@ -110,8 +111,6 @@ const SignInComponent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const AUTH_API = 'https://phosai-backend-api-fq4x.onrender.com';
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -135,7 +134,7 @@ const SignInComponent = () => {
   };
 
   const handleSignUp = async () => {
-    await axios.post(`${AUTH_API}/register`, {
+    await axios.post(`${BASE_URL}/register`, {
       email,
       password,
       confirm_password: confirmPassword
@@ -145,7 +144,7 @@ const SignInComponent = () => {
   };
 
   const handleSignIn = async () => {
-    const response = await axios.post(`${AUTH_API}/login`, { email, password });
+    const response = await axios.post(`${BASE_URL}/login`, { email, password });
     const userData = { username: response.data[0].username, userId: response.data[0].user_id };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));

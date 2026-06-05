@@ -22,7 +22,7 @@ const VoiceLingoComponent = () => {
               onClick={handleToggleTableVisibility} 
               sx={{ backgroundColor: theme.palette.action.hover }}
             >
-              <Typography variant="h6" sx={{fontFamily:'Inter'}}>View Translations</Typography>
+              <Typography variant="h6">View Translations</Typography>
             </AccordionSummary>
             <AccordionDetails>
               {isTableVisible && <VoxTransTable/>}

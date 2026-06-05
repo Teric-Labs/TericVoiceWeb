@@ -6,6 +6,7 @@ import VideoStream from "./views/Videostream";
 import Transcribe from "./views/Transcribe";
 import History from "./views/History";
 import Sidenav from "./components/Sidenav";
+import { TourProvider } from "./components/onboarding";
 import Translation from "./views/Translation";
 import Text2Speech from "./views/Text2Speech";
 import ViewVideo from "./views/ViewVideo";
@@ -33,10 +34,16 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import LanguageSupport from "./views/LanguageSupport";
 import ChatbotGuideView from "./views/ChatbotGuideView";
 import ProfileView from "./views/ProfileView";
+import UsageView from "./views/UsageView";
 import Chatbot from "./components/Chatbot";
 import UpgradePromptModal from "./components/UpgradePromptModal";
 import GlobalSnackbar from "./components/GlobalSnackbar";
 import GlobalProgressIndicator from "./components/GlobalProgressIndicator";
+import DubbingView from "./views/DubbingView";
+import VoiceoverView from "./views/VoiceoverView";
+import DashboardHomeView from "./views/DashboardHomeView";
+import ViewDubbing from "./views/ViewDubbing";
+import ViewVoiceover from "./views/ViewVoiceover";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -59,11 +66,13 @@ function App() {
           <Route path="/pricing" element={<PublicRoute><Pricing /></PublicRoute>} />
           <Route path="/documentation" element={<PublicRoute><APis /></PublicRoute>} />
           <Route path="/language-support" element={<PublicRoute><LanguageView /></PublicRoute>} />
-          <Route path="/dashboard" element={<PrivateRoute><Sidenav /></PrivateRoute>}>
-            <Route index element={<Navigate replace to="transcribe" />} />
+          <Route path="/dashboard" element={<PrivateRoute><TourProvider><Sidenav /></TourProvider></PrivateRoute>}>
+            <Route index element={<Navigate replace to="home" />} />
+            <Route path="home" element={<ErrorBoundary><DashboardHomeView /></ErrorBoundary>} />
             <Route path="agents" element={<ErrorBoundary><LiveStream /></ErrorBoundary>} />
             <Route path="conversational-ai" element={<ErrorBoundary><VideoStream /></ErrorBoundary>} />
             <Route path="history" element={<ErrorBoundary><History /></ErrorBoundary>} />
+            <Route path="usage" element={<ErrorBoundary><UsageView /></ErrorBoundary>} />
             <Route path="transcribe" element={<ErrorBoundary><Transcribe /></ErrorBoundary>} />
             <Route path="video-transcribe" element={<ErrorBoundary><VideoStream /></ErrorBoundary>} />
             <Route path="profile" element={<ErrorBoundary><ProfileView /></ErrorBoundary>} />
@@ -79,6 +88,8 @@ function App() {
             <Route path="ttdata/:id" element={<ErrorBoundary><ViewTranslations /></ErrorBoundary>} />
             <Route path="summarydata/:id" element={<ErrorBoundary><ViewSummary /></ErrorBoundary>} />
             <Route path="video/:id" element={<ErrorBoundary><ViewVideo /></ErrorBoundary>} />
+            <Route path="dub/:id" element={<ErrorBoundary><ViewDubbing /></ErrorBoundary>} />
+            <Route path="voiceover/:id" element={<ErrorBoundary><ViewVoiceover /></ErrorBoundary>} />
             <Route path="voice" element={<ErrorBoundary><Voice2Voice /></ErrorBoundary>} />
             <Route path="chat-guide" element={<ErrorBoundary><ChatbotGuideView /></ErrorBoundary>} />
             <Route path="subscription" element={<ErrorBoundary><Subscription /></ErrorBoundary>} />
@@ -86,11 +97,13 @@ function App() {
             <Route path="lang-support" element={<ErrorBoundary><LanguageSupport /></ErrorBoundary>} />
             <Route path="contact-support" element={<ErrorBoundary><ContactSupport /></ErrorBoundary>} />
             <Route path="voice-clone" element={<ErrorBoundary><VoiceCloning /></ErrorBoundary>} />
+            <Route path="dubbing" element={<ErrorBoundary><DubbingView /></ErrorBoundary>} />
+            <Route path="voiceovers" element={<ErrorBoundary><VoiceoverView /></ErrorBoundary>} />
           </Route>
         </Routes>
         <GlobalProgressIndicator />
         <GlobalSnackbar />
-        <Chatbot/>
+        {/* <Chatbot/> */}
         <UpgradePromptModal />
       </Router>
     </AuthProvider>

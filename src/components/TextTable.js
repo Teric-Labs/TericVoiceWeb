@@ -1,40 +1,51 @@
 import React from 'react';
-import { Stack, Typography, Chip } from '@mui/material';
-import { VolumeUp } from '@mui/icons-material';
 import ResultsTable from './ResultsTable';
+import VaultDateCell from './VaultDateCell';
+import { TitleCell, StatusChip, LangChip, MetaText } from './vault/VaultTableCells';
+import { defaultVaultSearch, truncateText } from '../utils/mediaVault';
 import { dataAPI } from '../services/api';
+import { VAULT_CACHE_KEYS } from '../utils/vaultCache';
 
-const truncate = (t, n = 80) => t ? (t.length > n ? t.slice(0, n) + '…' : t) : '—';
+const fetchTts = (id) => dataAPI.getVocifyVoices(id);
 
 const columns = [
   {
+    id: 'title', label: 'Title', sortable: true,
+    render: row => <TitleCell row={row} />,
+  },
+  {
     id: 'source_lang', label: 'Language', sortable: false,
-    render: row => <Chip label={row.source_lang || '—'} size="small" variant="outlined" />,
+    render: row => <LangChip code={row.source_lang} />,
   },
   {
-    id: 'original_text', label: 'Text', sortable: false,
-    render: row => <Typography variant="body2" color="text.secondary">{truncate(row.original_text)}</Typography>,
+    id: 'original_text', label: 'Script', sortable: false,
+    render: row => <MetaText>{truncateText(row.original_text, 64)}</MetaText>,
   },
   {
-    id: 'date', label: 'Date',
-    render: row => row.date ? new Date(row.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—',
+    id: 'status', label: 'Status', sortable: true,
+    render: row => <StatusChip status={row.status} />,
+  },
+  {
+    id: 'date', label: 'Date', sortable: true,
+    render: row => <VaultDateCell row={row} />,
   },
 ];
 
-export default function TextTable() {
+export default function TextTable({ refreshKey }) {
   return (
     <ResultsTable
-      fetchFn={id => dataAPI.getVocifyVoices(id)}
+      fetchFn={fetchTts}
+      cacheKey={VAULT_CACHE_KEYS.tts}
       columns={columns}
       viewPath={id => `/dashboard/tts/${id}`}
       collectionName="vocify"
-      searchFilter={(r, q) =>
-        (r.title || '').toLowerCase().includes(q.toLowerCase()) ||
-        (r.original_text || '').toLowerCase().includes(q.toLowerCase())
-      }
+      studioPath="/dashboard/synthesize"
+      emptyActionLabel="Open Synthesis Studio"
+      searchFilter={defaultVaultSearch}
       searchPlaceholder="Search speech files…"
       emptyTitle="No text-to-speech files yet"
       emptySubtitle="Generate speech from text and your files will appear here."
+      refreshKey={refreshKey}
     />
   );
 }
