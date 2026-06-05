@@ -150,6 +150,7 @@ export default function EnhancedHeroSection() {
             />
 
             <Typography
+              component="h1"
               sx={{
                 color: M_BLACK,
                 fontWeight: 800,

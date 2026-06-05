@@ -44,6 +44,7 @@ import VoiceoverView from "./views/VoiceoverView";
 import DashboardHomeView from "./views/DashboardHomeView";
 import ViewDubbing from "./views/ViewDubbing";
 import ViewVoiceover from "./views/ViewVoiceover";
+import RouteSEO from "./components/RouteSEO";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -60,6 +61,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
+        <RouteSEO />
         <Routes>
           <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />

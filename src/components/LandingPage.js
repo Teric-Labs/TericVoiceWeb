@@ -6,7 +6,7 @@ import '../App.css';
 
 const LandingPage = () => (
   <PublicPageLayout noPad>
-    <Box sx={{ bgcolor: 'transparent' }}>
+    <Box component="main" sx={{ bgcolor: 'transparent' }}>
       <MainComponent />
     </Box>
   </PublicPageLayout>
