@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebaseConfig';
+import { provisionUserAccount, provisionStoredUser } from '../utils/provisionUser';
 
 const AuthContext = createContext();
 
@@ -41,6 +44,26 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Ensure Firestore user + starter credits when Firebase session is active
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) return;
+      try {
+        await provisionUserAccount(firebaseUser, { notify: false });
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.warn('[Auth] provision on auth state change failed:', err);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Backfill credits for users with a valid local session but no fresh Firebase popup
+  useEffect(() => {
+    if (!isSessionValid()) return;
+    provisionStoredUser({ notify: false }).catch(() => {});
+  }, [isAuthenticated]);
 
   const login = (userData) => {
     localStorage.setItem('user', JSON.stringify(userData));

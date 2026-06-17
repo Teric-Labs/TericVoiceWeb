@@ -5,6 +5,8 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useAuth } from './AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from './firebaseConfig';
+import { provisionUserAccount } from '../utils/provisionUser';
+import { getFriendlyErrorMessage } from '../utils/errors';
 import {
   M_AC, M_GRADIENT, M_BLACK, M_BORDER, M_SURFACE, M_TEXT_MUTED, mBtnSecondary,
 } from './marketing/marketingTokens';
@@ -21,13 +23,11 @@ const Welcome = () => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const u = result.user;
-      localStorage.setItem('user', JSON.stringify({ username: u.displayName, userId: u.uid }));
-      localStorage.setItem('loginAt', Date.now().toString());
+      await provisionUserAccount(result.user, { notify: true });
       setIsAuthenticated(true);
       navigate('/dashboard');
-    } catch {
-      setError('Sign-in failed. Please try again.');
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err, 'Sign-in failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +66,9 @@ const Welcome = () => {
             </Typography>
             <Typography sx={{ color: M_TEXT_MUTED, fontSize: '0.9rem', mt: 0.75, textAlign: 'center' }}>
               Your voice AI workspace — transcribe, translate, and build.
+            </Typography>
+            <Typography sx={{ color: M_AC, fontSize: '0.82rem', mt: 1, fontWeight: 600, textAlign: 'center' }}>
+              New accounts receive 100 free starter credits — no card required.
             </Typography>
           </Box>
 
@@ -107,7 +110,7 @@ const Welcome = () => {
           </Button>
 
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3, flexWrap: 'wrap' }}>
-            {['Secure sign-in', '50+ languages', 'Free tier'].map(text => (
+            {['Secure sign-in', '50+ languages', '100 starter credits'].map(text => (
               <Typography key={text} sx={{ color: M_TEXT_MUTED, fontSize: '0.72rem', fontWeight: 600 }}>
                 {text}
               </Typography>

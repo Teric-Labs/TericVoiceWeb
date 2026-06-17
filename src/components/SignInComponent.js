@@ -145,10 +145,29 @@ const SignInComponent = () => {
 
   const handleSignIn = async () => {
     const response = await axios.post(`${BASE_URL}/login`, { email, password });
-    const userData = { username: response.data[0].username, userId: response.data[0].user_id };
+    const row = response.data?.[0];
+    if (!row?.user_id) {
+      throw new Error(row?.message || 'Login failed');
+    }
+    const userData = {
+      username: row.username,
+      userId: row.user_id,
+      email,
+      balance: row.balance,
+    };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('loginAt', Date.now().toString());
     setIsAuthenticated(true);
+    if (row.credits_granted) {
+      window.dispatchEvent(new CustomEvent('app-notification', {
+        detail: {
+          type: 'success',
+          title: 'Free trial activated',
+          message: '100 starter credits have been added to your account.',
+        },
+      }));
+    }
     navigate('/dashboard');
   };
 

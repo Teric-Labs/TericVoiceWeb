@@ -217,9 +217,20 @@ export const subscriptionAPI = {
     return response.data;
   },
 
-  // Sync Firebase users
-  syncFirebaseUsers: async () => {
-    const response = await apiClient.post('/api/sync-firebase-users');
+  // Sync Firebase users (legacy alias — provisions current user)
+  syncFirebaseUsers: async (payload = {}) => {
+    const response = await apiClient.post('/api/sync-firebase-users', payload);
+    return response.data;
+  },
+
+  // Provision account after sign-in (creates Firestore user + starter credits)
+  provisionAccount: async ({ id_token, user_id, email, display_name } = {}) => {
+    const response = await apiClient.post('/api/auth/provision', {
+      id_token,
+      user_id,
+      email,
+      display_name,
+    });
     return response.data;
   },
 
@@ -979,8 +990,19 @@ export const systemAPI = {
   },
 
   // Sync Firebase users
-  syncFirebaseUsers: async () => {
-    const response = await apiClient.post('/api/sync-firebase-users');
+  syncFirebaseUsers: async (payload = {}) => {
+    const response = await apiClient.post('/api/sync-firebase-users', payload);
+    return response.data;
+  },
+
+  // Provision account after sign-in (creates Firestore user + starter credits)
+  provisionAccount: async ({ id_token, user_id, email, display_name } = {}) => {
+    const response = await apiClient.post('/api/auth/provision', {
+      id_token,
+      user_id,
+      email,
+      display_name,
+    });
     return response.data;
   },
 
