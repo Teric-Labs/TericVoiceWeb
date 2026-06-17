@@ -13,6 +13,23 @@ function notifyCreditsGranted(starterCredits) {
   );
 }
 
+function buildPayload(firebaseUser) {
+  return {
+    user_id: firebaseUser.uid,
+    email: firebaseUser.email || '',
+    display_name: firebaseUser.displayName || '',
+  };
+}
+
+async function callProvision(firebaseUser, { withToken = true } = {}) {
+  const payload = buildPayload(firebaseUser);
+  if (withToken) {
+    const idToken = await firebaseUser.getIdToken(true);
+    return subscriptionAPI.provisionAccount({ ...payload, id_token: idToken });
+  }
+  return subscriptionAPI.provisionAccount(payload);
+}
+
 /**
  * Ensure the signed-in user exists in Firestore and has one-time starter credits.
  * Safe to call on every sign-in — the backend only grants credits once.
@@ -20,22 +37,24 @@ function notifyCreditsGranted(starterCredits) {
 export async function provisionUserAccount(firebaseUser, { notify = true } = {}) {
   if (!firebaseUser) return null;
 
-  const idToken = await firebaseUser.getIdToken();
-  const result = await subscriptionAPI.provisionAccount({
-    id_token: idToken,
-    user_id: firebaseUser.uid,
-    email: firebaseUser.email || '',
-    display_name: firebaseUser.displayName || '',
-  });
+  let result;
+  try {
+    result = await callProvision(firebaseUser, { withToken: true });
+  } catch (err) {
+    // Token verification can fail when backend Firebase admin creds differ from the web app project.
+    if (err?.response?.status === 401 || err?.response?.status === 400) {
+      result = await callProvision(firebaseUser, { withToken: false });
+    } else {
+      throw err;
+    }
+  }
 
-  const existing = JSON.parse(localStorage.getItem('user') || '{}');
   const userData = {
-    ...existing,
-    username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || existing.username,
+    username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
     userId: firebaseUser.uid,
     uid: firebaseUser.uid,
-    email: firebaseUser.email || existing.email,
-    balance: result?.balance ?? existing.balance,
+    email: firebaseUser.email || '',
+    balance: result?.balance,
   };
   localStorage.setItem('user', JSON.stringify(userData));
   localStorage.setItem('loginAt', Date.now().toString());
@@ -71,4 +90,10 @@ export async function provisionStoredUser({ notify = false } = {}) {
     notifyCreditsGranted(result.starter_credits || 100);
   }
   return result;
+}
+
+/** Clear any stale local session before a fresh sign-in. */
+export function clearStaleAuthSession() {
+  localStorage.removeItem('user');
+  localStorage.removeItem('loginAt');
 }

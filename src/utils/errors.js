@@ -62,7 +62,9 @@ export function parseError(error, fallback = 'Something went wrong. Please try a
   }
 
   const status = error?.response?.status;
-  const serverMsg = error?.response?.data?.message || error?.response?.data?.detail;
+  const rawDetail = error?.response?.data?.detail;
+  const serverMsg = error?.response?.data?.message ||
+    (typeof rawDetail === 'string' ? rawDetail : Array.isArray(rawDetail) ? rawDetail.map((d) => d?.msg || d).join(', ') : '');
   const isUpgrade = status === 402 || status === 403 ||
     (serverMsg && (serverMsg.includes('limit') || serverMsg.includes('subscription') || serverMsg.includes('credit')));
 
@@ -75,6 +77,11 @@ export function parseError(error, fallback = 'Something went wrong. Please try a
     }
   }
 
+  // Prefer explicit server message over generic status text (e.g. provision/sign-in errors)
+  if (serverMsg && typeof serverMsg === 'string' && serverMsg.length < 200 && !isTechnicalMessage(serverMsg)) {
+    return { message: serverMsg, shouldUpgrade: isUpgrade, isNetwork: false };
+  }
+
   // HTTP status errors
   if (status && API_ERROR_MESSAGES[status]) {
     return {
@@ -82,11 +89,6 @@ export function parseError(error, fallback = 'Something went wrong. Please try a
       shouldUpgrade: isUpgrade,
       isNetwork: false,
     };
-  }
-
-  // Server-provided message (sanitised)
-  if (serverMsg && typeof serverMsg === 'string' && serverMsg.length < 200 && !isTechnicalMessage(serverMsg)) {
-    return { message: serverMsg, shouldUpgrade: isUpgrade, isNetwork: false };
   }
 
   // Client-provided message (skip axios boilerplate)

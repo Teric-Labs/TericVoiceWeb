@@ -62,6 +62,8 @@ export const AuthProvider = ({ children }) => {
   // Backfill credits for users with a valid local session but no fresh Firebase popup
   useEffect(() => {
     if (!isSessionValid()) return;
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
     provisionStoredUser({ notify: false }).catch(() => {});
   }, [isAuthenticated]);
 
